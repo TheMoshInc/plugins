@@ -1,0 +1,146 @@
+{
+	"page": {
+		"styles": {
+			"background": "#ffffff",
+			"padding": "0 0 0 0"
+		},
+		"mobileStyles": {
+			"padding": "0 0 0 0"
+		}
+	},
+	"elements": [
+		{
+			"id": "sec-hero",
+			"type": "section",
+			"content": "",
+			"styles": { "padding": "80px 48px", "textAlign": "center" },
+			"mobileStyles": { "padding": "48px 16px" },
+			"attributes": {
+				"background": { "type": "color", "color": "#1a1a2e" },
+				"sectionType": "hero"
+			},
+			"children": [
+				{
+					"id": "hd-hero",
+					"type": "heading",
+					"content": "あなたのスキルを、世界に届けよう",
+					"styles": {
+						"color": "#ffffff",
+						"fontSize": "2.5rem",
+						"fontWeight": "bold",
+						"marginBottom": "16px"
+					},
+					"mobileStyles": { "fontSize": "1.6rem" },
+					"attributes": { "level": "1" }
+				},
+				{
+					"id": "tx-hero",
+					"type": "text",
+					"content": "オンラインレッスンで、あなたの知識と経験を共有しませんか？",
+					"styles": {
+						"color": "#cccccc",
+						"fontSize": "1.2rem",
+						"lineHeight": "1.8",
+						"marginBottom": "32px"
+					},
+					"mobileStyles": { "fontSize": "1rem" }
+				},
+				{
+					"id": "btn-hero",
+					"type": "button",
+					"content": "無料で始める",
+					"styles": {
+						"backgroundColor": "#e94560",
+						"color": "#ffffff",
+						"padding": "16px 48px",
+						"borderRadius": "8px",
+						"fontSize": "1.1rem",
+						"fontWeight": "bold"
+					},
+					"attributes": {
+						"href": "https://example.com/signup",
+						"target": "_blank"
+					}
+				}
+			]
+		},
+		{
+			"id": "sec-features",
+			"type": "section",
+			"content": "",
+			"styles": { "padding": "64px 48px", "textAlign": "center" },
+			"mobileStyles": { "padding": "40px 16px" },
+			"attributes": {
+				"background": { "type": "color", "color": "#ffffff" }
+			},
+			"children": [
+				{
+					"id": "hd-features",
+					"type": "heading",
+					"content": "選ばれる3つの理由",
+					"styles": {
+						"color": "#1a1a2e",
+						"fontSize": "2rem",
+						"fontWeight": "bold",
+						"marginBottom": "32px"
+					},
+					"mobileStyles": { "fontSize": "1.4rem" },
+					"attributes": { "level": "2" }
+				},
+				{
+					"id": "tx-features",
+					"type": "text",
+					"content": "簡単セットアップ・柔軟なスケジュール・安心の決済システム。すべてが揃ったプラットフォームです。",
+					"styles": {
+						"color": "#666666",
+						"fontSize": "1.1rem",
+						"lineHeight": "2.0"
+					},
+					"mobileStyles": { "fontSize": "0.95rem" }
+				}
+			]
+		},
+		{
+			"id": "sec-cta",
+			"type": "section",
+			"content": "",
+			"styles": { "padding": "64px 48px", "textAlign": "center" },
+			"mobileStyles": { "padding": "40px 16px" },
+			"attributes": {
+				"background": { "type": "color", "color": "#f8f9fa" }
+			},
+			"children": [
+				{
+					"id": "hd-cta",
+					"type": "heading",
+					"content": "今すぐ始めましょう",
+					"styles": {
+						"color": "#1a1a2e",
+						"fontSize": "1.8rem",
+						"fontWeight": "bold",
+						"marginBottom": "24px"
+					},
+					"mobileStyles": { "fontSize": "1.3rem" },
+					"attributes": { "level": "2" }
+				},
+				{
+					"id": "btn-cta",
+					"type": "button",
+					"content": "無料で始める",
+					"styles": {
+						"backgroundColor": "#e94560",
+						"color": "#ffffff",
+						"padding": "16px 48px",
+						"borderRadius": "8px",
+						"fontSize": "1.1rem",
+						"fontWeight": "bold"
+					},
+					"attributes": {
+						"href": "https://example.com/signup",
+						"target": "_blank"
+					}
+				}
+			]
+		}
+	]
+}

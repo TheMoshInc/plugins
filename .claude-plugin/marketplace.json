@@ -1,0 +1,14 @@
+{
+  "name": "mosh-plugins",
+  "owner": {
+    "name": "TheMoshInc"
+  },
+  "description": "Claude Code plugin marketplace maintained by MOSH",
+  "plugins": [
+    {
+      "name": "lp-builder-plugin",
+      "source": "./plugins/lp-builder-plugin",
+      "description": "Adds an lp-builder skill for constructing landing pages"
+    }
+  ]
+}

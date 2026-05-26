@@ -1,38 +1,3 @@
-# plugins
-
-MOSH が配布する [Claude Code](https://code.claude.com/) プラグインマーケットプレイス。
-
-## 収録プラグイン
-
-| プラグイン | 説明 |
-| :--- | :--- |
-| `lp-builder-plugin` | ランディングページを構築するための lp-builder skill |
-
-## インストール
-
-Claude Code 内で以下を実行:
-
-```shell
-/plugin marketplace add TheMoshInc/mcp-claude-plugins
-/plugin install lp-builder-plugin@mosh-plugins
-```
-
-## 更新
-
-```shell
-/plugin marketplace update mosh-plugins        # カタログを再取得
-/plugin update lp-builder-plugin@mosh-plugins  # プラグイン本体を更新
-```
-
-引数を省略するとすべてのマーケットプレイス/プラグインが対象になります。
-
-## アンインストール
-
-```shell
-/plugin uninstall lp-builder-plugin@mosh-plugins
-/plugin marketplace remove mosh-plugins
-```
-
 ## 利用規約
 
 本リポジトリは、オープンソースソフトウェアとして公開するものではありません。
