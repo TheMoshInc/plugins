@@ -7,6 +7,7 @@ MOSH が配布する [Claude Code](https://code.claude.com/) プラグインマ�
 | プラグイン | 説明 |
 | :--- | :--- |
 | `lp-builder-plugin` | ランディングページを構築するための lp-builder skill |
+| `workflow-builder-plugin` | ワークフロー（ステップ配信）を構築するための workflow-builder skill |
 
 ## インストール
 
@@ -15,13 +16,15 @@ Claude Code 内で以下を実行:
 ```shell
 /plugin marketplace add TheMoshInc/plugins
 /plugin install lp-builder-plugin@mosh-plugins
+/plugin install workflow-builder-plugin@mosh-plugins
 ```
 
 ## 更新
 
 ```shell
-/plugin marketplace update mosh-plugins        # カタログを再取得
-/plugin update lp-builder-plugin@mosh-plugins  # プラグイン本体を更新
+/plugin marketplace update mosh-plugins              # カタログを再取得
+/plugin update lp-builder-plugin@mosh-plugins        # プラグイン本体を更新
+/plugin update workflow-builder-plugin@mosh-plugins  # プラグイン本体を更新
 ```
 
 引数を省略するとすべてのマーケットプレイス/プラグインが対象になります。
@@ -30,6 +33,7 @@ Claude Code 内で以下を実行:
 
 ```shell
 /plugin uninstall lp-builder-plugin@mosh-plugins
+/plugin uninstall workflow-builder-plugin@mosh-plugins
 /plugin marketplace remove mosh-plugins
 ```
 

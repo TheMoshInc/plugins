@@ -9,6 +9,11 @@
       "name": "lp-builder-plugin",
       "source": "./plugins/lp-builder-plugin",
       "description": "Adds an lp-builder skill for constructing landing pages"
+    },
+    {
+      "name": "workflow-builder-plugin",
+      "source": "./plugins/workflow-builder-plugin",
+      "description": "Adds a workflow-builder skill for constructing MOSH workflows"
     }
   ]
 }

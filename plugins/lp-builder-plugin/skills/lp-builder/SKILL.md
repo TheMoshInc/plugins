@@ -112,6 +112,10 @@ PartType / ID 命名 / attributes の詳細は `references/content-schema.md`。
 | `content` に JSON 文字列を渡す | `content` フィールドには JSON オブジェクトを渡す |
 | `elements` 直下にセクション以外の要素 | すべて `section` の `children` に入れる |
 
+## エラーが返ったとき
+
+操作が業務ルールに反する場合（作成・公開できる LP 数の上限に達しているなど）は、理由を示すエラーが返る。再試行せず、返ってきた内容に沿って原因と対処をユーザーへ平易な日本語で伝える（内部的なコードや用語は出さない）。
+
 ## References
 
 | ファイル | 内容 |
