@@ -145,23 +145,23 @@
               "type": "text",
               "text": "通常の文言はこの色・太さで表示され、",
               "marks": [
-                { "type": "textStyle", "attrs": { "color": "#212529", "fontSize": "1.1rem", "fontFamily": "", "mobileFontSize": null, "backgroundColor": "" } }
+                { "type": "textStyle", "attrs": { "color": "#212529", "fontSize": "18px", "fontFamily": "", "mobileFontSize": null, "backgroundColor": "" } }
               ]
             },
             {
               "type": "text",
               "text": "ここだけ太字＋オレンジ色",
               "marks": [
-                { "type": "textStyle", "attrs": { "color": "#e95f3f", "fontSize": "1.1rem", "fontFamily": "", "mobileFontSize": null, "backgroundColor": "" } },
+                { "type": "textStyle", "attrs": { "color": "#e95f3f", "fontSize": "18px", "fontFamily": "", "mobileFontSize": null, "backgroundColor": "" } },
                 { "type": "bold" }
               ]
             },
-            { "type": "hardBreak", "marks": [{ "type": "textStyle", "attrs": { "color": "#212529", "fontSize": "1.1rem", "fontFamily": "", "mobileFontSize": null, "backgroundColor": "" } }] },
+            { "type": "hardBreak", "marks": [{ "type": "textStyle", "attrs": { "color": "#212529", "fontSize": "18px", "fontFamily": "", "mobileFontSize": null, "backgroundColor": "" } }] },
             {
               "type": "text",
               "text": "改行後、ここだけ小さい注釈サイズ",
               "marks": [
-                { "type": "textStyle", "attrs": { "color": "#212529", "fontSize": "0.6rem", "fontFamily": "", "mobileFontSize": null, "backgroundColor": "" } }
+                { "type": "textStyle", "attrs": { "color": "#212529", "fontSize": "10px", "fontFamily": "", "mobileFontSize": null, "backgroundColor": "" } }
               ]
             }
           ]
@@ -194,7 +194,7 @@
       "id": "hd-001",
       "type": "heading",
       "content": "見出しテキスト",
-      "styles": { "color": "#000000", "fontSize": "2rem" },
+      "styles": { "color": "#000000", "fontSize": "30px" },
       "attributes": { "level": "2" }
     },
     {
@@ -215,6 +215,7 @@
 - `section`: `padding` / `background` / `borderRadius` / `width` / `gap` / `flexWrap`
 - `text` / `heading`: `color` / `fontFamily` / `fontSize` / `lineHeight` / `textAlign` / `padding`
 - `button`: `background` / `color` / `borderRadius` / `width` / `padding` / `textAlign`
+  - 上記は編集画面のプロパティパネルで**変更できる**プロパティ。これに加えて、UI でボタンを挿入すると変更不可の固定デフォルト `display: "inline-block"` / `cursor: "pointer"` / `fontSize: "14px"` / `fontWeight: "bold"` が常に付与される（UI では編集手段がないため値はこの固定値のまま）。ボタンを組み立てる際はこれら固定デフォルトも含めて出力し、`fontSize` は `14px` 以外にしない。
 
 ### 明示的に設定しないプロパティ
 - `height`（特に `section` / `button`。高さは中身と `padding` で決める）
@@ -223,3 +224,14 @@
 - 上記の許可リストに無い任意の CSS
 
 特に `height` を指定すると編集画面でレイアウトが破綻する（公開ページは正常でも編集画面が崩れる）ため、高さは中身と `padding` で決める。ユーザーがこれらのスタイル（影・高さ固定・外側余白など）を要望した場合は、**設定できない旨と理由を伝え、許可プロパティ内の代替（`padding`・`background`・`borderRadius` 等）を提案**する。
+
+## フォントの制約（fontFamily・fontSize）
+
+`fontFamily` と `fontSize`（要素の `styles`、およびインライン装飾の tiptap `textStyle` マーク）は、編集画面（UI）で選べる固定値のみを使う。これ以外の値は UI のドロップダウンと一致せず、意図しない表示やフォント未ロードになる。
+
+### fontFamily（4種のみ・引用符込みの文字列）
+- `'Noto Sans JP'` / `'Sawarabi Gothic'` / `'M PLUS Rounded 1c'` / `'Noto Serif JP'`
+
+### fontSize（固定スケール・px）
+- `10px` / `12px` / `14px` / `16px` / `18px` / `20px` / `24px` / `30px` / `36px` / `48px`
+- 既定は本文 `14px`・見出し `18px`。`rem` など固定スケール外の値は使わない。

@@ -26,11 +26,11 @@
 					"content": "あなたのスキルを、世界に届けよう",
 					"styles": {
 						"color": "#ffffff",
-						"fontSize": "2.5rem",
+						"fontSize": "36px",
 						"fontWeight": "bold",
 						"marginBottom": "16px"
 					},
-					"mobileStyles": { "fontSize": "1.6rem" },
+					"mobileStyles": { "fontSize": "24px" },
 					"attributes": { "level": "1" }
 				},
 				{
@@ -39,23 +39,26 @@
 					"content": "オンラインレッスンで、あなたの知識と経験を共有しませんか？",
 					"styles": {
 						"color": "#cccccc",
-						"fontSize": "1.2rem",
+						"fontSize": "18px",
 						"lineHeight": "1.8",
 						"marginBottom": "32px"
 					},
-					"mobileStyles": { "fontSize": "1rem" }
+					"mobileStyles": { "fontSize": "16px" }
 				},
 				{
 					"id": "btn-hero",
 					"type": "button",
 					"content": "無料で始める",
 					"styles": {
-						"backgroundColor": "#e94560",
+						"display": "inline-block",
+						"background": "#e94560",
 						"color": "#ffffff",
 						"padding": "16px 48px",
 						"borderRadius": "8px",
-						"fontSize": "1.1rem",
-						"fontWeight": "bold"
+						"cursor": "pointer",
+						"fontSize": "14px",
+						"fontWeight": "bold",
+						"textAlign": "center"
 					},
 					"attributes": {
 						"href": "https://example.com/signup",
@@ -80,11 +83,11 @@
 					"content": "選ばれる3つの理由",
 					"styles": {
 						"color": "#1a1a2e",
-						"fontSize": "2rem",
+						"fontSize": "30px",
 						"fontWeight": "bold",
 						"marginBottom": "32px"
 					},
-					"mobileStyles": { "fontSize": "1.4rem" },
+					"mobileStyles": { "fontSize": "20px" },
 					"attributes": { "level": "2" }
 				},
 				{
@@ -93,10 +96,10 @@
 					"content": "簡単セットアップ・柔軟なスケジュール・安心の決済システム。すべてが揃ったプラットフォームです。",
 					"styles": {
 						"color": "#666666",
-						"fontSize": "1.1rem",
+						"fontSize": "18px",
 						"lineHeight": "2.0"
 					},
-					"mobileStyles": { "fontSize": "0.95rem" }
+					"mobileStyles": { "fontSize": "14px" }
 				}
 			]
 		},
@@ -128,11 +131,11 @@
 					"content": "今すぐ始めましょう",
 					"styles": {
 						"color": "#1a1a2e",
-						"fontSize": "1.8rem",
+						"fontSize": "30px",
 						"fontWeight": "bold",
 						"marginBottom": "24px"
 					},
-					"mobileStyles": { "fontSize": "1.3rem" },
+					"mobileStyles": { "fontSize": "20px" },
 					"attributes": { "level": "2" }
 				},
 				{
@@ -140,12 +143,15 @@
 					"type": "button",
 					"content": "無料で始める",
 					"styles": {
-						"backgroundColor": "#e94560",
+						"display": "inline-block",
+						"background": "#e94560",
 						"color": "#ffffff",
 						"padding": "16px 48px",
 						"borderRadius": "8px",
-						"fontSize": "1.1rem",
-						"fontWeight": "bold"
+						"cursor": "pointer",
+						"fontSize": "14px",
+						"fontWeight": "bold",
+						"textAlign": "center"
 					},
 					"attributes": {
 						"href": "https://example.com/signup",
