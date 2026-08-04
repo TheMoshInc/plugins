@@ -107,11 +107,14 @@ PATCH 時は `action` 配下の構造が **`scenarioActionForUpdate`** 系（`co
 
 ### 4. レビュー（公開前の最終確認）
 
+MOSHのAPIは `ACTIVE` 化時に埋め込み変数の可否を検証しない（フロントエンドの編集画面だけがこのチェックを行う）。MCP経由で操作する場合はこのガードが効かないため、**埋め込み変数のチェックもこのレビューの一部として自分で行う**。
+
 1. `getCreatorScenario` で現在の状態を取得する
 2. **JSON を貼らずに自然言語の箇条書きで要約**してユーザーに提示する（「ユーザーへの提示・コミュニケーション規約」§1 参照）。最低限の項目: ワークフロー名 / 公開状態 / トリガー（と参照リソース ID） / アクション（メール件名・本文の要旨、トラッキング有無等）
 3. 参照リソース ID が全て実在のものか口頭で確認する（INACTIVE の PATCH は ID 実在検証が行われないため）
-4. 「この内容で公開しますか？」と必ずユーザーに確認する
-5. 修正が必要なら Step 3 に戻る
+4. **埋め込み変数チェック**: 各 stage の `action` 内の `sendEmail.message` / `sendLineMessage.messages[].text` から `{{...}}` パターンを全て抽出し、そのステージが従う trigger（先頭 stage の `triggerType`）と `actionType` の組み合わせで [content-schema.md](references/content-schema.md) の対応表に照らして使用可能か確認する。使用不可の変数が1つでもあれば、ユーザーに「この文言は現在のトリガーでは差し込まれず空欄配信になります」と日本語で具体的に指摘し、修正（変数を外す／使える変数に変える／トリガーを変える）してもらう
+5. 「この内容で公開しますか？」と必ずユーザーに確認する（埋め込み変数に問題がある間は公開に進まない）
+6. 修正が必要なら Step 3 に戻る
 
 ### 5. 公開（`ACTIVE` 化）
 
@@ -197,6 +200,20 @@ PATCH 時は `action` 配下の構造が **`scenarioActionForUpdate`** 系（`co
 - `IMAGE_CAROUSEL` → `{ altText, imageCarousels[] }`（1〜4件）
 - `VIDEO` → `{ muxAssetId, previewMoshImageId }`
 
+### F. 埋め込み変数は次の5つ「だけ」（名前は完全一致・それ以外は無言で失敗）
+
+メール本文・LINE 本文で使える `{{...}}` 埋め込み変数は**以下の5つだけ**。この名前を**一字一句そのまま**使うこと。ここに無い変数名（例: `{{reservation_datetime}}`, `{{customer_name}}`, `{{date}}` 等）は**存在せず、エラーにもならずそのまま文字列として配信される（無言の失敗）**ため、絶対に創作しない。
+
+| 変数（この綴りで固定） | 意味 | 使える条件 |
+|---|---|---|
+| `{{guest_name}}` | ゲスト名 | `SEND_EMAIL` かつ trigger が `SERVICE_APPLIED` / `SERVICE_SCHEDULE_REMINDER` |
+| `{{line_name}}` | LINE プロフィール名 | `SEND_LINE_MESSAGE` のみ |
+| `{{service_name}}` | サービス名 | trigger が `SERVICE_APPLIED` / `SERVICE_SCHEDULE_REMINDER` |
+| `{{reservation_time_range}}` | 予約日時の範囲（**`reservation_datetime` ではない**） | `SERVICE_SCHEDULE_REMINDER`、および予約型 `SERVICE_APPLIED` |
+| `{{zoom_url}}` | Zoom 参加 URL | 上記予約系＋オンライン/Zoom 連携時 |
+
+本文を書く前に、使いたい概念が上表にあるか必ず確認する。無ければ変数を使わず固定文言にする。詳細な可否は [references/content-schema.md](references/content-schema.md) の対応表を参照（本文の5変数が唯一の真実）。
+
 ## よくあるミス
 
 | NG | OK |
@@ -218,6 +235,8 @@ PATCH 時は `action` 配下の構造が **`scenarioActionForUpdate`** 系（`co
 | 参照 ID が未確定のまま `patchCreatorScenario` を呼ぶ（空文字・ゼロ・ダミー値を入れる） | 実 ID が揃うまで PATCH しない。会話内で下書き案を保持し、ユーザーに ID 確認を促す |
 | 2ステージ目以降に `trigger: null` を指定する | `trigger` フィールド自体を省略する（null は Zod バリデーションで弾かれる） |
 | `lineChannelContactRegisteredTrigger` を trigger に含める | 型定義に存在しない。LINE チャンネルはボディ最上位の `creatorLineChannelId` で指定し、trigger サブフィールドは全て `null` |
+| 埋め込み変数チェックをせず `ACTIVE` 化する | `ACTIVE` 化前に自分で `{{...}}` を抽出し、trigger/actionType の組み合わせで使用可能か確認する（Step 4 レビューの一部） |
+| 存在しない埋め込み変数を創作する（例: `{{reservation_datetime}}` / `{{customer_name}}` / `{{date}}`） | 必須ルール F の5つ（`guest_name` / `line_name` / `service_name` / `reservation_time_range` / `zoom_url`）だけを綴りそのまま使う。無ければ固定文言にする |
 
 ## References
 

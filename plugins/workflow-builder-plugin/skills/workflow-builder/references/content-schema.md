@@ -219,6 +219,22 @@ PATCH で分岐内アクションを組むときは、型エラーが出にく�
 | `previewMoshImageId` | string | `"<preview_mosh_image_id>"` |
 | `handle`（stage） | string (uuid) | `"<stage_handle_uuid>"` |
 
+## 埋め込み変数（差し込み文字）
+
+`SEND_EMAIL` / `SEND_LINE_MESSAGE` の本文には `{{variable_name}}` 形式（二重中括弧）の埋め込み変数を使える。**Excel等の外部ソースにある `%foo%` のようなプレースホルダ記法はMOSHでは解釈されない**（そのまま文字列として残るだけ）ので、本文を外部ドキュメントから転記する際は必ず `{{...}}` 形式に置き換えること。
+
+### 対応変数一覧（この5つ以外は存在しない）
+
+| 変数名 | 意味 / データソース | 使える条件 |
+|---|---|---|
+| `line_name` | コンタクトのLINEプロフィール表示名 | `actionType: SEND_LINE_MESSAGE` の時のみ（`SEND_EMAIL`では常に空文字） |
+| `guest_name` | ゲスト（Moshユーザー）の名前 | `actionType: SEND_EMAIL` かつ `triggerType` が `SERVICE_APPLIED` / `SERVICE_SCHEDULE_REMINDER` の時のみ。それ以外は空文字 |
+| `service_name` | トリガーに紐づくサービス名 | `triggerType` が `SERVICE_APPLIED` / `SERVICE_SCHEDULE_REMINDER` の時のみ。それ以外の4トリガー（`MARKETING_LEAD_BENEFIT_RECEIVED` / `LINE_CHANNEL_CONTACT_REGISTERED` / `CONTACT_TAG_ADDED` / `INFLOW_ACTION_CONVERTED`）では常に空文字 |
+| `reservation_time_range` | 予約日時の範囲（`YYYY年M月D日 HH:mm〜HH:mm`, JST） | `SERVICE_SCHEDULE_REMINDER`は常に対応。`SERVICE_APPLIED`はサービスの`serviceType`が「予約(event)」または「個別(private)」の場合のみ（コンテンツ/サブスク/オンライン単体サービスでは空文字） |
+| `zoom_url` | ZoomのjoinURL | `reservation_time_range`と同条件に加えて、サービスの`locationType`がオンライン/ハイブリッドかつクリエイターがZoom連携済みの場合のみ。条件を満たさない場合は静かに空文字になる（保存・送信はブロックされない） |
+
+未対応のキー（例: 存在しない変数名や`SERVICE_APPLIED`以外での`service_name`利用）は**空文字ではなくプレースホルダ文字列がそのまま残る**か、状況によっては空文字になる（trigger種別で`context`自体が無い場合）。いずれにせよ意図通りに差し込まれるとは限らないため、使う前に上表の条件を必ず確認する。
+
 ## 流入アクション / トラッキング同意
 
 - 流入アクション (`inflowAction`) は LINE チャンネルに紐づく URL を発行する仕組み。`scenarioTriggerInflowActionConverted` の `inflowActionId` で参照

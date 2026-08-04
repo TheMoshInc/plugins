@@ -101,6 +101,18 @@
 			]
 		},
 		{
+			"id": "sep-features-cta",
+			"type": "separator",
+			"content": "",
+			"styles": {
+				"width": "100%",
+				"height": "1px",
+				"background": "#e0e0e0",
+				"borderTop": "1px solid #e0e0e0",
+				"margin": "0 0"
+			}
+		},
+		{
 			"id": "sec-cta",
 			"type": "section",
 			"content": "",

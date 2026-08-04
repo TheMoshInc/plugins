@@ -51,6 +51,13 @@
 - `"INACTIVE_ACTIVE"`（稼働 or 停止）か `"ARCHIVED"` のみ
 - `"ACTIVE"` 単体や `"INACTIVE"` 単体は指定できない（クエリパラメータの enum）
 
+## 埋め込み変数を使う際の注意
+
+- 対応する変数は `{{line_name}}` / `{{guest_name}}` / `{{service_name}}` / `{{reservation_time_range}}` / `{{zoom_url}}` の5つのみ（詳細・使える条件は [content-schema.md](content-schema.md) 参照）。それ以外の名前は差し込まれない
+- **外部ドキュメント（Excel等）の本文をそのまま転記しない**。`%event_date%` や `%line_name%` のような他ツール由来のプレースホルダはMOSHでは解釈されず、文字列としてそのまま配信されてしまう。転記時は必ず対応表と照合し、`{{...}}` 形式に置き換える
+- `service_name` / `reservation_time_range` / `zoom_url` は `triggerType` が `SERVICE_APPLIED` か `SERVICE_SCHEDULE_REMINDER` の場合しか値が入らない。`LINE_CHANNEL_CONTACT_REGISTERED` や `CONTACT_TAG_ADDED` 起点のワークフローでこれらを使っても空文字になるだけで、保存・公開時にエラーにはならない（気づきにくい）
+- `guest_name` は `SEND_EMAIL` 専用、`line_name` は `SEND_LINE_MESSAGE` 専用。逆の組み合わせでは常に空文字
+
 ## 命名規約
 
 - ワークフロー名 (`name`) は管理画面でも表示されるので、用途がわかる名前にする

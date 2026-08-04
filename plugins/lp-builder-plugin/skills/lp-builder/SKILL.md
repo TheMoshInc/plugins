@@ -98,6 +98,10 @@ bodyParams: { status: "PUBLISHED" }
 
 セクション以外の要素は必ず `section` の `children` に入れる。`elements` 配列直下にトップレベルの `section` のみを並べる。
 
+`text` / `heading` の `content` は通常プレーン文字列でよいが、**一文の中で部分的に太字・色・フォントサイズを変えたい場合**は tiptap のdoc構造をそのまま渡せる。詳細と実例は `references/content-schema.md` の「インライン装飾」の項を参照。
+
+スタイルは要素別の**許可プロパティ内のみ**を使う。`height` / `margin` / `boxShadow` など UI に無いプロパティは設定しない（指定すると編集画面が崩れる）。要望されても設定できない旨と代替を伝える。詳細は `references/content-schema.md` の「スタイルの許可プロパティ・禁止プロパティ」の項を参照。
+
 PartType / ID 命名 / attributes の詳細は `references/content-schema.md`。
 
 ## よくあるミス
