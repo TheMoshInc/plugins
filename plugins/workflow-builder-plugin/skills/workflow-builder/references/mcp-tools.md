@@ -30,6 +30,45 @@ queryParams: { creatorLineChannelId?, limit? }
 （パラメータなし）
 ```
 
+**`getCreatorLineChannels`** — LINE公式アカウント一覧を取得
+
+```
+（パラメータなし）
+```
+
+- レスポンス `channels[]`: `{ id, officialLineAccountId, displayName, isConnected, createdAt }`
+- `creatorLineChannelId`（`SEND_LINE_MESSAGE` / `LINE_CHANNEL_CONTACT_REGISTERED` / `LINK_LINE_RICH_MENU` で使用）の実在確認・`displayName` 変換に使う
+
+**`getCreatorContactTags`** — 顧客タグ一覧を取得
+
+```
+queryParams: { limit?, offset? }
+```
+
+- `limit`: デフォルト `100`、`offset`: デフォルト `0`
+- レスポンス `contactTags[]`: `{ id, name, creatorId, createdAt, updatedAt }`
+- `contactTagId`（`CONTACT_TAG_ADDED` / `ADD_CONTACT_TAG` / `REMOVE_CONTACT_TAG` / `CONDITION(CONTACT_TAG)` で使用）の実在確認に使う
+
+**`getCreatorAutoWebinars`** — オートウェビナー一覧を取得
+
+```
+queryParams: { sort?, limit? }
+```
+
+- `sort`: `"updatedAtAsc"` | `"updatedAtDesc"`（デフォルト `updatedAtDesc`）、`limit`: デフォルト `20`
+- レスポンス `autoWebinars[]`: `{ id, title, thumbnailId, updatedAt }`
+- `autoWebinarId`（`CONDITION(AUTO_WEBINAR_PARTICIPATION` / `AUTO_WEBINAR_WATCH_TIME)` で使用）の実在確認に使う
+
+**`getCreatorLineRichMenus`** — 個別リッチメニュー一覧を取得
+
+```
+queryParams: { creatorLineChannelId? }
+```
+
+- `creatorLineChannelId` で絞り込み可（未指定時は全件）
+- レスポンス `lineRichMenus[]`: `{ id, name, creatorLineChannelId, isDefault, linkedCount, backgroundMoshImageId, updatedAt }`
+- `lineRichMenuId`（`LINK_LINE_RICH_MENU` で使用）の実在確認に使う。付与先はワークフローの `creatorLineChannelId` と同じチャンネルが持つものに限る
+
 ## 詳細取得
 
 **`getCreatorScenario`** — ワークフロー詳細を取得
@@ -65,6 +104,7 @@ pathParams: { id }
 ```
 
 - 返り値: `{ id }`（複製後の新ワークフロー ID）
+- 複製直後のライフサイクルも `INACTIVE`（元が `ACTIVE` でも複製は稼働しない）
 
 **`postCreatorScenariosTrackingConsent`** — トラッキング利用に合意
 
@@ -73,6 +113,16 @@ pathParams: { id }
 ```
 
 - 同意状態を記録するだけのアクション
+
+**`postCreatorScenariosInflowAction`** — 流入アクションを作成
+
+```
+bodyParams: { name: string(1-255), creatorLineChannelId: number, conversionFrequencyType: "once" | "everyTime" }
+```
+
+- `conversionFrequencyType`: `once`=同一コンタクトへの初回のみ発火、`everyTime`=毎回発火
+- 返り値: `{ id }`（作成された流入アクションの ID）
+- `slug` / `inflowUrl` はサーバー側で自動発番（リクエストでは指定しない）
 
 ## 更新
 
@@ -96,3 +146,13 @@ bodyParams: { lifecycle: "INACTIVE" | "ACTIVE" | "ARCHIVED" }
 
 - 起動: `ACTIVE`、停止: `INACTIVE`、廃止: `ARCHIVED`
 - 一覧取得のクエリ enum とは別物（`getCreatorScenarios` の `lifecycle` は `"INACTIVE_ACTIVE"` / `"ARCHIVED"` のみ）
+
+**`patchCreatorScenariosInflowAction`** — 流入アクションを更新
+
+```
+pathParams: { id }
+bodyParams: { name?, conversionFrequencyType? }
+```
+
+- 部分更新。指定したフィールドのみ変更する（未指定のフィールドは維持）
+- `creatorLineChannelId` は変更不可（作成時のみ指定）

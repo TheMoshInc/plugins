@@ -23,24 +23,26 @@ MCP ツール (`*Scenario*` および `*InflowAction*` / `*TrackingConsent*`) �
 
 | triggerType | 必要な既存リソース |
 |---|---|
-| `MARKETING_LEAD_BENEFIT_RECEIVED`（特典取得） | **特典** が1つ以上（`benefitId` を確認） |
-| `LINE_CHANNEL_CONTACT_REGISTERED`（LINE友達追加） | **LINE チャンネル** が連携済み（`creatorLineChannelId` を確認。trigger サブフィールド不要、ボディ最上位で指定） |
-| `SERVICE_APPLIED`（サービス申込） | **サービス** が1つ以上（`serviceId` を確認） |
-| `SERVICE_SCHEDULE_REMINDER`（開催リマインダー） | **サービス** + 開催スケジュール |
-| `CONTACT_TAG_ADDED`（タグ付与） | **顧客タグ** が1つ以上（`contactTagId` を確認） |
-| `INFLOW_ACTION_CONVERTED`（流入アクション CV） | **流入アクション** が1つ以上（`inflowActionId` を確認、`getCreatorScenariosInflowActions` で取得可） |
+| `MARKETING_LEAD_BENEFIT_RECEIVED`（特典取得） | **特典** が1つ以上（`benefitId` をユーザーから確認。MCP に検索ツール無し） |
+| `LINE_CHANNEL_CONTACT_REGISTERED`（LINE友達追加） | **LINE チャンネル** が連携済み（`creatorLineChannelId` を`getCreatorLineChannels`で取得・確認可。trigger サブフィールド不要、ボディ最上位で指定） |
+| `SERVICE_APPLIED`（サービス申込） | **サービス** が1つ以上（`serviceId` をユーザーから確認。MCP に検索ツール無し） |
+| `SERVICE_SCHEDULE_REMINDER`（開催リマインダー） | **サービス** + 開催スケジュール（`serviceId` をユーザーから確認。MCP に検索ツール無し） |
+| `CONTACT_TAG_ADDED`（タグ付与） | **顧客タグ** が1つ以上（`contactTagId` を`getCreatorContactTags`で取得・確認可） |
+| `INFLOW_ACTION_CONVERTED`（流入アクション CV） | **流入アクション** が1つ以上（`inflowActionId` を`getCreatorScenariosInflowActions`で取得可） |
+| `INSTALLMENT_PAYMENT_FAILED`（分割決済失敗） | 不要（トリガー自体が ID を持たない。既存リソースの確認も不要） |
 
 action 側にも参照リソースが必要なケースがある:
 
 | action | 必要な既存リソース |
 |---|---|
-| `SEND_LINE_MESSAGE` | **LINE チャンネル**（`creatorLineChannelId` がワークフロー側に必要） |
-| `ADD_CONTACT_TAG` / `REMOVE_CONTACT_TAG` | **顧客タグ** |
-| `CONDITION` (`CONTACT_TAG`) | **顧客タグ** |
-| `CONDITION` (`SERVICE_APPLICATION_STATUS`) | **サービス** |
-| `CONDITION` (`AUTO_WEBINAR_PARTICIPATION`) | **オートウェビナー** |
+| `SEND_LINE_MESSAGE` | **LINE チャンネル**（`creatorLineChannelId` がワークフロー側に必要。`getCreatorLineChannels`で確認可） |
+| `ADD_CONTACT_TAG` / `REMOVE_CONTACT_TAG` | **顧客タグ**（`getCreatorContactTags`で確認可） |
+| `LINK_LINE_RICH_MENU` | **個別リッチメニュー**（`lineRichMenuId` を`getCreatorLineRichMenus`で取得・確認可。付与先はワークフローに紐づく LINE 公式アカウントが持つものに限る） |
+| `CONDITION` (`CONTACT_TAG`) | **顧客タグ**（`getCreatorContactTags`で確認可） |
+| `CONDITION` (`SERVICE_APPLICATION_STATUS`) | **サービス**（`serviceId` をユーザーから確認。MCP に検索ツール無し） |
+| `CONDITION` (`AUTO_WEBINAR_PARTICIPATION` / `AUTO_WEBINAR_WATCH_TIME`) | **オートウェビナー**（`autoWebinarId` を`getCreatorAutoWebinars`で取得・確認可） |
 
-参照したいリソースが無い場合は、ユーザーに**先に管理画面で作成**してもらってからワークフロー構築に着手する。
+参照したいリソースが無い場合は、ユーザーに**先に管理画面で作成**してもらってからワークフロー構築に着手する（`serviceId` / `benefitId` は MCP に検索手段が無いため、実在の場合も含め常にユーザーから直接確認する）。
 
 ## When to use
 
@@ -191,14 +193,21 @@ MOSHのAPIは `ACTIVE` 化時に埋め込み変数の可否を検証しない（
 | `contactTagId` / `inflowActionId` / `creatorLineChannelId` / `autoWebinarId` / `muxAssetId` | **整数** | `<contact_tag_id>` |
 | `previewMoshImageId` | 文字列 | `"<preview_mosh_image_id>"` |
 
-### E. LINE メッセージは `type` と `messages` の形が連動
+### E. LINE メッセージは `messages[]` の各要素が自分自身の `messageType` を持つ
 
-`scenarioActionSendLineMessage.messages` は `type` に応じて形が変わる（仕様上は oneOf）:
+`scenarioActionSendLineMessage` はトップレベルに `messages` の1フィールドのみ（`type` や
+`isTrackingEnabled` をトップレベルに置かない）。`messages` は1〜5件の配列で、**各要素ごとに**
+`messageType` を持つオブジェクト。**`messages: ["文字列", ...]` のようなプレーン文字列配列は誤り**
+（TEXTタイプでも `{ messageType: "TEXT", text, isTrackingEnabled, urlActions }` を1件ずつ並べる）。
 
-- `TEXT` → `string[]`（1〜5件、各1〜5000文字）
-- `CAROUSEL` → `{ altText, carousels[] }`（1〜4件）
-- `IMAGE_CAROUSEL` → `{ altText, imageCarousels[] }`（1〜4件）
-- `VIDEO` → `{ muxAssetId, previewMoshImageId }`
+- `TEXT` → `{ messageType: "TEXT", text: string(1-5000), isTrackingEnabled: boolean, urlActions: [...] | null }`
+- `CAROUSEL` → `{ messageType: "CAROUSEL", altText, carousels[] }`（1〜4件、各要素に `postbackActions`（任意・`null`可）あり）
+- `IMAGE_CAROUSEL` → `{ messageType: "IMAGE_CAROUSEL", altText, imageCarousels[] }`（1〜4件）
+- `VIDEO` → `{ messageType: "VIDEO", muxAssetId, previewMoshImageId }`
+- `RICH_MESSAGE` → `{ messageType: "RICH_MESSAGE", altText, imageUrl, imageWidth, imageHeight, splitPattern, cells[] }`
+
+詳細（`urlActions`/`postbackActions`の形・`RICH_MESSAGE`の`cells`件数対応表等）は content-schema.md の
+「SEND_LINE_MESSAGE」節を参照。
 
 ### F. 埋め込み変数は次の5つ「だけ」（名前は完全一致・それ以外は無言で失敗）
 
@@ -225,7 +234,8 @@ MOSHのAPIは `ACTIVE` 化時に埋め込み変数の可否を検証しない（
 | `serviceId: <service_id>`（クォート無しの整数として書く） | `serviceId: "<service_id>"`（クォート付きの文字列として書く） |
 | `getCreatorScenarios` の `lifecycle` に `"ACTIVE"` を指定 | クエリ上の enum は `"INACTIVE_ACTIVE"` か `"ARCHIVED"` の2値のみ |
 | 2ステージ目以降にも `trigger` を入れる | 通常は先頭 stage のみ trigger を持ち、以降は `trigger: null` |
-| LINE メッセージで `type: "TEXT"` なのに `messages: { altText: ... }` | `type: "TEXT"` なら `messages` は `string[]` |
+| `messages: ["文字列", ...]` のようなプレーン文字列配列 | `messages` は常にオブジェクト配列。TEXTでも `{ messageType: "TEXT", text, isTrackingEnabled, urlActions }` を1件ずつ並べる |
+| `sendLineMessage` の直下に `type` / `isTrackingEnabled` を置く | `messageType` と `isTrackingEnabled` 等は `messages[]` の各要素の中に置く（トップレベルには無い） |
 | 真っさらなテナントでワークフロー構築を始める | 先に「前提条件: 参照リソース」表のリソースを1つ以上用意してもらう |
 | PATCH 200 OK を「動く」と即断する | INACTIVE 中は検証が緩く、不正な ID でも保存できる。実在を口頭で再確認 |
 | 参照リソースの実在を確認せず `ACTIVE` 化する | 下書き中は ID が未検証。公開時に弾かれるので、公開前に特典/サービス/LINE 等の実在を確認する |

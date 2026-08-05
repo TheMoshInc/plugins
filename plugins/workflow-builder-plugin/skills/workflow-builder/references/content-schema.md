@@ -46,6 +46,7 @@ ARCHIVED  : アーカイブ済（事実上の廃止）
 | `SERVICE_SCHEDULE_REMINDER` | `serviceScheduleReminder` | `{ serviceId: string, remindTimeType: "RELATIVE"\|"ABSOLUTE", beforeDays: 0-30, hours: 0-23\|null, minutes: 0-59\|null }` |
 | `CONTACT_TAG_ADDED` | `contactTagAdded` | `{ contactTagId: number }` |
 | `INFLOW_ACTION_CONVERTED` | `inflowActionConverted` | `{ inflowActionId: number }` |
+| `INSTALLMENT_PAYMENT_FAILED` | なし（サブフィールド不要） | 詳細フィールドは不要。同一分割回の決済リトライ失敗では再発火しない |
 
 ### trigger テンプレート（必ず6フィールド全部指定）
 
@@ -74,6 +75,8 @@ ARCHIVED  : アーカイブ済（事実上の廃止）
   "inflowActionConverted": null
 }
 ```
+
+`INSTALLMENT_PAYMENT_FAILED` も同様にサブフィールドが全て `null`（前提となる既存リソースの確認も不要。トリガー自体に ID を持たない）。
 
 ## action の構造（POST 用 = `scenarioAction`）
 
@@ -113,32 +116,90 @@ ARCHIVED  : アーカイブ済（事実上の廃止）
 
 ### SEND_LINE_MESSAGE: `sendLineMessage`
 
-`type` に応じて `messages` の形が変わる。
+`sendLineMessage` はトップレベルに `messages` の**1フィールドのみ**（`type` や `isTrackingEnabled` を
+トップレベルに置かない）。`messages` は **1〜5件の配列**で、各要素が自分自身の `messageType`
+（大文字・種別を判別するリテラル）を持つオブジェクト。**`messages: ["文字列", ...]` のような
+プレーン文字列配列は誤り**（TEXTタイプであっても、必ず `{ messageType: "TEXT", text, ... }` の
+オブジェクトを1件ずつ並べる）。
 
 ```json
 {
-  "type": "TEXT",
-  "messages": ["こんにちは！", "もう一通テキストを送ります"],
-  "isTrackingEnabled": false
+  "messages": [
+    {
+      "messageType": "TEXT",
+      "text": "こんにちは！",
+      "isTrackingEnabled": false,
+      "urlActions": null
+    },
+    {
+      "messageType": "TEXT",
+      "text": "もう一通テキストを送ります",
+      "isTrackingEnabled": false,
+      "urlActions": null
+    }
+  ]
 }
 ```
 
-| type | messages の形 | 制約 |
-|---|---|---|
-| `TEXT` | `string[]` | 1〜5要素、各1〜5000文字 |
-| `CAROUSEL` | `{ altText: string(1-50), carousels: CarouselItem[] }` | carousels は1〜4件 |
-| `IMAGE_CAROUSEL` | `{ altText: string(1-50), imageCarousels: { image: uri, url: uri }[] }` | imageCarousels は1〜4件 |
-| `VIDEO` | `{ muxAssetId: number, previewMoshImageId: string }` | — |
+`messages[]` 各要素の形（`messageType` で判別。5種類）:
 
-CarouselItem の形:
+| messageType | 対応フィールド | 制約 |
+|---|---|---|
+| `TEXT` | `text: string(1-5000)`, `isTrackingEnabled: boolean`, `urlActions: UrlAction[] \| null` | 1メッセージにつき本文1件（配列ではない） |
+| `CAROUSEL` | `altText: string(1-50)`, `carousels: CarouselItem[]` | carousels は1〜4件 |
+| `IMAGE_CAROUSEL` | `altText: string(1-50)`, `imageCarousels: ImageCarouselItem[]` | imageCarousels は1〜4件 |
+| `VIDEO` | `muxAssetId: number`, `previewMoshImageId: string` | — |
+| `RICH_MESSAGE` | `altText`, `imageUrl`, `imageWidth(300-1024)`, `imageHeight(300-1024)`, `splitPattern`, `cells: RichMessageCell[]` | 1枚画像を分割しマスごとにタップ設定。cells の要素数は splitPattern に対応（後述） |
+
+いずれのタイプも `messages` 配列の**要素数は最大5件**（同じ `messageType` に限らず、TEXTとCAROUSEL等を混在させてもよい）。
+
+**TEXT の `urlActions`**（本文中のURLタップで顧客タグを操作したい場合のみ設定。不要なら `null`）:
+```json
+"urlActions": [
+  {
+    "url": "https://example.com/guide",
+    "postbackActions": [
+      { "postbackActionType": "addContactTag", "contactTagId": 1 }
+    ]
+  }
+]
+```
+- `url` — 本文中に含まれるURLと完全一致でキーにする
+- `postbackActions` — 1〜3件。`postbackActionType` は `"addContactTag"` | `"removeContactTag"`（+ `contactTagId`）
+
+CarouselItem の形（`postbackActions` は任意。設定しない場合は `null`）:
 ```json
 {
   "imageUrl": "https://...",
   "title": "タイトル(1-40)",
   "text": "本文(1-60)",
   "buttonText": "ボタン(1-20)",
-  "buttonUrl": "https://...",
-  "openExternalBrowser": false
+  "buttonUrl": "https://...（設定しない場合は null）",
+  "postbackActions": null
+}
+```
+- `postbackActions` — ボタンタップ時に実行するアクション（1〜3件、任意。設定しない場合は `null`）。
+  `postbackActionType` は `"sendMessage"`（+ `messages: [{ messageType: "text"（小文字）, message: string }]` で自動返信）
+  | `"addContactTag"` | `"removeContactTag"`（+ `contactTagId`）。
+  ⚠ `sendMessage` の内側の `messageType` は**小文字 `"text"`**（トップレベルの `messages[].messageType` の
+  大文字 `"TEXT"` とは綴りが異なるので混同しない）。
+
+ImageCarouselItem の形（`postbackActions` の仕様は CarouselItem と同じ）:
+```json
+{
+  "image": "https://...",
+  "url": "https://...（設定しない場合は null）",
+  "postbackActions": null
+}
+```
+
+RichMessageCell の形（`postbackActions` の仕様は CarouselItem と同じ。`cells` の要素数は
+`splitPattern` に対応: `ONE_BLOCK`=1 / `LEFT_RIGHT_SPLIT`=2 / `TOP_BOTTOM_SPLIT`=2 / `GRID_FOUR`=4。
+マスは左上から右下への行優先順）:
+```json
+{
+  "url": "https://...（設定しない場合は null）",
+  "postbackActions": null
 }
 ```
 
@@ -153,9 +214,14 @@ CarouselItem の形:
 }
 ```
 
-- `RELATIVE`: 前ステップ実行時から `actionAfterDays` 日後の `actionHours:actionMinutes` に次へ進む
-- `ABSOLUTE`: 絶対指定（仕様は実作業で確認・追記する）
-- `actionHours` / `actionMinutes` は `nullable: true`（時刻指定なしも可）
+**起点は常に「直前ステップの実行時刻」**（トリガー発火時刻ではない）。`RELATIVE` / `ABSOLUTE` いずれも起点は同じで、`actionHours` / `actionMinutes` の解釈だけが異なる。
+
+- `actionAfterDays`（0-30）は両タイプ共通の相対加算日数（起点に N 日を足す）。
+- `waitTimeType: "RELATIVE"` — `actionHours` / `actionMinutes` は起点の時刻に**加算する**時間・分（「起点から N日 H時間 M分 後」）。`null` のフィールドは加算なし。
+- `waitTimeType: "ABSOLUTE"` — `actionAfterDays` 日後の日付に、時刻を `actionHours:actionMinutes` へ**セット**する（クロック時刻指定）。`actionHours` と `actionMinutes` のどちらかでも `null` なら時刻セットは行われず、起点の時刻がそのまま維持される。
+- `actionHours` / `actionMinutes` は `nullable: true`（時刻指定なしも可）。
+- ⚠️ 計算結果の実行時刻が現在より過去になると、後続ステップはスケジュールされずそこで停止する（ユーザーへの通知は無い）。「配信されない」という相談の典型パターンなので、待機日数・時刻の設定はユーザーの意図（起点からの相対か、特定の時刻に揃えたいか）を確認してから `RELATIVE` / `ABSOLUTE` を選ぶ。
+- 待機0（結果が起点と同時刻になる設定）は即時実行される。
 
 ### CONDITION: `condition`
 
@@ -170,15 +236,19 @@ CarouselItem の形:
   ],
   "conditionServiceApplicationStatus": null,
   "conditionContactTag": { "contactTagId": 1 },
-  "conditionAutoWebinarParticipation": null
+  "conditionAutoWebinarParticipation": null,
+  "conditionAutoWebinarWatchTime": null
 }
 ```
+
+`condition` のサブフィールドは `conditionType` + 4つ（全て指定必須。対応する1つだけ実オブジェクト、残り3つは `null`）。
 
 | conditionType | 対応する非 null サブフィールド | 形 |
 |---|---|---|
 | `SERVICE_APPLICATION_STATUS` | `conditionServiceApplicationStatus` | `{ serviceId: string, serviceApplicationStatus: "APPLIED" }` |
 | `CONTACT_TAG` | `conditionContactTag` | `{ contactTagId: number }` |
-| `AUTO_WEBINAR_PARTICIPATION` | `conditionAutoWebinarParticipation` | `{ autoWebinarId: number }` |
+| `AUTO_WEBINAR_PARTICIPATION` | `conditionAutoWebinarParticipation` | `{ autoWebinarId: number }`（オートウェビナーへの参加有無。ID は `getCreatorAutoWebinars` で取得可） |
+| `AUTO_WEBINAR_WATCH_TIME` | `conditionAutoWebinarWatchTime` | `{ autoWebinarId: number, metricType: "WATCH_POSITION"\|"TOTAL_PLAY_TIME", thresholdSeconds: number(0-86400) }`（オートウェビナーの視聴時間条件。`WATCH_POSITION`=到達した最大視聴位置、`TOTAL_PLAY_TIME`=視聴した総再生時間。`thresholdSeconds`は「以上」で判定。ID は `getCreatorAutoWebinars` で取得可） |
 
 `branches` の各要素:
 - `matchValue: boolean` — 条件にマッチしたら true 側、外れたら false 側を実行
@@ -228,8 +298,8 @@ PATCH で分岐内アクションを組むときは、型エラーが出にく�
 | 変数名 | 意味 / データソース | 使える条件 |
 |---|---|---|
 | `line_name` | コンタクトのLINEプロフィール表示名 | `actionType: SEND_LINE_MESSAGE` の時のみ（`SEND_EMAIL`では常に空文字） |
-| `guest_name` | ゲスト（Moshユーザー）の名前 | `actionType: SEND_EMAIL` かつ `triggerType` が `SERVICE_APPLIED` / `SERVICE_SCHEDULE_REMINDER` の時のみ。それ以外は空文字 |
-| `service_name` | トリガーに紐づくサービス名 | `triggerType` が `SERVICE_APPLIED` / `SERVICE_SCHEDULE_REMINDER` の時のみ。それ以外の4トリガー（`MARKETING_LEAD_BENEFIT_RECEIVED` / `LINE_CHANNEL_CONTACT_REGISTERED` / `CONTACT_TAG_ADDED` / `INFLOW_ACTION_CONVERTED`）では常に空文字 |
+| `guest_name` | ゲスト（Moshユーザー）の名前 | `actionType: SEND_EMAIL` かつ `triggerType` が `SERVICE_APPLIED` / `SERVICE_SCHEDULE_REMINDER` / `INSTALLMENT_PAYMENT_FAILED` の時のみ。それ以外は空文字 |
+| `service_name` | トリガーに紐づくサービス名 | `triggerType` が `SERVICE_APPLIED` / `SERVICE_SCHEDULE_REMINDER` の時のみ。`INSTALLMENT_PAYMENT_FAILED`はトリガー自体にサービス参照を持たないため対象外。それ以外のトリガー（`MARKETING_LEAD_BENEFIT_RECEIVED` / `LINE_CHANNEL_CONTACT_REGISTERED` / `CONTACT_TAG_ADDED` / `INFLOW_ACTION_CONVERTED` / `INSTALLMENT_PAYMENT_FAILED`）では常に空文字 |
 | `reservation_time_range` | 予約日時の範囲（`YYYY年M月D日 HH:mm〜HH:mm`, JST） | `SERVICE_SCHEDULE_REMINDER`は常に対応。`SERVICE_APPLIED`はサービスの`serviceType`が「予約(event)」または「個別(private)」の場合のみ（コンテンツ/サブスク/オンライン単体サービスでは空文字） |
 | `zoom_url` | ZoomのjoinURL | `reservation_time_range`と同条件に加えて、サービスの`locationType`がオンライン/ハイブリッドかつクリエイターがZoom連携済みの場合のみ。条件を満たさない場合は静かに空文字になる（保存・送信はブロックされない） |
 

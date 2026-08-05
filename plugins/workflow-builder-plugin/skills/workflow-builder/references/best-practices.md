@@ -2,18 +2,19 @@
 
 ## ID 参照の確認手順
 
-ワークフローに埋め込む各種 ID は、現在の MCP ツール群だけでは取得できないものが大半。**ユーザーに管理画面の URL や数値を直接教えてもらう**運用を基本とする。
+ワークフローに埋め込む各種 ID のうち、`serviceId` / `benefitId` は MCP に検索・一覧取得ツールが無い。それ以外（`inflowActionId` / `creatorLineChannelId` / `contactTagId` / `autoWebinarId` / `lineRichMenuId`）は対応する一覧取得ツールで取得・実在確認できる。
 
 | ID | MCP で取得できるか | 取得経路 |
 |---|---|---|
 | `inflowActionId` | ✅ | `getCreatorScenariosInflowActions` |
-| `creatorLineChannelId` | ❌ | ユーザーから受け取る（管理画面の LINE 連携ページ） |
+| `creatorLineChannelId` | ✅ | `getCreatorLineChannels` |
+| `contactTagId` | ✅ | `getCreatorContactTags` |
+| `autoWebinarId` | ✅ | `getCreatorAutoWebinars` |
+| `lineRichMenuId` | ✅ | `getCreatorLineRichMenus`（`creatorLineChannelId` で絞り込み可） |
 | `serviceId` | ❌ | ユーザーから受け取る（管理画面のサービス管理） |
 | `benefitId` | ❌ | ユーザーから受け取る（管理画面の特典管理） |
-| `contactTagId` | ❌ | ユーザーから受け取る（管理画面の顧客タグ） |
-| `autoWebinarId` | ❌ | ユーザーから受け取る（管理画面のオートウェビナー） |
 
-要件ヒアリングの段階で「**該当リソースの ID を教えてください**」を必ず聞く。ID が分からない場合は管理画面のスクリーンショットやリンクから一緒に確認する。
+`serviceId` / `benefitId` が必要な trigger/condition（`SERVICE_APPLIED` / `SERVICE_SCHEDULE_REMINDER` / `MARKETING_LEAD_BENEFIT_RECEIVED` / `CONDITION(SERVICE_APPLICATION_STATUS)`）では、要件ヒアリングの段階で「**該当リソースの ID を教えてください**」を必ず聞き、MCP からは検索・実在確認ができないことを踏まえてユーザー申告のまま扱う（下書き保存時は実在検証されないため、公開前レビューで改めて口頭確認する）。それ以外の ID は対応する一覧取得ツールで実在するものを選んでもらう（一覧を提示する際は名前で選んでもらい、生の ID を会話の主役にしない）。
 
 ## ライフサイクル運用
 
