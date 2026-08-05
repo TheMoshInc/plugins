@@ -115,6 +115,7 @@ PartType / ID 命名 / attributes の詳細は `references/content-schema.md`。
 | `content` なし | `section` でも `content: ""` を付ける |
 | `content` に JSON 文字列を渡す | `content` フィールドには JSON オブジェクトを渡す |
 | `elements` 直下にセクション以外の要素 | すべて `section` の `children` に入れる |
+| `video` の `attributes.src` に外部URL(GCS/Vimeo等の直リンク)をそのまま設定 | `video` は `moshVideoId` が無いと編集画面が**クラッシュ**するためMCPからは新規作成不可。編集画面からのアップロードを案内する。YouTubeなら`youtubeVideo`で代替可（`content-schema.md`の「`video`の仕様」参照） |
 | `attributes.sectionType` に `"hero"` / `"cta"` | 許容値（`main` / `description` / `merit` / `faq` など14種）から選ぶ |
 | `text` / `heading` の `content` に `null` やオブジェクト（`json`キー無し） | 内容が無ければ `content: ""`（**クラッシュ防止**。`references/content-schema.md`の「絶対に避けること」参照） |
 | `schedule` の `content` にオブジェクトを渡す | プレーン文字列のみ（tiptap不可。**クラッシュ防止**） |
