@@ -10,18 +10,18 @@
 	},
 	"elements": [
 		{
-			"id": "sec-hero",
+			"id": "sec-main",
 			"type": "section",
 			"content": "",
 			"styles": { "padding": "80px 48px", "textAlign": "center" },
 			"mobileStyles": { "padding": "48px 16px" },
 			"attributes": {
 				"background": { "type": "color", "color": "#1a1a2e" },
-				"sectionType": "hero"
+				"sectionType": "main"
 			},
 			"children": [
 				{
-					"id": "hd-hero",
+					"id": "hd-main",
 					"type": "heading",
 					"content": "あなたのスキルを、世界に届けよう",
 					"styles": {
@@ -34,7 +34,7 @@
 					"attributes": { "level": "1" }
 				},
 				{
-					"id": "tx-hero",
+					"id": "tx-main",
 					"type": "text",
 					"content": "オンラインレッスンで、あなたの知識と経験を共有しませんか？",
 					"styles": {
@@ -46,7 +46,7 @@
 					"mobileStyles": { "fontSize": "16px" }
 				},
 				{
-					"id": "btn-hero",
+					"id": "btn-main",
 					"type": "button",
 					"content": "無料で始める",
 					"styles": {
@@ -74,7 +74,8 @@
 			"styles": { "padding": "64px 48px", "textAlign": "center" },
 			"mobileStyles": { "padding": "40px 16px" },
 			"attributes": {
-				"background": { "type": "color", "color": "#ffffff" }
+				"background": { "type": "color", "color": "#ffffff" },
+				"sectionType": "merit"
 			},
 			"children": [
 				{
@@ -122,7 +123,8 @@
 			"styles": { "padding": "64px 48px", "textAlign": "center" },
 			"mobileStyles": { "padding": "40px 16px" },
 			"attributes": {
-				"background": { "type": "color", "color": "#f8f9fa" }
+				"background": { "type": "color", "color": "#f8f9fa" },
+				"sectionType": "description"
 			},
 			"children": [
 				{

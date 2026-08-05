@@ -90,7 +90,7 @@ bodyParams: { status: "PUBLISHED" }
 
 すべての要素は次のフィールドを持つ：
 
-- `id` — `"プレフィックス-識別子"` 形式（例: `"sec-001"`, `"hd-hero"`）
+- `id` — `"プレフィックス-識別子"` 形式（例: `"sec-001"`, `"hd-main"`）
 - `type` — PartType 名（`section` / `heading` / `text` / `button` など）
 - `content` — テキスト内容。中身がない場合は空文字 `""`
 - `styles` — スタイルオブジェクト。空 `{}` でもOK
@@ -115,6 +115,11 @@ PartType / ID 命名 / attributes の詳細は `references/content-schema.md`。
 | `content` なし | `section` でも `content: ""` を付ける |
 | `content` に JSON 文字列を渡す | `content` フィールドには JSON オブジェクトを渡す |
 | `elements` 直下にセクション以外の要素 | すべて `section` の `children` に入れる |
+| `attributes.sectionType` に `"hero"` / `"cta"` | 許容値（`main` / `description` / `merit` / `faq` など14種）から選ぶ |
+| `text` / `heading` の `content` に `null` やオブジェクト（`json`キー無し） | 内容が無ければ `content: ""`（**クラッシュ防止**。`references/content-schema.md`の「絶対に避けること」参照） |
+| `schedule` の `content` にオブジェクトを渡す | プレーン文字列のみ（tiptap不可。**クラッシュ防止**） |
+| `heading` の `attributes.level` が `"1"`〜`"4"` の範囲外 | 範囲内の値のみ使う（**クラッシュ防止**） |
+| `image-carousel` の `attributes.images` が非配列 or `{src,alt}`等のオブジェクト配列 | URL文字列の配列のみ（**クラッシュ防止**。そもそも実験的パーツにつき新規作成不可） |
 
 ## エラーが返ったとき
 
@@ -124,7 +129,7 @@ PartType / ID 命名 / attributes の詳細は `references/content-schema.md`。
 
 | ファイル | 内容 |
 |---|---|
-| `references/content-schema.md` | PartType 一覧、ID 命名規約、`attributes` 詳細、セクション+children の例 |
-| `references/best-practices.md` | 推奨セクション構成（Hero → Problem → Solution …）、モバイル対応 |
+| `references/content-schema.md` | PartType 一覧、ID 命名規約、`attributes` 詳細（`sectionType` の許容値を含む）、セクション+children の例 |
+| `references/best-practices.md` | 推奨セクション構成（メイン → 課題提起 → 解決策 …）と対応する `sectionType`、モバイル対応 |
 | `references/mcp-tools.md` | 各 MCP ツールのパラメータ仕様 |
-| `examples/full-landing-page.json` | Hero / Features / CTA を含む完成例 |
+| `examples/full-landing-page.json` | メイン / 特徴 / CTA を含む完成例 |
