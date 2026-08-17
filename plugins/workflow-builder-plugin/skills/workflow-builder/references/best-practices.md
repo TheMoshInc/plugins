@@ -11,10 +11,10 @@
 | `contactTagId` | ✅ | `getCreatorContactTags` |
 | `autoWebinarId` | ✅ | `getCreatorAutoWebinars` |
 | `lineRichMenuId` | ✅ | `getCreatorLineRichMenus`（`creatorLineChannelId` で絞り込み可） |
-| `serviceId` | ❌ | ユーザーから受け取る（管理画面のサービス管理） |
+| `serviceId` | ❌ | ユーザーから受け取る（管理画面のプラン・サービス管理） |
 | `benefitId` | ❌ | ユーザーから受け取る（管理画面の特典管理） |
 
-`serviceId` / `benefitId` が必要な trigger/condition（`SERVICE_APPLIED` / `SERVICE_SCHEDULE_REMINDER` / `MARKETING_LEAD_BENEFIT_RECEIVED` / `CONDITION(SERVICE_APPLICATION_STATUS)`）では、要件ヒアリングの段階で「**該当リソースの ID を教えてください**」を必ず聞き、MCP からは検索・実在確認ができないことを踏まえてユーザー申告のまま扱う（下書き保存時は実在検証されないため、公開前レビューで改めて口頭確認する）。それ以外の ID は対応する一覧取得ツールで実在するものを選んでもらう（一覧を提示する際は名前で選んでもらい、生の ID を会話の主役にしない）。
+`serviceId` / `benefitId` が必要な trigger/condition（`SERVICE_APPLIED` / `SERVICE_SCHEDULE_REMINDER` / `MARKETING_LEAD_BENEFIT_RECEIVED` / `CONDITION(SERVICE_APPLICATION_STATUS)` / `CONDITION(BANK_TRANSFER_STATUS)`）では、要件ヒアリングの段階で「**該当リソースの ID を教えてください**」を必ず聞き、MCP からは検索・実在確認ができないことを踏まえてユーザー申告のまま扱う（下書き保存時は実在検証されないため、公開前レビューで改めて口頭確認する）。それ以外の ID は対応する一覧取得ツールで実在するものを選んでもらう（一覧を提示する際は名前で選んでもらい、生の ID を会話の主役にしない）。
 
 ## ライフサイクル運用
 
@@ -32,7 +32,7 @@
 - `ACTIVE` 化（公開）時に、参照リソースの実在と同時稼働数の上限が確認される。満たさない場合は理由を示すエラーが返る
   - 同時に稼働できるワークフロー数の上限に達している場合
   - 「指定された特典が見つかりません。特典が削除されていないか確認してください。」（トリガーの特典が削除済み等）
-  - 「LINE関連の開始条件またはステップを使用するには、ワークフローにLINE公式アカウントを設定してください。」（LINE チャンネル未設定）
+  - 「LINE関連の開始条件またはステップを使用するには、ワークフローにLINE公式アカウントを設定してください。」（LINE公式アカウント未設定）
 - 対処: エラーの原因（参照リソース不足・稼働数上限）を解消してから再度 `ACTIVE` 化する。ユーザーには平易な日本語で原因と対処を伝える
 
 ### 下書き（`INACTIVE`）中は検証が緩い

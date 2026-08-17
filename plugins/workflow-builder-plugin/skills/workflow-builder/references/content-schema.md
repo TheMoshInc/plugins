@@ -41,7 +41,7 @@ ARCHIVED  : アーカイブ済（事実上の廃止）
 | triggerType | 対応する非 null サブフィールド | サブフィールドの形 |
 |---|---|---|
 | `MARKETING_LEAD_BENEFIT_RECEIVED` | `marketingLeadBenefitReceivedTrigger` | `{ benefitId: string }` |
-| `LINE_CHANNEL_CONTACT_REGISTERED` | なし（サブフィールド不要） | LINE チャンネルはリクエストボディ最上位の `creatorLineChannelId` で指定 |
+| `LINE_CHANNEL_CONTACT_REGISTERED` | なし（サブフィールド不要） | LINE公式アカウントはリクエストボディ最上位の `creatorLineChannelId` で指定 |
 | `SERVICE_APPLIED` | `serviceAppliedTrigger` | `{ serviceId: string, paymentMethod: "CASH"\|"CARD"\|"BANK_TRANSFER"\|null }` |
 | `SERVICE_SCHEDULE_REMINDER` | `serviceScheduleReminder` | `{ serviceId: string, remindTimeType: "RELATIVE"\|"ABSOLUTE", beforeDays: 0-30, hours: 0-23\|null, minutes: 0-59\|null }` |
 | `CONTACT_TAG_ADDED` | `contactTagAdded` | `{ contactTagId: number }` |
@@ -63,7 +63,7 @@ ARCHIVED  : アーカイブ済（事実上の廃止）
 }
 ```
 
-`LINE_CHANNEL_CONTACT_REGISTERED` の場合はサブフィールドが全て `null`。LINE チャンネルはボディ最上位の `creatorLineChannelId` で指定する:
+`LINE_CHANNEL_CONTACT_REGISTERED` の場合はサブフィールドが全て `null`。LINE公式アカウントはボディ最上位の `creatorLineChannelId` で指定する:
 
 ```json
 {
@@ -237,11 +237,12 @@ RichMessageCell の形（`postbackActions` の仕様は CarouselItem と同じ�
   "conditionServiceApplicationStatus": null,
   "conditionContactTag": { "contactTagId": 1 },
   "conditionAutoWebinarParticipation": null,
-  "conditionAutoWebinarWatchTime": null
+  "conditionAutoWebinarWatchTime": null,
+  "conditionBankTransferStatus": null
 }
 ```
 
-`condition` のサブフィールドは `conditionType` + 4つ（全て指定必須。対応する1つだけ実オブジェクト、残り3つは `null`）。
+`condition` のサブフィールドは `conditionType` + 5つ（全て指定必須。対応する1つだけ実オブジェクト、残り4つは `null`）。
 
 | conditionType | 対応する非 null サブフィールド | 形 |
 |---|---|---|
@@ -249,6 +250,7 @@ RichMessageCell の形（`postbackActions` の仕様は CarouselItem と同じ�
 | `CONTACT_TAG` | `conditionContactTag` | `{ contactTagId: number }` |
 | `AUTO_WEBINAR_PARTICIPATION` | `conditionAutoWebinarParticipation` | `{ autoWebinarId: number }`（オートウェビナーへの参加有無。ID は `getCreatorAutoWebinars` で取得可） |
 | `AUTO_WEBINAR_WATCH_TIME` | `conditionAutoWebinarWatchTime` | `{ autoWebinarId: number, metricType: "WATCH_POSITION"\|"TOTAL_PLAY_TIME", thresholdSeconds: number(0-86400) }`（オートウェビナーの視聴時間条件。`WATCH_POSITION`=到達した最大視聴位置、`TOTAL_PLAY_TIME`=視聴した総再生時間。`thresholdSeconds`は「以上」で判定。ID は `getCreatorAutoWebinars` で取得可） |
+| `BANK_TRANSFER_STATUS` | `conditionBankTransferStatus` | `{ serviceId: string, bankTransferStatus: "PENDING"\|"COMPLETED"\|"REJECTED"\|"CANCELED" }`（対象ゲストの指定サービスへの注文が、指定した銀行振込の振込状況に一致するかで分岐。`PENDING`=振込待ち・未入金、`COMPLETED`=振込完了・入金の反映待ちを含む、`REJECTED`=振込期限切れ、`CANCELED`=キャンセル。クレジットカード等、銀行振込以外の支払い方法の申し込みは常に「一致しない」側に進む） |
 
 `branches` の各要素:
 - `matchValue: boolean` — 条件にマッチしたら true 側、外れたら false 側を実行
@@ -299,15 +301,15 @@ PATCH で分岐内アクションを組むときは、型エラーが出にく�
 |---|---|---|
 | `line_name` | コンタクトのLINEプロフィール表示名 | `actionType: SEND_LINE_MESSAGE` の時のみ（`SEND_EMAIL`では常に空文字） |
 | `guest_name` | ゲスト（Moshユーザー）の名前 | `actionType: SEND_EMAIL` かつ `triggerType` が `SERVICE_APPLIED` / `SERVICE_SCHEDULE_REMINDER` / `INSTALLMENT_PAYMENT_FAILED` の時のみ。それ以外は空文字 |
-| `service_name` | トリガーに紐づくサービス名 | `triggerType` が `SERVICE_APPLIED` / `SERVICE_SCHEDULE_REMINDER` の時のみ。`INSTALLMENT_PAYMENT_FAILED`はトリガー自体にサービス参照を持たないため対象外。それ以外のトリガー（`MARKETING_LEAD_BENEFIT_RECEIVED` / `LINE_CHANNEL_CONTACT_REGISTERED` / `CONTACT_TAG_ADDED` / `INFLOW_ACTION_CONVERTED` / `INSTALLMENT_PAYMENT_FAILED`）では常に空文字 |
-| `reservation_time_range` | 予約日時の範囲（`YYYY年M月D日 HH:mm〜HH:mm`, JST） | `SERVICE_SCHEDULE_REMINDER`は常に対応。`SERVICE_APPLIED`はサービスの`serviceType`が「予約(event)」または「個別(private)」の場合のみ（コンテンツ/サブスク/オンライン単体サービスでは空文字） |
-| `zoom_url` | ZoomのjoinURL | `reservation_time_range`と同条件に加えて、サービスの`locationType`がオンライン/ハイブリッドかつクリエイターがZoom連携済みの場合のみ。条件を満たさない場合は静かに空文字になる（保存・送信はブロックされない） |
+| `service_name` | トリガーに紐づくプラン・サービス名 | `triggerType` が `SERVICE_APPLIED` / `SERVICE_SCHEDULE_REMINDER` の時のみ。`INSTALLMENT_PAYMENT_FAILED`はトリガー自体にプラン・サービス参照を持たないため対象外。それ以外のトリガー（`MARKETING_LEAD_BENEFIT_RECEIVED` / `LINE_CHANNEL_CONTACT_REGISTERED` / `CONTACT_TAG_ADDED` / `INFLOW_ACTION_CONVERTED` / `INSTALLMENT_PAYMENT_FAILED`）では常に空文字 |
+| `reservation_time_range` | 予約日時の範囲（`YYYY年M月D日 HH:mm〜HH:mm`, JST） | `SERVICE_SCHEDULE_REMINDER`は常に対応。`SERVICE_APPLIED`はプラン・サービスの`serviceType`が「予約(event)」または「個別(private)」の場合のみ（コンテンツ/サブスク/オンライン単体のプラン・サービスでは空文字） |
+| `zoom_url` | ZoomのjoinURL | `reservation_time_range`と同条件に加えて、プラン・サービスの`locationType`がオンライン/ハイブリッドかつクリエイターがZoom連携済みの場合のみ。条件を満たさない場合は静かに空文字になる（保存・送信はブロックされない） |
 
 未対応のキー（例: 存在しない変数名や`SERVICE_APPLIED`以外での`service_name`利用）は**空文字ではなくプレースホルダ文字列がそのまま残る**か、状況によっては空文字になる（trigger種別で`context`自体が無い場合）。いずれにせよ意図通りに差し込まれるとは限らないため、使う前に上表の条件を必ず確認する。
 
-## 流入アクション / トラッキング同意
+## 流入経路 / トラッキング同意
 
-- 流入アクション (`inflowAction`) は LINE チャンネルに紐づく URL を発行する仕組み。`scenarioTriggerInflowActionConverted` の `inflowActionId` で参照
+- 流入経路 (`inflowAction`) は LINE公式アカウントに紐づく URL を発行する仕組み。`scenarioTriggerInflowActionConverted` の `inflowActionId` で参照
 - トラッキング同意は API 利用前提として `postCreatorScenariosTrackingConsent` で記録。`getCreatorScenariosTrackingConsents` で同意状態取得
 
 ## INACTIVE 状態の PATCH 検証
