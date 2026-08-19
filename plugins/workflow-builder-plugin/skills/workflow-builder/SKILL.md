@@ -30,6 +30,7 @@ MCP ツール (`*Scenario*` および `*InflowAction*` / `*TrackingConsent*`) �
 | `CONTACT_TAG_ADDED`（タグ付与） | **顧客タグ** が1つ以上（`contactTagId` を`getCreatorContactTags`で取得・確認可） |
 | `INFLOW_ACTION_CONVERTED`（流入経路 CV） | **流入経路** が1つ以上（`inflowActionId` を`getCreatorScenariosInflowActions`で取得可） |
 | `INSTALLMENT_PAYMENT_FAILED`（分割決済失敗） | 不要（トリガー自体が ID を持たない。既存リソースの確認も不要） |
+| `SUBSCRIPTION_PAYMENT_FAILED`（サブスク決済失敗） | 不要（トリガー自体が ID を持たない。既存リソースの確認も不要。初回失敗のみ発火し、同一請求期間内の決済リトライ失敗では再発火しない） |
 
 action 側にも参照リソースが必要なケースがある:
 
@@ -222,7 +223,7 @@ MOSHのAPIは `ACTIVE` 化時に埋め込み変数の可否を検証しない（
 
 | 変数（この綴りで固定） | 意味 | 使える条件 |
 |---|---|---|
-| `{{guest_name}}` | ゲスト名 | `SEND_EMAIL` かつ trigger が `SERVICE_APPLIED` / `SERVICE_SCHEDULE_REMINDER` / `INSTALLMENT_PAYMENT_FAILED` |
+| `{{guest_name}}` | ゲスト名 | `SEND_EMAIL` かつ trigger が `SERVICE_APPLIED` / `SERVICE_SCHEDULE_REMINDER` / `INSTALLMENT_PAYMENT_FAILED` / `SUBSCRIPTION_PAYMENT_FAILED` |
 | `{{line_name}}` | LINE プロフィール名 | `SEND_LINE_MESSAGE` のみ |
 | `{{service_name}}` | プラン・サービス名 | trigger が `SERVICE_APPLIED` / `SERVICE_SCHEDULE_REMINDER` |
 | `{{reservation_time_range}}` | 予約日時の範囲（**`reservation_datetime` ではない**） | `SERVICE_SCHEDULE_REMINDER`、および予約型 `SERVICE_APPLIED` |

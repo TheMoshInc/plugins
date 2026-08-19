@@ -47,6 +47,7 @@ ARCHIVED  : アーカイブ済（事実上の廃止）
 | `CONTACT_TAG_ADDED` | `contactTagAdded` | `{ contactTagId: number }` |
 | `INFLOW_ACTION_CONVERTED` | `inflowActionConverted` | `{ inflowActionId: number }` |
 | `INSTALLMENT_PAYMENT_FAILED` | なし（サブフィールド不要） | 詳細フィールドは不要。同一分割回の決済リトライ失敗では再発火しない |
+| `SUBSCRIPTION_PAYMENT_FAILED` | なし（サブフィールド不要） | 詳細フィールドは不要。初回失敗のみ発火し、同一請求期間内の決済リトライ失敗では再発火しない |
 
 ### trigger テンプレート（必ず6フィールド全部指定）
 
@@ -76,7 +77,7 @@ ARCHIVED  : アーカイブ済（事実上の廃止）
 }
 ```
 
-`INSTALLMENT_PAYMENT_FAILED` も同様にサブフィールドが全て `null`（前提となる既存リソースの確認も不要。トリガー自体に ID を持たない）。
+`INSTALLMENT_PAYMENT_FAILED` / `SUBSCRIPTION_PAYMENT_FAILED` も同様にサブフィールドが全て `null`（前提となる既存リソースの確認も不要。トリガー自体に ID を持たない）。
 
 ## action の構造（POST 用 = `scenarioAction`）
 
@@ -300,8 +301,8 @@ PATCH で分岐内アクションを組むときは、型エラーが出にく�
 | 変数名 | 意味 / データソース | 使える条件 |
 |---|---|---|
 | `line_name` | コンタクトのLINEプロフィール表示名 | `actionType: SEND_LINE_MESSAGE` の時のみ（`SEND_EMAIL`では常に空文字） |
-| `guest_name` | ゲスト（Moshユーザー）の名前 | `actionType: SEND_EMAIL` かつ `triggerType` が `SERVICE_APPLIED` / `SERVICE_SCHEDULE_REMINDER` / `INSTALLMENT_PAYMENT_FAILED` の時のみ。それ以外は空文字 |
-| `service_name` | トリガーに紐づくプラン・サービス名 | `triggerType` が `SERVICE_APPLIED` / `SERVICE_SCHEDULE_REMINDER` の時のみ。`INSTALLMENT_PAYMENT_FAILED`はトリガー自体にプラン・サービス参照を持たないため対象外。それ以外のトリガー（`MARKETING_LEAD_BENEFIT_RECEIVED` / `LINE_CHANNEL_CONTACT_REGISTERED` / `CONTACT_TAG_ADDED` / `INFLOW_ACTION_CONVERTED` / `INSTALLMENT_PAYMENT_FAILED`）では常に空文字 |
+| `guest_name` | ゲスト（Moshユーザー）の名前 | `actionType: SEND_EMAIL` かつ `triggerType` が `SERVICE_APPLIED` / `SERVICE_SCHEDULE_REMINDER` / `INSTALLMENT_PAYMENT_FAILED` / `SUBSCRIPTION_PAYMENT_FAILED` の時のみ。それ以外は空文字 |
+| `service_name` | トリガーに紐づくプラン・サービス名 | `triggerType` が `SERVICE_APPLIED` / `SERVICE_SCHEDULE_REMINDER` の時のみ。`INSTALLMENT_PAYMENT_FAILED` / `SUBSCRIPTION_PAYMENT_FAILED` はトリガー自体にプラン・サービス参照を持たないため対象外。それ以外のトリガー（`MARKETING_LEAD_BENEFIT_RECEIVED` / `LINE_CHANNEL_CONTACT_REGISTERED` / `CONTACT_TAG_ADDED` / `INFLOW_ACTION_CONVERTED` / `INSTALLMENT_PAYMENT_FAILED` / `SUBSCRIPTION_PAYMENT_FAILED`）では常に空文字 |
 | `reservation_time_range` | 予約日時の範囲（`YYYY年M月D日 HH:mm〜HH:mm`, JST） | `SERVICE_SCHEDULE_REMINDER`は常に対応。`SERVICE_APPLIED`はプラン・サービスの`serviceType`が「予約(event)」または「個別(private)」の場合のみ（コンテンツ/サブスク/オンライン単体のプラン・サービスでは空文字） |
 | `zoom_url` | ZoomのjoinURL | `reservation_time_range`と同条件に加えて、プラン・サービスの`locationType`がオンライン/ハイブリッドかつクリエイターがZoom連携済みの場合のみ。条件を満たさない場合は静かに空文字になる（保存・送信はブロックされない） |
 
