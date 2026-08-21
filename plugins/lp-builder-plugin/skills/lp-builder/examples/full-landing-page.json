@@ -28,7 +28,7 @@
 						"color": "#ffffff",
 						"fontSize": "36px",
 						"fontWeight": "bold",
-						"marginBottom": "16px"
+						"padding": "0 0 16px 0"
 					},
 					"mobileStyles": { "fontSize": "24px" },
 					"attributes": { "level": "1" }
@@ -41,7 +41,7 @@
 						"color": "#cccccc",
 						"fontSize": "18px",
 						"lineHeight": "1.8",
-						"marginBottom": "32px"
+						"padding": "0 0 32px 0"
 					},
 					"mobileStyles": { "fontSize": "16px" }
 				},
@@ -60,6 +60,7 @@
 						"fontWeight": "bold",
 						"textAlign": "center"
 					},
+					"mobileStyles": { "width": "100%" },
 					"attributes": {
 						"href": "https://example.com/signup",
 						"target": "_blank"
@@ -71,8 +72,8 @@
 			"id": "sec-features",
 			"type": "section",
 			"content": "",
-			"styles": { "padding": "64px 48px", "textAlign": "center" },
-			"mobileStyles": { "padding": "40px 16px" },
+			"styles": { "padding": "80px 48px", "textAlign": "center" },
+			"mobileStyles": { "padding": "48px 16px" },
 			"attributes": {
 				"background": { "type": "color", "color": "#ffffff" },
 				"sectionType": "merit"
@@ -86,7 +87,7 @@
 						"color": "#1a1a2e",
 						"fontSize": "30px",
 						"fontWeight": "bold",
-						"marginBottom": "32px"
+						"padding": "0 0 32px 0"
 					},
 					"mobileStyles": { "fontSize": "20px" },
 					"attributes": { "level": "2" }
@@ -101,27 +102,26 @@
 						"lineHeight": "2.0"
 					},
 					"mobileStyles": { "fontSize": "14px" }
+				},
+				{
+					"id": "sep-features-cta",
+					"type": "separator",
+					"content": "",
+					"styles": {
+						"width": "100%",
+						"borderTopStyle": "solid",
+						"borderTopWidth": "1px",
+						"borderTopColor": "#e0e0e0"
+					}
 				}
 			]
-		},
-		{
-			"id": "sep-features-cta",
-			"type": "separator",
-			"content": "",
-			"styles": {
-				"width": "100%",
-				"height": "1px",
-				"background": "#e0e0e0",
-				"borderTop": "1px solid #e0e0e0",
-				"margin": "0 0"
-			}
 		},
 		{
 			"id": "sec-cta",
 			"type": "section",
 			"content": "",
-			"styles": { "padding": "64px 48px", "textAlign": "center" },
-			"mobileStyles": { "padding": "40px 16px" },
+			"styles": { "padding": "80px 48px", "textAlign": "center" },
+			"mobileStyles": { "padding": "48px 16px" },
 			"attributes": {
 				"background": { "type": "color", "color": "#f8f9fa" },
 				"sectionType": "description"
@@ -135,7 +135,7 @@
 						"color": "#1a1a2e",
 						"fontSize": "30px",
 						"fontWeight": "bold",
-						"marginBottom": "24px"
+						"padding": "0 0 24px 0"
 					},
 					"mobileStyles": { "fontSize": "20px" },
 					"attributes": { "level": "2" }
@@ -155,6 +155,7 @@
 						"fontWeight": "bold",
 						"textAlign": "center"
 					},
+					"mobileStyles": { "width": "100%" },
 					"attributes": {
 						"href": "https://example.com/signup",
 						"target": "_blank"

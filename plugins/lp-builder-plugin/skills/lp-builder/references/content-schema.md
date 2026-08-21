@@ -77,7 +77,7 @@
 | `countdown` | カウントダウン |
 | `schedule` | スケジュール |
 | `image-carousel` | 画像カルーセル（**実験的パーツにつき新規作成不可**。既存要素は維持。詳細は下記「`image-carousel` の仕様」を参照） |
-| `autoWebinar` | 自動ウェビナー |
+| `autoWebinar` | 自動ウェビナー（詳細は下記「`autoWebinar` の仕様」を参照） |
 
 ## `attributes` フィールド（任意）
 
@@ -101,21 +101,63 @@
 ```
 
 - `level` — `heading` のレベル: `"1"` | `"2"` | `"3"` | `"4"`
-- `href` / `target` / `rel` — `button` のリンク設定
+- `href` / `target` / `rel` — `button` のリンク設定。**`image` にも同じ形で設定可能**（後述）
 - `src` / `alt` — `image` の設定
-- `background.type` — `"color"` | `"image"`
+- `background.type` — `"color"` | `"image"` | `"gradationColor"`（グラデーション。下記「背景グラデーション」の項を参照）
 - `sectionType` — `section` の分類メタ情報。下記の許容値以外（`"hero"` など）は無効値なので使わない
+
+### `section` の背景画像
+
+`section` は単色背景だけでなく、`attributes.background` に `type: "image"` と `image: "https://..."`（実在の画像URL）を指定することで背景画像も設定できる。保存・再取得後も `attributes.background.image` が欠落せず保持されることを確認済み。`styles.background` 側は色のフォールバックとして残しておいてよい。
+
+```json
+{
+  "id": "tag-point01",
+  "type": "section",
+  "styles": { "width": "200px", "padding": "14px 20px 14px 36px", "background": "#42b9b9" },
+  "content": "",
+  "children": [ /* 背景画像の上に重ねるテキスト等 */ ],
+  "attributes": {
+    "background": { "type": "image", "color": "#42b9b9", "image": "https://..." }
+  }
+}
+```
+
+背景画像の帯（リボン状の飾り画像等）の上に文字を重ねたい場合、`image` type の `section` にして子要素にテキストを入れることで、専用の装飾画像を持つ元ページのパーツ（ポイント番号バッジ等）を捏造せず実際の画像で再現できる。ただし `background-size`/`background-position`（cover/contain等）を明示的に指定するプロパティはスキーマに無いため、画像の縦横比と `section` の `width`/`padding` から実際の表示が変わる可能性がある点は留意する。
+
+### `image` にリンクを設定する（クリック可能な画像）
+
+`image` 要素は `button` と同様に `attributes.href` / `attributes.target` / `attributes.rel` を設定でき、画像自体をクリック可能なリンクにできる（実際に保存・再取得して値が保持されることを確認済み）。画像1枚をボタン代わりに使いたい場合（例: バナー画像そのものがCTAボタンを兼ねるデザイン）は、`button` 要素で代替する必要はなく、`image` に直接 `href` を付ければ見た目と機能を両立できる。
+
+```json
+{
+  "id": "img-cta-001",
+  "type": "image",
+  "content": "",
+  "styles": { "width": "70%", "padding": "16px 24px 0 24px" },
+  "layout": { "styles": { "textAlign": "center" } },
+  "attributes": {
+    "src": "https://...",
+    "alt": "お申し込みはこちら",
+    "href": "https://...",
+    "target": "_blank"
+  }
+}
+```
+
+- リンク先が無い（装飾目的のみの）画像では `href` を省略してよい。省略時はクリックしても何も起きないだけで、クラッシュ等の問題はない。
+- `href` の値は他の要素と同様、ユーザーから実在のURLが与えられていない場合は捏造しない（次項参照）。
 
 ### type 別の必須 attributes（構造上は任意・機能上は必須）
 
-`attributes` はスキーマ上すべてのキーが任意だが、以下の type では省略すると表示が欠落する（ボタンがリンク切れになる、画像/動画が表示されない等）。実質的に必須として扱う。
+`attributes` はスキーマ上すべてのキーが任意だが、以下の type では省略すると表示が欠落する（ボタンがリンク切れになる、画像が表示されない等）。実質的に必須として扱う。**ただし `video` / `image-carousel` は「表示が欠落する」程度ではなく、MCP からの新規作成自体が不可(`video` は編集画面がクラッシュする、`image-carousel` は実験的パーツのため)。以下の表の「必須」列は、新規作成の手引きではなく、既存要素を編集で残す際に値を落とさないための情報として読むこと。**
 
 | type | 必須 | 補足 |
 |---|---|---|
-| `image` | `src` | `alt` も推奨（未設定でもクラッシュはしないがアクセシビリティ上推奨） |
+| `image` | `src` | `alt` も推奨（未設定でもクラッシュはしないがアクセシビリティ上推奨）。`href`/`target`は任意でクリック可能な画像にできる（上記参照）。`image` 要素は実在する画像 URL が確定している場合のみ新規作成する。`src: ""` のまま作らない（画面上で空枠表示になる。画像未提供時は編集画面からのアップロードを案内。`best-practices.md` の「画像の運用」参照） |
 | `button` | `href` | `target` も推奨（新規タブで開くか指定） |
-| `video` | `src` | |
-| `youtubeVideo` | `src` | |
+| `video` | `src` と `moshVideoId` の両方 | **MCP からは新規作成不可。** どちらか一方だけでは不十分（詳細は下記「`video` の仕様」を参照） |
+| `youtubeVideo` | `src` | YouTube の動画URL（外部URLで問題ない） |
 | `image-carousel` | `images` | **URL文字列の配列**必須（詳細・実験的パーツである旨は下記「`image-carousel` の仕様」を参照） |
 | `heading` | — | `level` は省略可。省略時は `"2"` 相当として扱われる |
 
@@ -130,7 +172,7 @@
 | 値 | 編集画面の表示名 | 用途 |
 |---|---|---|
 | `main` | メイン | ファーストビュー（キャッチコピー＋メインビジュアル） |
-| `description` | 説明・訴求 | 課題提起・解決策・サービス説明 |
+| `description` | 説明・訴求 | 課題提起・解決策・プラン・サービスの説明 |
 | `profile` | プロフィール | 講師・運営者の紹介 |
 | `merit` | メリット | 特徴・受講後の変化 |
 | `countdown` | カウントダウン | 締切までの残り時間 |
@@ -139,6 +181,32 @@
 | `footer` | サイトフッター | 特商法表記・注意事項 |
 
 `sectionType` は編集画面でのセクション分類に使われるメタ情報で、レンダリング結果（公開LPの表示）には影響しない。ただし無効値を入れると分類が壊れるため、必ず上記の値を使う。CTA のような専用の値は無いので、CTA セクションは内容に応じて `main` / `description` などを選ぶ。
+
+## 背景グラデーション（`gradationColor`）
+
+`attributes.background` は単色・画像のほか、構造化されたグラデーション指定に対応している（セクションで実データの保存・再取得を確認済み。ボタンも編集画面は同じ構造化形を扱う）:
+
+```json
+"attributes": {
+  "background": {
+    "type": "gradationColor",
+    "color": "#0E4A36",
+    "gradationColor": {
+      "angle": 90,
+      "colorStops": [
+        { "stop": 0, "color": "hsl(160, 68.2%, 17.3%)" },
+        { "stop": 48, "color": "hsl(160, 49.6%, 32.8%)" }
+      ]
+    }
+  }
+}
+```
+
+- `angle` — 0〜359 の整数。90 が左→右、180 が上→下、135 が左上→右下
+- `colorStops` — 2件以上。`stop` は 0〜100 の整数（%）。`color` は **hsl / hsla 形式**で書く（編集画面のカラーピッカーが hsl に正規化するため。HEX は規約外）
+- `color`（`background` 直下）— 単色フォールバック。必ず含める（HEX 可）
+- **`styles.background` に `"linear-gradient(...)"` の文字列を書かない**。描画はされるが編集画面のプロパティパネルは単色として扱うため、ユーザーが後から編集できなくなる。グラデーションは必ずこの構造化形で設定する
+- ページ全体（`page`）の背景はこの形に対応していない（ページの背景グラデーションは編集画面からのみ設定可能）。セクション・ボタンに対して使う
 
 ## `countdown` の仕様
 
@@ -157,6 +225,23 @@
 - **対象日時はこの要素の`attributes`では指定しない。** カウントダウンの対象日時・残り時間は常にLP自体の表示期限設定（`expirationType` / `expireAt` / `relativeExpiration`。`mcp-tools.md`参照）から算出される。`expirationType`が`"NONE"`（無期限）の場合、カウントダウンはダッシュ（`-`）表示になる。
 - `content`は空文字`""`のままでよい（表示テキストは持たない）。
 - 期限到達時（日/時間/分/秒すべて`0`になった瞬間）は、この`countdown`要素単体が「0」表示になるのではなく、**公開LPのコンテンツ全体**が期限切れ画面（`expirationAction`次第で非表示メッセージ or リダイレクト。`mcp-tools.md`参照）に差し替わる。
+
+## `video` の仕様
+
+**MCP からの新規作成は不可。外部URL（GCS・Vimeo・自社サーバー等の直リンクmp4を含む）を `attributes.src` にそのまま設定してはいけない。** `video` パーツは MOSH の動画アップロード・変換パイプラインが生成する2つの値を前提にした仕組みで、どちらも MCP からは正規に得られない。
+
+- `attributes.moshVideoId` — アップロードで採番される内部ID。**編集画面のプレビューはこの ID だけを使い**、変換状況を取得するAPIを叩く。`moshVideoId` が無い（未設定・空文字）状態で `video` 要素を保存すると、**編集画面を開いた瞬間に空IDでAPIを叩いて404となり、編集画面全体が強制的にエラー画面へ遷移してクラッシュする。**
+- `attributes.src` — MOSH の変換パイプラインが生成するHLS配信用マニフェストURLで、**公開ページ側の実際の動画再生**（video.js の再生ソース）に使われる。編集画面のクラッシュには関与しないが、これが無い・不正な値だと公開ページで動画が再生されない。外部の直リンクmp4をここに入れても、HLS形式でないため再生できない。
+
+どちらも「MOSH自身へのアップロード」でしか正しい値が得られないため、**ユーザーから動画URL（実在するURLであっても）が提示された場合でも `video` 要素は作成しない。**
+
+ユーザーに動画を追加したいと言われたら、次のように対応する。
+
+- 動画は編集画面から直接アップロードしてもらうよう案内する（アップロード後に変換が完了すると `moshVideoId` が自動で設定される）。
+- 提示されたURLが YouTube のものであれば、`youtubeVideo` パーツ（`attributes.src` にYouTubeのURLをそのまま設定できる）を代替として提案する。
+- 動画以外の部分（見出し・本文など）は通常どおり組み立てて下書き保存してよい。動画部分だけを保留する。
+
+**既存の `video` 要素は消さない。** 編集画面から既にアップロード済みの `video` 要素（`moshVideoId` を持つ実データ）がある LP を MCP で編集する場合、その要素はそのまま維持する（`image-carousel` の既存要素保持と同じ考え方）。
 
 ## `image-carousel` の仕様
 
@@ -180,22 +265,24 @@
 
 - `attributes.images` — **URL文字列の配列**（例: `["https://example.com/a.jpg", "https://example.com/b.jpg"]`）。`{ "src": "...", "alt": "..." }` のようなオブジェクトの配列にしてはいけない。レンダラーは各要素を画像URLの文字列としてそのまま扱うため、配列でも要素がオブジェクトだとクラッシュする（`image` type の `src`/`alt` 属性と混同しないこと）。
 
-## `video` の仕様
+## `autoWebinar` の仕様
 
-**MCP からの新規作成は不可。外部URL（GCS・Vimeo・自社サーバー等の直リンクmp4を含む）を `attributes.src` にそのまま設定してはいけない。** `video` パーツは MOSH の動画アップロード・変換パイプラインが生成する2つの値を前提にした仕組みで、どちらも MCP からは正規に得られない。
+**`attributes` は常に空オブジェクト `{}`。要素自体は動画ID・ウェビナーIDを一切持たない。** 再生対象の動画は、LP の設定に紐づく `serviceId`（オートウェビナーが設定された「連携サービス」）から解決される。連携先はLP単位（トップレベル）で決まり、要素側にIDを持たせる仕組みは存在しない。
 
-- `attributes.moshVideoId` — アップロードで採番される内部ID。**編集画面のプレビューはこの ID だけを使い**、変換状況を取得するAPIを叩く。`moshVideoId` が無い（未設定・空文字）状態で `video` 要素を保存すると、**編集画面を開いた瞬間に空IDでAPIを叩いて404となり、編集画面全体が強制的にエラー画面へ遷移してクラッシュする。**
-- `attributes.src` — MOSH の変換パイプラインが生成するHLS配信用マニフェストURLで、**公開ページ側の実際の動画再生**（video.js の再生ソース）に使われる。編集画面のクラッシュには関与しないが、これが無い・不正な値だと公開ページで動画が再生されない。外部の直リンクmp4をここに入れても、HLS形式でないため再生できない。
+```json
+{
+  "id": "aw-001",
+  "type": "autoWebinar",
+  "content": "",
+  "styles": { "width": "100%", "height": "auto" },
+  "attributes": {}
+}
+```
 
-どちらも「MOSH自身へのアップロード」でしか正しい値が得られないため、**ユーザーから動画URL（実在するURLであっても）が提示された場合でも `video` 要素は作成しない。**
-
-ユーザーに動画を追加したいと言われたら、次のように対応する。
-
-- 動画は編集画面から直接アップロードしてもらうよう案内する（アップロード後に変換が完了すると `moshVideoId` と `src` が自動で設定される）。
-- 提示されたURLが YouTube のものであれば、`youtubeVideo` パーツ（`attributes.src` にYouTubeのURLをそのまま設定できる）を代替として提案する。
-- 動画以外の部分（見出し・本文など）は通常どおり組み立てて下書き保存してよい。動画部分だけを保留する。
-
-**既存の `video` 要素は消さない。** 編集画面から既にアップロード済みの `video` 要素（`moshVideoId` と `src` を持つ実データ）がある LP を MCP で編集する場合、その要素はそのまま維持する。
+- `styles.width` — 編集画面のプロパティパネルで変更可能な唯一の値。`"100%"` がデフォルトで、他に `"100px"`〜`"1000px"`（100px刻み）・`"1080px"` を選べる。新規に組み立てる際は `"100%"` でよい。
+- `styles.height` — `"auto"` 固定。`video` と同様に明示的な高さ指定はしない。
+- **`serviceId` は推測・捏造しない。** ユーザーから実在の `serviceId`（オートウェビナーが紐づいたイベントタイプのプラン・サービス）が明示されていない場合、`autoWebinar` 要素自体は上記の骨組み（`styles`/`attributes` は空のまま）で作成してよいが、LPの `serviceId` 設定はユーザーに確認してから行う。連携が無い状態では編集画面上は「このオートウェビナーを表示するには、サービスとの連携が必要です」というプレースホルダー表示になるだけで、クラッシュはしない。
+- 動画IDが無いことを理由に `autoWebinar` 要素自体の作成を省略したり、テキストの説明文で代替したりしない。要素は必ず作り、連携（`serviceId`）だけを別途確認する。
 
 ## `text` / `heading` のインライン装飾（一文の中で部分的に太字・色・サイズを変える）
 
@@ -286,7 +373,10 @@
 編集画面（UI）は要素ごとに設定できるスタイルプロパティが決まっている。UI に用意されていないスタイルプロパティを `styles` に指定すると、編集画面で表示が崩れる原因になる。要素別に、下記の**使ってよいプロパティだけ**を使う。
 
 ### 使ってよいスタイルプロパティ（要素別）
-- `section`: `padding` / `background` / `borderRadius` / `width` / `gap` / `flexWrap` / `display`
+- `section`: `padding` / `background` / `borderRadius` / `width` / `gap` / `flexWrap` / `display` / 辺別 border（下記）
+  - セクションの枠線は**辺別プロパティ**で指定する: `borderTopStyle` / `borderTopWidth` / `borderTopColor`（右・下・左も同様に `borderRight*` / `borderBottom*` / `borderLeft*`）。四辺に付ける場合は4辺それぞれの Style・Width・Color を指定する
+  - `border: "1px solid #..."` の**ショートハンドは使わない**（編集画面のプロパティパネルは辺別の値を読むため、ショートハンドで書くとパネルに反映されずユーザーが後から編集できない）
+  - 例: `{ "borderTopStyle": "solid", "borderTopWidth": "1px", "borderTopColor": "rgba(0,0,0,0.08)" }`
 
 #### PC/SPでレイアウト方向(横並び・縦並び)を変える方法
 
@@ -319,6 +409,39 @@
 - `text` / `heading`: `color` / `fontFamily` / `fontSize` / `lineHeight` / `textAlign` / `padding`
 - `button`: `background` / `color` / `borderRadius` / `width` / `padding` / `textAlign`
   - 上記は編集画面のプロパティパネルで**変更できる**プロパティ。これに加えて、UI でボタンを挿入すると変更不可の固定デフォルト `display: "inline-block"` / `cursor: "pointer"` / `fontSize: "14px"` / `fontWeight: "bold"` が常に付与される（UI では編集手段がないため値はこの固定値のまま）。ボタンを組み立てる際はこれら固定デフォルトも含めて出力し、`fontSize` は `14px` 以外にしない。
+- `image`: `width` / `padding`（`styles` 内で使用可能。中央寄せは `styles` ではなく後述の `layout` フィールドで行う）
+
+#### `image` / `button` の中央寄せ（`layout` フィールド）
+
+`width` を100%未満にした `image` や `button` を、親要素（`section`/`col`）の中で中央寄せしたい場合、その要素自身の `styles.textAlign` を `"center"` にしても**効かない**。`styles.textAlign` はその要素の**内側のコンテンツ**（`button` ならボタン内のテキスト）の揃え位置を制御するだけで、要素自体の配置（左寄せ/中央寄せ）は制御しない。
+
+要素自体を中央に配置するには、`styles` とは別枠の **`layout` フィールド**（`content`/`styles`/`attributes` と同じ階層にある兄弟フィールド）を使う。編集画面で「配置」を中央にすると、実際に次のような `layout` プロパティが要素に追加される（`image`・`button` の両方で実際の編集操作を再取得して確認済み）。
+
+```json
+{
+  "id": "img-001",
+  "type": "image",
+  "content": "",
+  "layout": { "styles": { "textAlign": "center" } },
+  "styles": { "width": "80%", "padding": "0 24px" },
+  "attributes": { "src": "https://...", "alt": "..." }
+}
+```
+
+```json
+{
+  "id": "btn-001",
+  "type": "button",
+  "content": "詳しくはこちら",
+  "layout": { "styles": { "textAlign": "center" } },
+  "styles": { "display": "inline-block", "background": "#e94560", "color": "#ffffff", "padding": "16px 48px", "borderRadius": "8px", "cursor": "pointer", "fontSize": "14px", "fontWeight": "bold", "textAlign": "center" },
+  "attributes": { "href": "https://...", "target": "_blank" }
+}
+```
+
+- 中央寄せしたい `image` / `button` には `layout: { "styles": { "textAlign": "center" } }` を追加する。`button` の場合、`styles.textAlign: "center"`（ボタン内テキストの中央揃え）と `layout.styles.textAlign: "center"`（ボタン自体の中央配置）は別物であり、両方揃えて初めて見た目どおりの中央寄せになる。
+- `text` は要素自体が親幅いっぱいのブロックのため、`styles.textAlign: "center"` だけで文字が中央寄せになり `layout` は不要（実際に `layout` が付与されないことを確認済み）。
+- `image` と `button` では確認済み。`heading` など他の要素にも同じ仕組みがあるかは未確認のため、流用する際は検証してから行うこと。
 
 ### 明示的に設定しないプロパティ
 - `height`（特に `section` / `button`。高さは中身と `padding` で決める）
@@ -347,3 +470,4 @@
 - **`schedule` の `content` は常にプレーン文字列のみ。** `null` やオブジェクト（tiptap 構造を含む）を渡さない。`text` / `heading` と異なり部分装飾の仕組みが無く、素の文字列として扱われるため、他の型で描画できてもクラッシュする。
 - **`heading` の `attributes.level` は `"1"`〜`"4"` の範囲のみ。** 範囲外の値を入れると編集画面が開けなくなるおそれがある（「`attributes` フィールド」参照）。
 - **`image-carousel` の `attributes.images` は必ず URL 文字列の配列。** 配列でない値や、配列でも要素が文字列でない場合（`{ "src": ..., "alt": ... }` 等のオブジェクト配列）はクラッシュする（「`image-carousel` の仕様」参照）。
+- **`video` に外部URLをそのまま `attributes.src` として設定しない。** `moshVideoId`（MOSHの動画アップロードで採番される内部ID）が無いと編集画面が空IDで404を起こし強制的にエラー画面へ遷移する。実在するURLが提示されても `video` 要素は作成せず、編集画面からのアップロードを案内する（「`video` の仕様」参照）。
