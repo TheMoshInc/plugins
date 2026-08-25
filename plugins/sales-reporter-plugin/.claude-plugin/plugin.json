@@ -1,0 +1,5 @@
+{
+  "name": "sales-reporter-plugin",
+  "description": "Adds a sales-reporter skill for checking and analyzing MOSH sales",
+  "version": "0.1.0"
+}

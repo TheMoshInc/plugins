@@ -14,6 +14,11 @@
       "name": "workflow-builder-plugin",
       "source": "./plugins/workflow-builder-plugin",
       "description": "Adds a workflow-builder skill for constructing MOSH workflows"
+    },
+    {
+      "name": "sales-reporter-plugin",
+      "source": "./plugins/sales-reporter-plugin",
+      "description": "Adds a sales-reporter skill for checking and analyzing MOSH sales"
     }
   ]
 }
