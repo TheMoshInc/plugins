@@ -1,0 +1,116 @@
+{
+	"creatorLineChannelId": 10,
+	"stages": [
+		{
+			"trigger": {
+				"triggerType": "INFLOW_ACTION_CONVERTED",
+				"marketingLeadBenefitReceivedTrigger": null,
+				"serviceAppliedTrigger": null,
+				"serviceScheduleReminder": null,
+				"contactTagAdded": null,
+				"inflowActionConverted": {
+					"inflowActionId": 5
+				}
+			},
+			"action": {
+				"actionType": "SEND_LINE_MESSAGE",
+				"sendEmail": null,
+				"sendLineMessage": {
+					"messages": [
+						{
+							"messageType": "TEXT",
+							"text": "ご登録ありがとうございます！\nまずはこちらのガイドをご覧ください。\nhttps://example.com/guide",
+							"isTrackingEnabled": false,
+							"urlActions": [
+								{
+									"url": "https://example.com/guide",
+									"postbackActions": [
+										{
+											"postbackActionType": "addContactTag",
+											"contactTagId": 1
+										}
+									]
+								}
+							]
+						}
+					]
+				},
+				"waitTime": null,
+				"condition": null,
+				"addContactTag": null,
+				"removeContactTag": null,
+				"linkLineRichMenu": null
+			}
+		},
+		{
+			"action": {
+				"actionType": "WAIT_TIME",
+				"sendEmail": null,
+				"sendLineMessage": null,
+				"waitTime": {
+					"waitTimeType": "RELATIVE",
+					"actionAfterDays": 1,
+					"actionHours": null,
+					"actionMinutes": null
+				},
+				"condition": null,
+				"addContactTag": null,
+				"removeContactTag": null,
+				"linkLineRichMenu": null
+			}
+		},
+		{
+			"action": {
+				"actionType": "CONDITION",
+				"sendEmail": null,
+				"sendLineMessage": null,
+				"waitTime": null,
+				"condition": {
+					"conditionType": "CONTACT_TAG",
+					"conditionServiceApplicationStatus": null,
+					"conditionContactTag": {
+						"contactTagId": 1
+					},
+					"conditionAutoWebinarParticipation": null,
+					"conditionAutoWebinarWatchTime": null,
+					"conditionBankTransferStatus": null,
+					"branches": [
+						{
+							"matchValue": true,
+							"stages": []
+						},
+						{
+							"matchValue": false,
+							"stages": [
+								{
+									"action": {
+										"actionType": "SEND_LINE_MESSAGE",
+										"sendEmail": null,
+										"sendLineMessage": {
+											"messages": [
+												{
+													"messageType": "TEXT",
+													"text": "先日お送りしたガイドはご覧いただけましたか？\n3分で読める内容なので、ぜひ一度チェックしてみてください。\nhttps://example.com/guide",
+													"isTrackingEnabled": false,
+													"urlActions": null
+												}
+											]
+										},
+										"waitTime": null,
+										"condition": null,
+										"addContactTag": null,
+										"removeContactTag": null,
+										"linkLineRichMenu": null
+									}
+								}
+							]
+						}
+					]
+				},
+				"addContactTag": null,
+				"removeContactTag": null,
+				"linkLineRichMenu": null
+			}
+		}
+	]
+}

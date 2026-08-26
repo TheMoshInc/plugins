@@ -45,7 +45,7 @@ ARCHIVED  : アーカイブ済（事実上の廃止）
 | `SERVICE_APPLIED` | `serviceAppliedTrigger` | `{ serviceId: string, paymentMethod: "CASH"\|"CARD"\|"BANK_TRANSFER"\|null }` |
 | `SERVICE_SCHEDULE_REMINDER` | `serviceScheduleReminder` | `{ serviceId: string, remindTimeType: "RELATIVE"\|"ABSOLUTE", beforeDays: 0-30, hours: 0-23\|null, minutes: 0-59\|null }` |
 | `CONTACT_TAG_ADDED` | `contactTagAdded` | `{ contactTagId: number }` |
-| `INFLOW_ACTION_CONVERTED` | `inflowActionConverted` | `{ inflowActionId: number }` |
+| `INFLOW_ACTION_CONVERTED` | `inflowActionConverted` | `{ inflowActionId: number }`（流入経路は LINE 公式アカウントに属する。ボディ最上位の `creatorLineChannelId` を流入経路が属するアカウントと一致させること） |
 | `INSTALLMENT_PAYMENT_FAILED` | なし（サブフィールド不要） | 詳細フィールドは不要。同一分割回の決済リトライ失敗では再発火しない |
 | `SUBSCRIPTION_PAYMENT_FAILED` | なし（サブフィールド不要） | 詳細フィールドは不要。初回失敗のみ発火し、同一請求期間内の決済リトライ失敗では再発火しない |
 
@@ -85,9 +85,9 @@ ARCHIVED  : アーカイブ済（事実上の廃止）
 
 | actionType | 対応する非 null サブフィールド | サブフィールドの形 |
 |---|---|---|
-| `SEND_EMAIL` | `sendEmail` | `{ subject: string(1-50), message: string, isTrackingEnabled: boolean }` |
-| `SEND_LINE_MESSAGE` | `sendLineMessage` | `{ type, messages, isTrackingEnabled }`（後述） |
-| `WAIT_TIME` | `waitTime` | `{ waitTimeType, actionAfterDays: 0-30, actionHours: 0-23\|null, actionMinutes: 0-59\|null }` |
+| `SEND_EMAIL` | `sendEmail` | `{ subject: string(最大50字), message: string, isTrackingEnabled: boolean }` |
+| `SEND_LINE_MESSAGE` | `sendLineMessage` | `{ messages }`（トップレベルは `messages` のみ。`messageType` / `isTrackingEnabled` は各要素内に置く。後述） |
+| `WAIT_TIME` | `waitTime` | `{ waitTimeType, actionDate: date\|null, actionAfterDays: 0-30, actionHours: 0-23\|null, actionMinutes: 0-59\|null }` |
 | `CONDITION` | `condition` | `{ conditionType, branches[], conditionXxx }`（後述） |
 | `ADD_CONTACT_TAG` | `addContactTag` | `{ contactTagId: number }` |
 | `REMOVE_CONTACT_TAG` | `removeContactTag` | `{ contactTagId: number }` |
@@ -118,7 +118,7 @@ ARCHIVED  : アーカイブ済（事実上の廃止）
 ### SEND_LINE_MESSAGE: `sendLineMessage`
 
 `sendLineMessage` はトップレベルに `messages` の**1フィールドのみ**（`type` や `isTrackingEnabled` を
-トップレベルに置かない）。`messages` は **1〜5件の配列**で、各要素が自分自身の `messageType`
+トップレベルに置かない）。`messages` は **最大5件の配列**（スキーマ上は0件も許容されるが下書き専用。稼働させるには1件以上必要）で、各要素が自分自身の `messageType`
 （大文字・種別を判別するリテラル）を持つオブジェクト。**`messages: ["文字列", ...]` のような
 プレーン文字列配列は誤り**（TEXTタイプであっても、必ず `{ messageType: "TEXT", text, ... }` の
 オブジェクトを1件ずつ並べる）。
@@ -168,7 +168,7 @@ ARCHIVED  : アーカイブ済（事実上の廃止）
 - `url` — 本文中に含まれるURLと完全一致でキーにする
 - `postbackActions` — 1〜3件。`postbackActionType` は `"addContactTag"` | `"removeContactTag"`（+ `contactTagId`）
 
-CarouselItem の形（`postbackActions` は任意。設定しない場合は `null`）:
+CarouselItem の形（`postbackActions` はキー省略不可。設定しない場合は `null` を明示する）:
 ```json
 {
   "imageUrl": "https://...",
@@ -179,7 +179,7 @@ CarouselItem の形（`postbackActions` は任意。設定しない場合は `nu
   "postbackActions": null
 }
 ```
-- `postbackActions` — ボタンタップ時に実行するアクション（1〜3件、任意。設定しない場合は `null`）。
+- `postbackActions` — ボタンタップ時に実行するアクション（1〜3件。キー自体の省略は不可で、設定しない場合は `null` を明示）。
   `postbackActionType` は `"sendMessage"`（+ `messages: [{ messageType: "text"（小文字）, message: string }]` で自動返信）
   | `"addContactTag"` | `"removeContactTag"`（+ `contactTagId`）。
   ⚠ `sendMessage` の内側の `messageType` は**小文字 `"text"`**（トップレベルの `messages[].messageType` の
@@ -209,19 +209,22 @@ RichMessageCell の形（`postbackActions` の仕様は CarouselItem と同じ�
 ```json
 {
   "waitTimeType": "RELATIVE",
+  "actionDate": null,
   "actionAfterDays": 3,
   "actionHours": 10,
   "actionMinutes": 0
 }
 ```
 
-**起点は常に「直前ステップの実行時刻」**（トリガー発火時刻ではない）。`RELATIVE` / `ABSOLUTE` いずれも起点は同じで、`actionHours` / `actionMinutes` の解釈だけが異なる。
+**起点は waitTimeType で変わる**。`RELATIVE` / `ABSOLUTE` は直前ステップの実行時刻が起点で、`actionHours` / `actionMinutes` の解釈だけが異なる。`FIXED` はカレンダー日付の絶対日時。
 
-- `actionAfterDays`（0-30）は両タイプ共通の相対加算日数（起点に N 日を足す）。
+- `actionAfterDays`（0-30）は RELATIVE / ABSOLUTE の相対加算日数（起点に N 日を足す）。FIXED では 0。
+- `actionDate` は FIXED のみ YYYY-MM-DD。RELATIVE / ABSOLUTE は null。
 - `waitTimeType: "RELATIVE"` — `actionHours` / `actionMinutes` は起点の時刻に**加算する**時間・分（「起点から N日 H時間 M分 後」）。`null` のフィールドは加算なし。
 - `waitTimeType: "ABSOLUTE"` — `actionAfterDays` 日後の日付に、時刻を `actionHours:actionMinutes` へ**セット**する（クロック時刻指定）。`actionHours` と `actionMinutes` のどちらかでも `null` なら時刻セットは行われず、起点の時刻がそのまま維持される。
-- `actionHours` / `actionMinutes` は `nullable: true`（時刻指定なしも可）。
-- ⚠️ 計算結果の実行時刻が現在より過去になると、後続ステップはスケジュールされずそこで停止する（ユーザーへの通知は無い）。「配信されない」という相談の典型パターンなので、待機日数・時刻の設定はユーザーの意図（起点からの相対か、特定の時刻に揃えたいか）を確認してから `RELATIVE` / `ABSOLUTE` を選ぶ。
+- `waitTimeType: "FIXED"` — `actionDate` の日付に、時刻を `actionHours:actionMinutes` へセットする（Asia/Tokyo）。時分は必須。稼働時に指定日時が過去だと 400。
+- `actionHours` / `actionMinutes` は RELATIVE / ABSOLUTE では `nullable: true`（時刻指定なしも可）。FIXED では必須。
+- ⚠️ RELATIVE / ABSOLUTE で計算結果の実行時刻が現在より過去になると、後続ステップはスケジュールされずそこで停止する（ユーザーへの通知は無い）。「配信されない」という相談の典型パターンなので、待機日数・時刻の設定はユーザーの意図（起点からの相対か、特定の時刻に揃えたいか、カレンダー日付か）を確認してから `RELATIVE` / `ABSOLUTE` / `FIXED` を選ぶ。
 - 待機0（結果が起点と同時刻になる設定）は即時実行される。
 
 ### CONDITION: `condition`
@@ -251,7 +254,7 @@ RichMessageCell の形（`postbackActions` の仕様は CarouselItem と同じ�
 | `CONTACT_TAG` | `conditionContactTag` | `{ contactTagId: number }` |
 | `AUTO_WEBINAR_PARTICIPATION` | `conditionAutoWebinarParticipation` | `{ autoWebinarId: number }`（オートウェビナーへの参加有無。ID は `getCreatorAutoWebinars` で取得可） |
 | `AUTO_WEBINAR_WATCH_TIME` | `conditionAutoWebinarWatchTime` | `{ autoWebinarId: number, metricType: "WATCH_POSITION"\|"TOTAL_PLAY_TIME", thresholdSeconds: number(0-86400) }`（オートウェビナーの視聴時間条件。`WATCH_POSITION`=到達した最大視聴位置、`TOTAL_PLAY_TIME`=視聴した総再生時間。`thresholdSeconds`は「以上」で判定。ID は `getCreatorAutoWebinars` で取得可） |
-| `BANK_TRANSFER_STATUS` | `conditionBankTransferStatus` | `{ serviceId: string, bankTransferStatus: "PENDING"\|"COMPLETED"\|"REJECTED"\|"CANCELED" }`（対象ゲストの指定サービスへの注文が、指定した銀行振込の振込状況に一致するかで分岐。`PENDING`=振込待ち・未入金、`COMPLETED`=振込完了・入金の反映待ちを含む、`REJECTED`=振込期限切れ、`CANCELED`=キャンセル。クレジットカード等、銀行振込以外の支払い方法の申し込みは常に「一致しない」側に進む） |
+| `BANK_TRANSFER_STATUS` | `conditionBankTransferStatus` | `{ serviceId: string, bankTransferStatus: "PENDING"\|"COMPLETED"\|"REJECTED"\|"CANCELED" }`（対象ゲストの指定プラン・サービスへの注文が、指定した銀行振込の振込状況に一致するかで分岐。`PENDING`=振込待ち・未入金、`COMPLETED`=振込完了・入金の反映待ちを含む、`REJECTED`=振込期限切れ、`CANCELED`=キャンセル。クレジットカード等、銀行振込以外の支払い方法の申し込みは常に「一致しない」側に進む） |
 
 `branches` の各要素:
 - `matchValue: boolean` — 条件にマッチしたら true 側、外れたら false 側を実行
@@ -294,7 +297,7 @@ PATCH で分岐内アクションを組むときは、型エラーが出にく�
 
 ## 埋め込み変数（差し込み文字）
 
-`SEND_EMAIL` / `SEND_LINE_MESSAGE` の本文には `{{variable_name}}` 形式（二重中括弧）の埋め込み変数を使える。**Excel等の外部ソースにある `%foo%` のようなプレースホルダ記法はMOSHでは解釈されない**（そのまま文字列として残るだけ）ので、本文を外部ドキュメントから転記する際は必ず `{{...}}` 形式に置き換えること。
+`SEND_EMAIL` / `SEND_LINE_MESSAGE` の本文には `{{variable_name}}` 形式（二重中括弧）の埋め込み変数を使える。変数が解決されるのは**メッセージ本文のみ**で、`SEND_EMAIL` の `subject`（件名）では解決されず `{{...}}` がそのまま件名に残る（件名には使わない）。**Excel等の外部ソースにある `%foo%` のようなプレースホルダ記法はMOSHでは解釈されない**（そのまま文字列として残るだけ）ので、本文を外部ドキュメントから転記する際は必ず `{{...}}` 形式に置き換えること。
 
 ### 対応変数一覧（この5つ以外は存在しない）
 
@@ -302,11 +305,11 @@ PATCH で分岐内アクションを組むときは、型エラーが出にく�
 |---|---|---|
 | `line_name` | コンタクトのLINEプロフィール表示名 | `actionType: SEND_LINE_MESSAGE` の時のみ（`SEND_EMAIL`では常に空文字） |
 | `guest_name` | ゲスト（Moshユーザー）の名前 | `actionType: SEND_EMAIL` かつ `triggerType` が `SERVICE_APPLIED` / `SERVICE_SCHEDULE_REMINDER` / `INSTALLMENT_PAYMENT_FAILED` / `SUBSCRIPTION_PAYMENT_FAILED` の時のみ。それ以外は空文字 |
-| `service_name` | トリガーに紐づくプラン・サービス名 | `triggerType` が `SERVICE_APPLIED` / `SERVICE_SCHEDULE_REMINDER` の時のみ。`INSTALLMENT_PAYMENT_FAILED` / `SUBSCRIPTION_PAYMENT_FAILED` はトリガー自体にプラン・サービス参照を持たないため対象外。それ以外のトリガー（`MARKETING_LEAD_BENEFIT_RECEIVED` / `LINE_CHANNEL_CONTACT_REGISTERED` / `CONTACT_TAG_ADDED` / `INFLOW_ACTION_CONVERTED` / `INSTALLMENT_PAYMENT_FAILED` / `SUBSCRIPTION_PAYMENT_FAILED`）では常に空文字 |
+| `service_name` | トリガーに紐づくプラン・サービス名 | `triggerType` が `SERVICE_APPLIED` / `SERVICE_SCHEDULE_REMINDER` / `INSTALLMENT_PAYMENT_FAILED` / `SUBSCRIPTION_PAYMENT_FAILED` の時（決済失敗系も実行コンテキストに対象プラン・サービスの参照が積まれるため値が入る）。それ以外のトリガー（`MARKETING_LEAD_BENEFIT_RECEIVED` / `LINE_CHANNEL_CONTACT_REGISTERED` / `CONTACT_TAG_ADDED` / `INFLOW_ACTION_CONVERTED`）では常に空文字 |
 | `reservation_time_range` | 予約日時の範囲（`YYYY年M月D日 HH:mm〜HH:mm`, JST） | `SERVICE_SCHEDULE_REMINDER`は常に対応。`SERVICE_APPLIED`はプラン・サービスの`serviceType`が「予約(event)」または「個別(private)」の場合のみ（コンテンツ/サブスク/オンライン単体のプラン・サービスでは空文字） |
 | `zoom_url` | ZoomのjoinURL | `reservation_time_range`と同条件に加えて、プラン・サービスの`locationType`がオンライン/ハイブリッドかつクリエイターがZoom連携済みの場合のみ。条件を満たさない場合は静かに空文字になる（保存・送信はブロックされない） |
 
-未対応のキー（例: 存在しない変数名や`SERVICE_APPLIED`以外での`service_name`利用）は**空文字ではなくプレースホルダ文字列がそのまま残る**か、状況によっては空文字になる（trigger種別で`context`自体が無い場合）。いずれにせよ意図通りに差し込まれるとは限らないため、使う前に上表の条件を必ず確認する。
+存在しない変数名（上表の5つ以外のキー）は**エラーにならずプレースホルダ文字列がそのまま残る**（無言の失敗）。上表の5変数は、使える条件を満たさないトリガー・アクションの組み合わせでは**空文字**に置換される（実害例: メール本文の宛名に `{{line_name}}` を書くと、保存・公開はエラーにならないが宛名が空文字のまま配信される）。どちらも意図通りに差し込まれないため、使う前に上表の条件を必ず確認する。
 
 ## 流入経路 / トラッキング同意
 
@@ -315,7 +318,8 @@ PATCH で分岐内アクションを組むときは、型エラーが出にく�
 
 ## INACTIVE 状態の PATCH 検証
 
-`INACTIVE` のワークフローに対する `patchCreatorScenario` の検証は緩い:
+`INACTIVE` のワークフローに対する `patchCreatorScenario` では、参照 ID の実在検証の有無がフィールドで異なる:
 
-- **参照リソース ID の実在検証は行われない** — 例えば存在しない `benefitId` を入れても 200 OK で保存される
-- 「保存できた」を「動く」と思い込まないこと。ユーザーに `benefitId` / `serviceId` / `contactTagId` 等が実在の管理画面リソースに対応しているかを口頭で確認する
+- **`benefitId` / `serviceId` の2つだけは実在検証されない** — 存在しない `benefitId` を入れても 200 OK で保存される（実在が検証されるのは公開＝`ACTIVE` 化時）
+- それ以外の参照 ID（`contactTagId` / `inflowActionId` / `creatorLineChannelId` / `autoWebinarId` / `muxAssetId` / `lineRichMenuId`）は **PATCH 時にも実在検証され、不正なら 400 で弾かれる**（保存できた時点で実在は保証される）
+- 「保存できた」を「動く」と思い込まないこと。`benefitId` / `serviceId` は実在の管理画面リソースに対応しているかをユーザーに口頭で確認する

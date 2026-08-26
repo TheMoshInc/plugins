@@ -7,7 +7,6 @@
 				"marketingLeadBenefitReceivedTrigger": {
 					"benefitId": "<benefit_id>"
 				},
-				"lineChannelContactRegisteredTrigger": null,
 				"serviceAppliedTrigger": null,
 				"serviceScheduleReminder": null,
 				"contactTagAdded": null,
@@ -24,7 +23,8 @@
 				"waitTime": null,
 				"condition": null,
 				"addContactTag": null,
-				"removeContactTag": null
+				"removeContactTag": null,
+				"linkLineRichMenu": null
 			}
 		}
 	]

@@ -27,8 +27,8 @@ MCP ツール (`*Scenario*` および `*InflowAction*` / `*TrackingConsent*`) �
 | `LINE_CHANNEL_CONTACT_REGISTERED`（LINE友達追加） | **LINE公式アカウント** が連携済み（`creatorLineChannelId` を`getCreatorLineChannels`で取得・確認可。trigger サブフィールド不要、ボディ最上位で指定） |
 | `SERVICE_APPLIED`（プラン・サービス申込） | **プラン・サービス** が1つ以上（`serviceId` をユーザーから確認。MCP に検索ツール無し） |
 | `SERVICE_SCHEDULE_REMINDER`（開催リマインダー） | **プラン・サービス** + 開催スケジュール（`serviceId` をユーザーから確認。MCP に検索ツール無し） |
-| `CONTACT_TAG_ADDED`（タグ付与） | **顧客タグ** が1つ以上（`contactTagId` を`getCreatorContactTags`で取得・確認可） |
-| `INFLOW_ACTION_CONVERTED`（流入経路 CV） | **流入経路** が1つ以上（`inflowActionId` を`getCreatorScenariosInflowActions`で取得可） |
+| `CONTACT_TAG_ADDED`（タグ付与） | **顧客タグ**（`contactTagId` を`getCreatorContactTags`で取得・確認可。該当タグが無ければ`postCreatorContactTags`で新規作成できる） |
+| `INFLOW_ACTION_CONVERTED`（流入経路 CV） | **流入経路** が1つ以上（`inflowActionId` を`getCreatorScenariosInflowActions`で取得可）。流入経路は LINE 公式アカウントに属するため、**ワークフロー最上位の `creatorLineChannelId` を流入経路が属するアカウントと一致させる**（一覧レスポンスの `creatorLineChannelId` で確認） |
 | `INSTALLMENT_PAYMENT_FAILED`（分割決済失敗） | 不要（トリガー自体が ID を持たない。既存リソースの確認も不要） |
 | `SUBSCRIPTION_PAYMENT_FAILED`（サブスク決済失敗） | 不要（トリガー自体が ID を持たない。既存リソースの確認も不要。初回失敗のみ発火し、同一請求期間内の決済リトライ失敗では再発火しない） |
 
@@ -37,14 +37,14 @@ action 側にも参照リソースが必要なケースがある:
 | action | 必要な既存リソース |
 |---|---|
 | `SEND_LINE_MESSAGE` | **LINE公式アカウント**（`creatorLineChannelId` がワークフロー側に必要。`getCreatorLineChannels`で確認可） |
-| `ADD_CONTACT_TAG` / `REMOVE_CONTACT_TAG` | **顧客タグ**（`getCreatorContactTags`で確認可） |
-| `LINK_LINE_RICH_MENU` | **個別リッチメニュー**（`lineRichMenuId` を`getCreatorLineRichMenus`で取得・確認可。付与先はワークフローに紐づく LINE公式アカウントが持つものに限る） |
-| `CONDITION` (`CONTACT_TAG`) | **顧客タグ**（`getCreatorContactTags`で確認可） |
+| `ADD_CONTACT_TAG` / `REMOVE_CONTACT_TAG` | **顧客タグ**（`getCreatorContactTags`で確認可。無ければ`postCreatorContactTags`で新規作成できる） |
+| `LINK_LINE_RICH_MENU` | **個別リッチメニュー**（`lineRichMenuId` を`getCreatorLineRichMenus`で取得・確認可。ワークフローに紐づく LINE公式アカウントのメニューを選ぶこと。API はクリエイター所有なら別チャンネルのメニューでも保存・公開を通してしまうが、実行時に対象コンタクトが見つからず失敗しうる — 一致を強制するのは編集画面のみ） |
+| `CONDITION` (`CONTACT_TAG`) | **顧客タグ**（`getCreatorContactTags`で確認可。無ければ`postCreatorContactTags`で新規作成できる） |
 | `CONDITION` (`SERVICE_APPLICATION_STATUS`) | **プラン・サービス**（`serviceId` をユーザーから確認。MCP に検索ツール無し） |
 | `CONDITION` (`AUTO_WEBINAR_PARTICIPATION` / `AUTO_WEBINAR_WATCH_TIME`) | **オートウェビナー**（`autoWebinarId` を`getCreatorAutoWebinars`で取得・確認可） |
 | `CONDITION` (`BANK_TRANSFER_STATUS`) | **プラン・サービス**（`serviceId` をユーザーから確認。MCP に検索ツール無し。対象ゲストの当該プラン・サービスへの注文の銀行振込状況で分岐） |
 
-参照したいリソースが無い場合は、ユーザーに**先に管理画面で作成**してもらってからワークフロー構築に着手する（`serviceId` / `benefitId` は MCP に検索手段が無いため、実在の場合も含め常にユーザーから直接確認する）。
+参照したいリソースが無い場合は、ユーザーに**先に管理画面で作成**してもらってからワークフロー構築に着手する（`serviceId` / `benefitId` は MCP に検索手段が無いため、実在の場合も含め常にユーザーから直接確認する）。**例外は顧客タグ**: `postCreatorContactTags` で MCP から新規作成できる（同名タグが既にあれば既存の `id` を返す冪等動作。返ってきた `id` はそのまま `contactTagId` に使える）ため、管理画面に誘導せずその場で作成して進めてよい。
 
 ## When to use
 
@@ -70,9 +70,17 @@ action 側にも参照リソースが必要なケースがある:
 
 - **起動条件（trigger）**: 何が起きたら走らせるか
 - **実行内容（action）**: 何を実行するか、何ステップ並べるか
+- **CV ポイント**: ユーザーに最終的にとってほしい行動はどれか（サービス購入 / 個別相談・説明会の予約 / リスト作成のみ＝配信先を増やすだけで有償提案はしない / 特典コンテンツの受け取り 等）。これが決まると各メッセージの CTA と締めの一通が決まる
+- **連絡ツール**: LINE / メール / 両方のどれで送るか（集客経路ではなく「どの手段で送るか」）。メール配信は対象コンタクトのメールアドレス保有が前提（[references/best-practices.md](references/best-practices.md) の「トリガー × アクションの相性」参照）
 - **参照リソース**: 上の「前提条件」表の該当リソースが既にあるか、その ID
 - **メッセージ内容**: メール件名/本文、LINE メッセージ等
 - **クリエイター名・トーン**: メッセージ案を組み立てるときに使う
+
+ヒアリングの進め方:
+
+- 初回の要望が曖昧なとき（「ワークフロー作って」「何ができる？」等）は、いきなり質問を始めず**典型例を3〜4個提示して選んでもらう**（ローンチ型 / リテンション型 / セグメント型 / リマインダー型。骨子は [references/best-practices.md](references/best-practices.md) の「代表ケース」参照）
+- 質問は1項目ずつ細切れにせず、**関連する2〜3項目をまとめて1回で聞く**
+- スケジュール・配信間隔の目安が無いと言われたら、best-practices の「配信間隔の目安」の一般値を提示する
 
 ### 2. 空ワークフローの作成（INACTIVE で誕生）
 
@@ -86,7 +94,7 @@ action 側にも参照リソースが必要なケースがある:
 
 ### 3. stages の構築（trigger + action の組み立て）
 
-[references/content-schema.md](references/content-schema.md) を読み込み、構造ルールに沿った JSON を組み立てる。設計指針は [references/best-practices.md](references/best-practices.md) を参照。
+[references/content-schema.md](references/content-schema.md) を読み込み、構造ルールに沿った JSON を組み立てる。設計指針は [references/best-practices.md](references/best-practices.md) を参照。完成形の実例は [examples/welcome-benefit-email.json](examples/welcome-benefit-email.json)（最小例: 特典→メール1通）と [examples/inflow-line-tap-followup.json](examples/inflow-line-tap-followup.json)（複合例: LINE 流入経路→urlActions でタグ付与→WAIT_TIME→CONDITION・片方空 branch）を参照する。特に LINE メッセージや CONDITION を含む場合は、複合例の形をベースに組み立てる。
 
 `patchCreatorScenario` で `stages` を更新する:
 
@@ -103,11 +111,13 @@ action 側にも参照リソースが必要なケースがある:
 }
 ```
 
-`stages` は**配列まるごと置き換え**になる想定で組む。1ステージ目の `trigger` は必ず指定し、2ステージ目以降は `trigger` フィールド自体を省略する（先頭ステージの trigger を契機に連鎖実行される）。`trigger: null` は Zod バリデーションで弾かれるため使用禁止。
+`stages` は**配列まるごと置き換え**になる想定で組む。1ステージ目の `trigger` は必ず指定し、2ステージ目以降は `trigger` フィールド自体を省略する（先頭ステージの trigger を契機に連鎖実行される）。`trigger: null` は使用禁止 — スキーマは optional・非 nullable のため `null` は Zod バリデーションで弾かれる（ワークフロー編集画面本体も 2 ステージ目以降は trigger キー無しで送信する）。
 
 PATCH 時は `action` 配下の構造が **`scenarioActionForUpdate`** 系（`condition` だけ `scenarioActionConditionForUpdate`）になる点に注意。詳細は content-schema 参照。
 
-> ⚠️ **PATCH 200 OK ≠ 動作保証**: INACTIVE 状態の PATCH は検証が緩く、**存在しないリソース ID を入れても 200 OK が返る**（例: 存在しない `benefitId` でも保存できてしまう）。「保存できた」を「正しく動く」と勘違いしない。ユーザーに参照リソース ID が実在のものかを口頭で確認すること。
+stages を組み上げたら、**送信前に [references/best-practices.md](references/best-practices.md) の「ノード接続ルール」と「トリガー × アクションの相性」で点検する**（WAIT_TIME 終端・宙ぶらりん・両 branch 空・メアド未取得トリガー×SEND_EMAIL の検出）。
+
+> ⚠️ **PATCH 200 OK ≠ 動作保証**: INACTIVE 状態の PATCH では **`benefitId` / `serviceId` の実在が検証されず、存在しない ID でも 200 OK で保存できてしまう**（実在が検証されるのは公開＝`ACTIVE` 化時）。それ以外の参照 ID（`contactTagId` / `inflowActionId` / `creatorLineChannelId` / `autoWebinarId` / `muxAssetId` / `lineRichMenuId`）は PATCH 時にも実在検証され、不正なら 400 で弾かれる（保存できた時点で実在は保証される）。「保存できた」を「正しく動く」と勘違いせず、`benefitId` / `serviceId` はユーザーに実在のものかを口頭で確認すること。
 
 ### 4. レビュー（公開前の最終確認）
 
@@ -115,10 +125,11 @@ MOSHのAPIは `ACTIVE` 化時に埋め込み変数の可否を検証しない（
 
 1. `getCreatorScenario` で現在の状態を取得する
 2. **JSON を貼らずに自然言語の箇条書きで要約**してユーザーに提示する（「ユーザーへの提示・コミュニケーション規約」§1 参照）。最低限の項目: ワークフロー名 / 公開状態 / トリガー（と参照リソース ID） / アクション（メール件名・本文の要旨、トラッキング有無等）
-3. 参照リソース ID が全て実在のものか口頭で確認する（INACTIVE の PATCH は ID 実在検証が行われないため）
+3. `benefitId` / `serviceId` が実在のものか口頭で確認する（この2つだけは INACTIVE の PATCH で実在検証されない。他の参照 ID は保存できた時点で実在が保証されている）
 4. **埋め込み変数チェック**: 各 stage の `action` 内の `sendEmail.message` / `sendLineMessage.messages[].text` から `{{...}}` パターンを全て抽出し、そのステージが従う trigger（先頭 stage の `triggerType`）と `actionType` の組み合わせで [content-schema.md](references/content-schema.md) の対応表に照らして使用可能か確認する。使用不可の変数が1つでもあれば、ユーザーに「この文言は現在のトリガーでは差し込まれず空欄配信になります」と日本語で具体的に指摘し、修正（変数を外す／使える変数に変える／トリガーを変える）してもらう
-5. 「この内容で公開しますか？」と必ずユーザーに確認する（埋め込み変数に問題がある間は公開に進まない）
-6. 修正が必要なら Step 3 に戻る
+5. **机上デバッグ**: [references/best-practices.md](references/best-practices.md) の「机上デバッグチェックリスト」を実行する（トリガー×アクション整合 / ノード接続 / 日程の矛盾 / メッセージ重複・抜け / 埋め込み変数）。問題があれば修正し、懸念点と修正内容を1〜3行で報告する。ユーザーから「見直して」「懸念点は」と言われた場合も同じチェックを実行する
+6. 「この内容で公開しますか？」と必ずユーザーに確認する（埋め込み変数・机上デバッグに問題がある間は公開に進まない）
+7. 修正が必要なら Step 3 に戻る
 
 ### 5. 公開（`ACTIVE` 化）
 
@@ -155,7 +166,7 @@ MOSHのAPIは `ACTIVE` 化時に埋め込み変数の可否を検証しない（
 
 ### 4. 参照 ID が未確定でも捏造しない（中間状態で保存してよい）
 
-- `benefitId` 等の参照リソース ID が未確定でも、**推測した ID（空文字・0・ダミー値を含む）を入れてはいけない**。INACTIVE の PATCH は参照 ID の実在検証が行われないため、不正な ID のまま保存してもエラーにならず、ユーザーが気付かず公開するとトリガー・アクションが実リソースに紐づかない壊れたワークフローになる。
+- `benefitId` 等の参照リソース ID が未確定でも、**推測した ID（空文字・0・ダミー値を含む）を入れてはいけない**。`benefitId` / `serviceId` は INACTIVE の PATCH で実在検証が行われないため、不正な ID のまま保存してもエラーにならず、ユーザーが気付かず公開するとトリガー・アクションが実リソースに紐づかない壊れたワークフローになる。
 - ただし**中間状態での保存は可能**（クラッシュしない）。決まっている部分（ワークフロー名・メール/LINE 本文・待機日数など）は先に保存してよく、**未確定の参照 ID はセットせず空けたまま**にして下書きを進められる。すべてを会話内に抱え込む必要はない。
 - 未確定 ID については「`benefitId` が必要です。管理画面で特典 ID を確認してから教えてください」とユーザーに確認を促し、**実 ID が揃ってから当該 ID をセットして保存し、公開する**。捏造 ID を含んだままの公開（`ACTIVE` 化）は絶対にしない。
 
@@ -204,12 +215,12 @@ MOSHのAPIは `ACTIVE` 化時に埋め込み変数の可否を検証しない（
 ### E. LINE メッセージは `messages[]` の各要素が自分自身の `messageType` を持つ
 
 `scenarioActionSendLineMessage` はトップレベルに `messages` の1フィールドのみ（`type` や
-`isTrackingEnabled` をトップレベルに置かない）。`messages` は1〜5件の配列で、**各要素ごとに**
-`messageType` を持つオブジェクト。**`messages: ["文字列", ...]` のようなプレーン文字列配列は誤り**
+`isTrackingEnabled` をトップレベルに置かない）。`messages` は最大5件の配列で、**各要素ごとに**
+`messageType` を持つオブジェクト（スキーマ上は0件も許容されるが下書き専用で、稼働させるには1件以上必要）。**`messages: ["文字列", ...]` のようなプレーン文字列配列は誤り**
 （TEXTタイプでも `{ messageType: "TEXT", text, isTrackingEnabled, urlActions }` を1件ずつ並べる）。
 
 - `TEXT` → `{ messageType: "TEXT", text: string(1-5000), isTrackingEnabled: boolean, urlActions: [...] | null }`
-- `CAROUSEL` → `{ messageType: "CAROUSEL", altText, carousels[] }`（1〜4件、各要素に `postbackActions`（任意・`null`可）あり）
+- `CAROUSEL` → `{ messageType: "CAROUSEL", altText, carousels[] }`（1〜4件。各要素の `postbackActions` はキー省略不可 — 使わない場合は `null` を明示）
 - `IMAGE_CAROUSEL` → `{ messageType: "IMAGE_CAROUSEL", altText, imageCarousels[] }`（1〜4件）
 - `VIDEO` → `{ messageType: "VIDEO", muxAssetId, previewMoshImageId }`
 - `RICH_MESSAGE` → `{ messageType: "RICH_MESSAGE", altText, imageUrl, imageWidth, imageHeight, splitPattern, cells[] }`
@@ -219,50 +230,26 @@ MOSHのAPIは `ACTIVE` 化時に埋め込み変数の可否を検証しない（
 
 ### F. 埋め込み変数は次の5つ「だけ」（名前は完全一致・それ以外は無言で失敗）
 
-メール本文・LINE 本文で使える `{{...}}` 埋め込み変数は**以下の5つだけ**。この名前を**一字一句そのまま**使うこと。ここに無い変数名（例: `{{reservation_datetime}}`, `{{customer_name}}`, `{{date}}` 等）は**存在せず、エラーにもならずそのまま文字列として配信される（無言の失敗）**ため、絶対に創作しない。
+メール本文・LINE 本文で使える `{{...}}` 埋め込み変数は `{{guest_name}}` / `{{line_name}}` / `{{service_name}}` / `{{reservation_time_range}}`（**`reservation_datetime` ではない**）/ `{{zoom_url}}` の**5つだけ**。この綴りを一字一句そのまま使う。ここに無い変数名（例: `{{reservation_datetime}}`, `{{customer_name}}`, `{{date}}` 等）は**存在せず、エラーにもならずそのまま文字列として配信される（無言の失敗）**ため、絶対に創作しない。
 
-| 変数（この綴りで固定） | 意味 | 使える条件 |
-|---|---|---|
-| `{{guest_name}}` | ゲスト名 | `SEND_EMAIL` かつ trigger が `SERVICE_APPLIED` / `SERVICE_SCHEDULE_REMINDER` / `INSTALLMENT_PAYMENT_FAILED` / `SUBSCRIPTION_PAYMENT_FAILED` |
-| `{{line_name}}` | LINE プロフィール名 | `SEND_LINE_MESSAGE` のみ |
-| `{{service_name}}` | プラン・サービス名 | trigger が `SERVICE_APPLIED` / `SERVICE_SCHEDULE_REMINDER` |
-| `{{reservation_time_range}}` | 予約日時の範囲（**`reservation_datetime` ではない**） | `SERVICE_SCHEDULE_REMINDER`、および予約型 `SERVICE_APPLIED` |
-| `{{zoom_url}}` | Zoom 参加 URL | 上記予約系＋オンライン/Zoom 連携時 |
-
-本文を書く前に、使いたい概念が上表にあるか必ず確認する。無ければ変数を使わず固定文言にする。詳細な可否は [references/content-schema.md](references/content-schema.md) の対応表を参照（本文の5変数が唯一の真実）。
+各変数が使える trigger × action の条件・空文字になる組み合わせは、[references/content-schema.md](references/content-schema.md) の「埋め込み変数」対応表が**唯一の真実**。**本文を書く前に必ず同表を参照**し、条件を満たさない・表に無い概念は変数を使わず固定文言にする。
 
 ## よくあるミス
 
+上の「前提条件」「Workflow」「提示規約」「必須ルール A〜F」でカバー済みの事項は再掲しない。ここは**他セクションでカバーされない落とし穴のみ**を載せる（新しいミスを追記する前に、既存セクション・references でカバーできないか確認し、できるならそちらを強化する）。
+
 | NG | OK |
 |---|---|
-| `actionType` を指定して該当フィールドだけ埋め、他を省略 | 他 6 フィールドを `null` で明示する |
-| 他フィールドを `undefined` / 空オブジェクト `{}` で埋める | 必ず `null` を明示する |
-| `triggerType` だけ書いて trigger サブオブジェクトを省略 | 対応する 1 フィールド以外は全て `null` を明示 |
-| PATCH で `scenarioAction`（POST用）を使う | PATCH では `scenarioActionForUpdate` 構造を使う |
-| `serviceId: <service_id>`（クォート無しの整数として書く） | `serviceId: "<service_id>"`（クォート付きの文字列として書く） |
-| `getCreatorScenarios` の `lifecycle` に `"ACTIVE"` を指定 | クエリ上の enum は `"INACTIVE_ACTIVE"` か `"ARCHIVED"` の2値のみ |
-| 2ステージ目以降にも `trigger` を入れる | 通常は先頭 stage のみ trigger を持ち、以降は `trigger: null` |
-| `messages: ["文字列", ...]` のようなプレーン文字列配列 | `messages` は常にオブジェクト配列。TEXTでも `{ messageType: "TEXT", text, isTrackingEnabled, urlActions }` を1件ずつ並べる |
-| `sendLineMessage` の直下に `type` / `isTrackingEnabled` を置く | `messageType` と `isTrackingEnabled` 等は `messages[]` の各要素の中に置く（トップレベルには無い） |
-| 真っさらなテナントでワークフロー構築を始める | 先に「前提条件: 参照リソース」表のリソースを1つ以上用意してもらう |
-| PATCH 200 OK を「動く」と即断する | INACTIVE 中は検証が緩く、不正な ID でも保存できる。実在を口頭で再確認 |
-| 参照リソースの実在を確認せず `ACTIVE` 化する | 下書き中は ID が未検証。公開時に弾かれるので、公開前に特典/プラン・サービス/LINE 等の実在を確認する |
-| 作成直後にすぐ `ACTIVE` 化を試す | まず `INACTIVE` のまま stages を構築・確認し、ユーザーの承認を得てから公開する |
-| JSON ブロックをユーザーに貼って「この内容で OK ですか？」と聞く | 自然言語の箇条書きで要約してから確認する（ユーザーは JSON を読めない前提） |
-| 流入経路一覧・ワークフロー一覧で `creatorLineChannelId` を生の ID のまま表示する | `getCreatorLineChannels` と突き合わせて `displayName` に変換して表示する（`null` は「未設定」と表示） |
-| `200 OK` / `500` / `PATCH` 等のコード・HTTP 用語をユーザー向け文面に出す | 「保存できました」「公開しました」など平易な日本語で伝える |
-| 未確定の参照 ID に、推測値（空文字・0・ダミー値）を入れて保存する | 未確定 ID は捏造せず空けたまま中間保存してよい。実 ID をユーザーに確認し、揃ってからセットして保存・公開する |
-| 2ステージ目以降に `trigger: null` を指定する | `trigger` フィールド自体を省略する（null は Zod バリデーションで弾かれる） |
-| `lineChannelContactRegisteredTrigger` を trigger に含める | 型定義に存在しない。LINE公式アカウントはボディ最上位の `creatorLineChannelId` で指定し、trigger サブフィールドは全て `null` |
-| 埋め込み変数チェックをせず `ACTIVE` 化する | `ACTIVE` 化前に自分で `{{...}}` を抽出し、trigger/actionType の組み合わせで使用可能か確認する（Step 4 レビューの一部） |
-| 存在しない埋め込み変数を創作する（例: `{{reservation_datetime}}` / `{{customer_name}}` / `{{date}}`） | 必須ルール F の5つ（`guest_name` / `line_name` / `service_name` / `reservation_time_range` / `zoom_url`）だけを綴りそのまま使う。無ければ固定文言にする |
+| `getCreatorScenarios` の `lifecycle` に `"ACTIVE"` を指定 | 一覧クエリの enum は `"INACTIVE_ACTIVE"` か `"ARCHIVED"` の2値のみ（更新系 `patchCreatorScenariosLifecycle` の3値 enum とは別物。詳細は [references/mcp-tools.md](references/mcp-tools.md)） |
 | `CONDITION(BANK_TRANSFER_STATUS)` で `conditionBankTransferStatus` を省略する／他の conditionType 使用時に `conditionBankTransferStatus: null` を書き忘れる | condition のサブフィールドは 5つ（`conditionServiceApplicationStatus` / `conditionContactTag` / `conditionAutoWebinarParticipation` / `conditionAutoWebinarWatchTime` / `conditionBankTransferStatus`）を毎回全部指定する。対応する1つだけ実オブジェクト、残り4つは null |
+| `SEND_EMAIL` の `subject` に `{{...}}` 埋め込み変数を使う | 変数が解決されるのは本文のみ。件名に入れるとプレースホルダがそのまま残る。件名は固定文言にする |
 
 ## References
 
 | ファイル | 内容 |
 |---|---|
 | [references/content-schema.md](references/content-schema.md) | `stages[].trigger` / `stages[].action` の JSON 構造、enum 一覧、actionType 別テンプレ、`*ForUpdate` 差分 |
-| [references/best-practices.md](references/best-practices.md) | ID 参照の確認手順、ライフサイクル運用、動作仕様、命名規約 |
+| [references/best-practices.md](references/best-practices.md) | ID 参照の確認手順、ライフサイクル運用、動作仕様、トリガー×アクションの相性、ノード接続ルール、机上デバッグチェックリスト、代表ケースと配信間隔の目安、命名規約 |
 | [references/mcp-tools.md](references/mcp-tools.md) | 各 MCP ツールのパラメータ仕様 |
 | [examples/welcome-benefit-email.json](examples/welcome-benefit-email.json) | 特典取得（`MARKETING_LEAD_BENEFIT_RECEIVED`）をトリガーに、ウェルカムメール（`SEND_EMAIL`）を1通送る最小例。`patchCreatorScenario` の bodyParams としてそのまま渡せる形 |
+| [examples/inflow-line-tap-followup.json](examples/inflow-line-tap-followup.json) | LINE 流入経路 CV（`INFLOW_ACTION_CONVERTED`）→ 本文 URL のタップでタグ付与（`urlActions`/`postbackActions`）→ 1日待機 → タグ未付与（未クリック）だけに追客、の網羅例。CONDITION の**片方空 branch**（クリック済みは早期終了）を含む。ID はダミー値で、流入経路が属する LINE 公式アカウントと最上位 `creatorLineChannelId` の一致が必須 |
