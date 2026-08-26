@@ -40,7 +40,7 @@ ARCHIVED  : アーカイブ済（事実上の廃止）
 
 | triggerType | 対応する非 null サブフィールド | サブフィールドの形 |
 |---|---|---|
-| `MARKETING_LEAD_BENEFIT_RECEIVED` | `marketingLeadBenefitReceivedTrigger` | `{ benefitId: string }` |
+| `MARKETING_LEAD_BENEFIT_RECEIVED` | `marketingLeadBenefitReceivedTrigger` | `{ benefitId: string }`。特典提供終了により**新規設定は不可**（既存ワークフローの読み取り・維持のみ） |
 | `LINE_CHANNEL_CONTACT_REGISTERED` | なし（サブフィールド不要） | LINE公式アカウントはリクエストボディ最上位の `creatorLineChannelId` で指定 |
 | `SERVICE_APPLIED` | `serviceAppliedTrigger` | `{ serviceId: string, paymentMethod: "CASH"\|"CARD"\|"BANK_TRANSFER"\|null }` |
 | `SERVICE_SCHEDULE_REMINDER` | `serviceScheduleReminder` | `{ serviceId: string, remindTimeType: "RELATIVE"\|"ABSOLUTE", beforeDays: 0-30, hours: 0-23\|null, minutes: 0-59\|null }` |
@@ -55,11 +55,11 @@ ARCHIVED  : アーカイブ済（事実上の廃止）
 
 ```json
 {
-  "triggerType": "MARKETING_LEAD_BENEFIT_RECEIVED",
-  "marketingLeadBenefitReceivedTrigger": { "benefitId": "<benefit_id>" },
+  "triggerType": "CONTACT_TAG_ADDED",
+  "marketingLeadBenefitReceivedTrigger": null,
   "serviceAppliedTrigger": null,
   "serviceScheduleReminder": null,
-  "contactTagAdded": null,
+  "contactTagAdded": { "contactTagId": 1 },
   "inflowActionConverted": null
 }
 ```
@@ -154,7 +154,7 @@ ARCHIVED  : アーカイブ済（事実上の廃止）
 
 いずれのタイプも `messages` 配列の**要素数は最大5件**（同じ `messageType` に限らず、TEXTとCAROUSEL等を混在させてもよい）。
 
-**TEXT の `urlActions`**（本文中のURLタップで顧客タグを操作したい場合のみ設定。不要なら `null`）:
+**TEXT の `urlActions`**（本文中のURLタップでコンタクトタグを操作したい場合のみ設定。不要なら `null`）:
 ```json
 "urlActions": [
   {
@@ -305,7 +305,7 @@ PATCH で分岐内アクションを組むときは、型エラーが出にく�
 |---|---|---|
 | `line_name` | コンタクトのLINEプロフィール表示名 | `actionType: SEND_LINE_MESSAGE` の時のみ（`SEND_EMAIL`では常に空文字） |
 | `guest_name` | ゲスト（Moshユーザー）の名前 | `actionType: SEND_EMAIL` かつ `triggerType` が `SERVICE_APPLIED` / `SERVICE_SCHEDULE_REMINDER` / `INSTALLMENT_PAYMENT_FAILED` / `SUBSCRIPTION_PAYMENT_FAILED` の時のみ。それ以外は空文字 |
-| `service_name` | トリガーに紐づくプラン・サービス名 | `triggerType` が `SERVICE_APPLIED` / `SERVICE_SCHEDULE_REMINDER` / `INSTALLMENT_PAYMENT_FAILED` / `SUBSCRIPTION_PAYMENT_FAILED` の時（決済失敗系も実行コンテキストに対象プラン・サービスの参照が積まれるため値が入る）。それ以外のトリガー（`MARKETING_LEAD_BENEFIT_RECEIVED` / `LINE_CHANNEL_CONTACT_REGISTERED` / `CONTACT_TAG_ADDED` / `INFLOW_ACTION_CONVERTED`）では常に空文字 |
+| `service_name` | トリガーに紐づくプラン・サービス名 | `triggerType` が `SERVICE_APPLIED` / `SERVICE_SCHEDULE_REMINDER` / `INSTALLMENT_PAYMENT_FAILED` / `SUBSCRIPTION_PAYMENT_FAILED` の時（決済失敗系も実行コンテキストに対象プラン・サービスの参照が積まれるため値が入る）。それ以外のトリガー（既存の `MARKETING_LEAD_BENEFIT_RECEIVED` / `LINE_CHANNEL_CONTACT_REGISTERED` / `CONTACT_TAG_ADDED` / `INFLOW_ACTION_CONVERTED`）では常に空文字 |
 | `reservation_time_range` | 予約日時の範囲（`YYYY年M月D日 HH:mm〜HH:mm`, JST） | `SERVICE_SCHEDULE_REMINDER`は常に対応。`SERVICE_APPLIED`はプラン・サービスの`serviceType`が「予約(event)」または「個別(private)」の場合のみ（コンテンツ/サブスク/オンライン単体のプラン・サービスでは空文字） |
 | `zoom_url` | ZoomのjoinURL | `reservation_time_range`と同条件に加えて、プラン・サービスの`locationType`がオンライン/ハイブリッドかつクリエイターがZoom連携済みの場合のみ。条件を満たさない場合は静かに空文字になる（保存・送信はブロックされない） |
 
@@ -320,6 +320,6 @@ PATCH で分岐内アクションを組むときは、型エラーが出にく�
 
 `INACTIVE` のワークフローに対する `patchCreatorScenario` では、参照 ID の実在検証の有無がフィールドで異なる:
 
-- **`benefitId` / `serviceId` の2つだけは実在検証されない** — 存在しない `benefitId` を入れても 200 OK で保存される（実在が検証されるのは公開＝`ACTIVE` 化時）
+- **`benefitId` / `serviceId` の2つだけは実在検証されない** — 存在しない ID を入れても 200 OK で保存される（実在が検証されるのは公開＝`ACTIVE` 化時。`benefitId` は既存の特典取得ワークフローの維持時のみ）
 - それ以外の参照 ID（`contactTagId` / `inflowActionId` / `creatorLineChannelId` / `autoWebinarId` / `muxAssetId` / `lineRichMenuId`）は **PATCH 時にも実在検証され、不正なら 400 で弾かれる**（保存できた時点で実在は保証される）
-- 「保存できた」を「動く」と思い込まないこと。`benefitId` / `serviceId` は実在の管理画面リソースに対応しているかをユーザーに口頭で確認する
+- 「保存できた」を「動く」と思い込まないこと。`serviceId`（および既存ワークフローの `benefitId`）は実在の管理画面リソースに対応しているかをユーザーに口頭で確認する

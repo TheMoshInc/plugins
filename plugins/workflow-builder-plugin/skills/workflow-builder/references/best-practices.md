@@ -2,7 +2,7 @@
 
 ## ID 参照の確認手順
 
-ワークフローに埋め込む各種 ID のうち、`serviceId` / `benefitId` は MCP に検索・一覧取得ツールが無い。それ以外（`inflowActionId` / `creatorLineChannelId` / `contactTagId` / `autoWebinarId` / `lineRichMenuId`）は対応する一覧取得ツールで取得・実在確認できる。
+ワークフローに埋め込む各種 ID のうち、`serviceId` は MCP に検索・一覧取得ツールが無い。それ以外（`inflowActionId` / `creatorLineChannelId` / `contactTagId` / `autoWebinarId` / `lineRichMenuId`）は対応する一覧取得ツールで取得・実在確認できる。`benefitId` は特典提供終了により新規設定しない（既存ワークフローの維持時のみ）。
 
 | ID | MCP で取得できるか | 取得経路 |
 |---|---|---|
@@ -12,16 +12,15 @@
 | `autoWebinarId` | ✅ | `getCreatorAutoWebinars` |
 | `lineRichMenuId` | ✅ | `getCreatorLineRichMenus`（`creatorLineChannelId` で絞り込み可） |
 | `serviceId` | ❌ | ユーザーから受け取る（管理画面のプラン・サービス管理） |
-| `benefitId` | ❌ | ユーザーから受け取る（管理画面の特典管理） |
 
-`serviceId` / `benefitId` が必要な trigger/condition（`SERVICE_APPLIED` / `SERVICE_SCHEDULE_REMINDER` / `MARKETING_LEAD_BENEFIT_RECEIVED` / `CONDITION(SERVICE_APPLICATION_STATUS)` / `CONDITION(BANK_TRANSFER_STATUS)`）では、要件ヒアリングの段階で「**該当リソースの ID を教えてください**」を必ず聞き、MCP からは検索・実在確認ができないことを踏まえてユーザー申告のまま扱う（下書き保存時は実在検証されないため、公開前レビューで改めて口頭確認する）。それ以外の ID は対応する一覧取得ツールで実在するものを選んでもらう（一覧を提示する際は名前で選んでもらい、生の ID を会話の主役にしない）。
+`serviceId` が必要な trigger/condition（`SERVICE_APPLIED` / `SERVICE_SCHEDULE_REMINDER` / `CONDITION(SERVICE_APPLICATION_STATUS)` / `CONDITION(BANK_TRANSFER_STATUS)`）では、要件ヒアリングの段階で「**該当リソースの ID を教えてください**」を必ず聞き、MCP からは検索・実在確認ができないことを踏まえてユーザー申告のまま扱う（下書き保存時は実在検証されないため、公開前レビューで改めて口頭確認する）。それ以外の ID は対応する一覧取得ツールで実在するものを選んでもらう（一覧を提示する際は名前で選んでもらい、生の ID を会話の主役にしない）。`MARKETING_LEAD_BENEFIT_RECEIVED` は特典提供終了により**新規設定しない**。
 
 ## ライフサイクル運用
 
 基本フロー: **`INACTIVE` で作る → ユーザー確認 → 公開（`ACTIVE` 化）**
 
 - **作成直後**: 必ず `INACTIVE`
-- **stages 構築中**: `INACTIVE` のまま何度でも更新する。下書き段階では `benefitId` / `serviceId` の実在はチェックされない（他の参照 ID は PATCH 時にも検証され不正なら 400）ので、この2つは公開前にユーザーへ口頭で確認する
+- **stages 構築中**: `INACTIVE` のまま何度でも更新する。下書き段階では `benefitId` / `serviceId` の実在はチェックされない（他の参照 ID は PATCH 時にも検証され不正なら 400）ので、`serviceId`（および既存ワークフローの `benefitId`）は公開前にユーザーへ口頭で確認する
 - **公開（`ACTIVE` 化）**: 公開時に参照リソースの実在・同時稼働数の上限が確認され、満たさない場合は理由を示すエラーが返る
 - **停止（`INACTIVE` 化）・廃止（`ARCHIVED`）**: `patchCreatorScenariosLifecycle` で行う
 
@@ -55,7 +54,7 @@
 ## トリガー × アクションの相性
 
 - **`LINE_CHANNEL_CONTACT_REGISTERED` / `CONTACT_TAG_ADDED` トリガーで `SEND_EMAIL` を選ぶ前に、配信先がメールアドレスを持つか確認する**。`SEND_EMAIL` の宛先は実行時にコンタクトのメールアドレス（ContactEmail）から解決される。メールアドレスが紐付いていないコンタクト（LINE 友達追加だけで登録されたコンタクト等）は配信失敗（実行履歴に「送信先コンタクトなし」）となり、**そのコンタクトの後続ステップも打ち切られる**（保存・公開はエラーにならない）。LINE 友達追加起点は原則 `SEND_LINE_MESSAGE` を選ぶ。タグ付与起点でメールを使う場合は、対象コンタクトがメールアドレスを保有している前提（特典のメール取得経由等）かをユーザーに確認する
-- コンタクト起点トリガー（LINE友達追加・特典取得・タグ付与・流入経路CV）でも、MOSH アカウントを前提とする CONDITION（`SERVICE_APPLICATION_STATUS` / `AUTO_WEBINAR_PARTICIPATION` / `AUTO_WEBINAR_WATCH_TIME` / `BANK_TRANSFER_STATUS`）は使える（実行時にコンタクトへ紐付いた MOSH アカウントで評価される）。ただし MOSH アカウントが紐付いていないコンタクトは対象者を解決できず、その CONDITION で失敗する
+- コンタクト起点トリガー（LINE友達追加・タグ付与・流入経路CV。既存の特典取得ワークフローも含む）でも、MOSH アカウントを前提とする CONDITION（`SERVICE_APPLICATION_STATUS` / `AUTO_WEBINAR_PARTICIPATION` / `AUTO_WEBINAR_WATCH_TIME` / `BANK_TRANSFER_STATUS`）は使える（実行時にコンタクトへ紐付いた MOSH アカウントで評価される）。ただし MOSH アカウントが紐付いていないコンタクトは対象者を解決できず、その CONDITION で失敗する
 - 予約リマインド（`SERVICE_SCHEDULE_REMINDER`）の最初のメッセージは WAIT_TIME を挟まずトリガー直後に置く。リマインド対象日時を跨ぐ大きな WAIT_TIME を設定しない（開催後に届くリマインドになる）
 - `INFLOW_ACTION_CONVERTED` トリガーの流入経路は LINE 公式アカウントに属する。**ワークフロー最上位の `creatorLineChannelId` を、流入経路が属するアカウントと一致させる**（`getCreatorScenariosInflowActions` のレスポンスの `creatorLineChannelId` で確認する。不一致だとトリガーと配信のアカウントがずれる）
 
@@ -95,7 +94,7 @@ SKILL.md の Step 4 レビュー時（および「見直して」「懸念点は
 
 ヒアリング結果に応じて取捨選択する。コピペせず、ユーザーの状況に合わせて再構成する。
 
-- **ケースA ローンチ型**: 特典取得トリガー → ウェルカム＋特典配布 → 数日のナーチャリング配信（自己紹介・実績・価値観。1〜2日間隔）→ ウェビナー・個別相談へ誘導 → サービス案内・販売
+- **ケースA ローンチ型**: タグ追加トリガー → ウェルカム配信 → 数日のナーチャリング配信（自己紹介・実績・価値観。1〜2日間隔）→ ウェビナー・個別相談へ誘導 → サービス案内・販売
 - **ケースB リテンション型**: プラン・サービス申込トリガー → お礼＋当日案内 → 開講前日リマインド → 開講翌日フォロー → 終了後アンケート
 - **ケースC セグメント型**: タグ付与トリガー → CONDITION（タグ・視聴履歴等）で分岐 → 該当セグメントだけに限定オファー配信（片方 branch 空の早期終了を活用）
 

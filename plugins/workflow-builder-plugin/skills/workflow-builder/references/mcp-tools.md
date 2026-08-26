@@ -41,7 +41,7 @@ queryParams: { creatorLineChannelId?, limit? }
 - レスポンス `channels[]`: `{ id, officialLineAccountId, displayName, isConnected, createdAt }`
 - `creatorLineChannelId`（`SEND_LINE_MESSAGE` / `LINE_CHANNEL_CONTACT_REGISTERED` / `LINK_LINE_RICH_MENU` で使用）の実在確認・`displayName` 変換に使う
 
-**`getCreatorContactTags`** — 顧客タグ一覧を取得
+**`getCreatorContactTags`** — コンタクトタグ一覧を取得
 
 ```
 queryParams: { limit?, offset? }
@@ -130,7 +130,7 @@ pathParams: { id }
 - 同意状態を記録するだけのアクション
 - **ユーザーの明示的な同意なしに呼び出してはならない**。事前に合意内容（トラッキング利用に関する規約への同意）をユーザーに提示し、同意の意思を確認してから呼び出す
 
-**`postCreatorContactTags`** — 顧客タグを新規作成
+**`postCreatorContactTags`** — コンタクトタグを新規作成
 
 ```
 bodyParams: { name: string(1-64) }
