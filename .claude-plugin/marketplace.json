@@ -19,6 +19,11 @@
       "name": "sales-reporter-plugin",
       "source": "./plugins/sales-reporter-plugin",
       "description": "Adds a sales-reporter skill for checking and analyzing MOSH sales"
+    },
+    {
+      "name": "file-share-plugin",
+      "source": "./plugins/file-share-plugin",
+      "description": "Adds a file-share skill for managing MOSH shared files"
     }
   ]
 }

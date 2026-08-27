@@ -1,0 +1,5 @@
+{
+  "name": "file-share-plugin",
+  "description": "Adds a file-share skill for managing MOSH shared files",
+  "version": "0.1.0"
+}
