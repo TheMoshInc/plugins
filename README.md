@@ -8,6 +8,7 @@ MOSH が配布する [Claude Code](https://code.claude.com/) プラグインマ�
 | :--- | :--- |
 | `lp-builder-plugin` | ランディングページを構築するための lp-builder skill |
 | `workflow-builder-plugin` | ワークフロー（ステップ配信）を構築するための workflow-builder skill |
+| `contact-broadcast-plugin` | コンタクト向け一斉配信（メール / LINE）を作成・運用するための contact-broadcast skill |
 | `file-share-plugin` | ファイル共有（動画・画像・PDF）を操作するための file-share skill |
 
 ## インストール
@@ -18,15 +19,17 @@ Claude Code 内で以下を実行:
 /plugin marketplace add TheMoshInc/plugins
 /plugin install lp-builder-plugin@mosh-plugins
 /plugin install workflow-builder-plugin@mosh-plugins
+/plugin install contact-broadcast-plugin@mosh-plugins
 /plugin install file-share-plugin@mosh-plugins
 ```
 
 ## 更新
 
 ```shell
-/plugin marketplace update mosh-plugins              # カタログを再取得
-/plugin update lp-builder-plugin@mosh-plugins        # プラグイン本体を更新
-/plugin update workflow-builder-plugin@mosh-plugins  # プラグイン本体を更新
+/plugin marketplace update mosh-plugins               # カタログを再取得
+/plugin update lp-builder-plugin@mosh-plugins         # プラグイン本体を更新
+/plugin update workflow-builder-plugin@mosh-plugins   # プラグイン本体を更新
+/plugin update contact-broadcast-plugin@mosh-plugins  # プラグイン本体を更新
 /plugin update file-share-plugin@mosh-plugins        # プラグイン本体を更新
 ```
 
@@ -37,6 +40,7 @@ Claude Code 内で以下を実行:
 ```shell
 /plugin uninstall lp-builder-plugin@mosh-plugins
 /plugin uninstall workflow-builder-plugin@mosh-plugins
+/plugin uninstall contact-broadcast-plugin@mosh-plugins
 /plugin uninstall file-share-plugin@mosh-plugins
 /plugin marketplace remove mosh-plugins
 ```

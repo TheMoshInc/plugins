@@ -1,0 +1,39 @@
+{
+	"taskName": "9月の3講座紹介（カルーセル）",
+	"lineChannelId": 10,
+	"contents": [
+		{
+			"type": "carousel",
+			"altText": "9月の3講座のご案内",
+			"carousels": [
+				{
+					"imageUrl": "https://media.mosh.jp/images/<画像ID1>",
+					"title": "初心者ヨガ",
+					"text": "はじめての方向けのヨガクラスです。",
+					"buttonText": "詳細・申込み",
+					"buttonUrl": "https://mosh.jp/<申込みページのパス>",
+					"openExternalBrowser": false
+				},
+				{
+					"imageUrl": "https://media.mosh.jp/images/<画像ID2>",
+					"title": "骨盤調整",
+					"text": "骨盤まわりを整えるクラスです。",
+					"buttonText": "詳細・申込み",
+					"buttonUrl": "https://mosh.jp/<申込みページのパス>",
+					"openExternalBrowser": false
+				},
+				{
+					"imageUrl": "https://media.mosh.jp/images/<画像ID3>",
+					"title": "瞑想入門",
+					"text": "瞑想のはじめ方を学ぶクラスです。",
+					"buttonText": "詳細・申込み",
+					"buttonUrl": "https://mosh.jp/<申込みページのパス>",
+					"openExternalBrowser": false
+				}
+			]
+		}
+	],
+	"scheduledAt": "2026-09-10T19:00:00+09:00",
+	"filterConditions": null,
+	"isDraft": false
+}

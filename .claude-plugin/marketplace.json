@@ -16,6 +16,10 @@
       "description": "Adds a workflow-builder skill for constructing MOSH workflows"
     },
     {
+      "name": "contact-broadcast-plugin",
+      "source": "./plugins/contact-broadcast-plugin",
+      "description": "Adds a contact-broadcast skill for sending MOSH contact broadcasts"
+    },
       "name": "sales-reporter-plugin",
       "source": "./plugins/sales-reporter-plugin",
       "description": "Adds a sales-reporter skill for checking and analyzing MOSH sales"

@@ -1,0 +1,26 @@
+{
+	"taskName": "9月レッスン告知（LINE）",
+	"lineChannelId": 10,
+	"contents": [
+		{
+			"type": "text",
+			"text": "9月のレッスンの予約受付を開始しました。",
+			"isTrackingEnabled": false
+		}
+	],
+	"scheduledAt": "2026-09-06T19:00:00+09:00",
+	"filterConditions": {
+		"line": null,
+		"tag": {
+			"id": [
+				{
+					"value": 8,
+					"operator": "eq"
+				}
+			]
+		},
+		"inflowAction": null,
+		"richMenu": null
+	},
+	"isDraft": false
+}

@@ -1,0 +1,19 @@
+{
+	"taskName": "9月レッスンのご案内",
+	"title": "9月レッスンのご案内",
+	"body": "9月の予約受付を開始しました。",
+	"scheduledAt": "2026-09-05T20:00:00+09:00",
+	"filterConditions": {
+		"email": null,
+		"tag": {
+			"id": [
+				{
+					"value": 8,
+					"operator": "eq"
+				}
+			]
+		}
+	},
+	"isDraft": false,
+	"isTrackingEnabled": false
+}
