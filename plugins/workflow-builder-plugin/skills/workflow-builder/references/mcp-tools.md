@@ -52,16 +52,6 @@ queryParams: { limit?, offset? }
 - `contactTagId`（`CONTACT_TAG_ADDED` / `ADD_CONTACT_TAG` / `REMOVE_CONTACT_TAG` / `CONDITION(CONTACT_TAG)` で使用）の実在確認に使う
 - 指定された名前のタグが一覧に無い場合は、既存タグを提示して選び直してもらうか、`postCreatorContactTags` で新規作成できる
 
-**`getCreatorAutoWebinars`** — オートウェビナー一覧を取得
-
-```
-queryParams: { sort?, limit? }
-```
-
-- `sort`: `"updatedAtAsc"` | `"updatedAtDesc"`（デフォルト `updatedAtDesc`）、`limit`: デフォルト `20`
-- レスポンス `autoWebinars[]`: `{ id, title, thumbnailId, updatedAt }`
-- `autoWebinarId`（`CONDITION(AUTO_WEBINAR_PARTICIPATION` / `AUTO_WEBINAR_WATCH_TIME)` で使用）の実在確認に使う
-
 **`getCreatorLineRichMenus`** — 個別リッチメニュー一覧を取得
 
 ```

@@ -2,18 +2,18 @@
 
 ## ID 参照の確認手順
 
-ワークフローに埋め込む各種 ID のうち、`serviceId` は MCP に検索・一覧取得ツールが無い。それ以外（`inflowActionId` / `creatorLineChannelId` / `contactTagId` / `autoWebinarId` / `lineRichMenuId`）は対応する一覧取得ツールで取得・実在確認できる。`benefitId` は特典提供終了により新規設定しない（既存ワークフローの維持時のみ）。
+ワークフローに埋め込む各種 ID のうち、`serviceId` / `autoWebinarId` は MCP に検索・一覧取得ツールが無い。それ以外（`inflowActionId` / `creatorLineChannelId` / `contactTagId` / `lineRichMenuId`）は対応する一覧取得ツールで取得・実在確認できる。`benefitId` は特典提供終了により新規設定しない（既存ワークフローの維持時のみ）。
 
 | ID | MCP で取得できるか | 取得経路 |
 |---|---|---|
 | `inflowActionId` | ✅ | `getCreatorScenariosInflowActions` |
 | `creatorLineChannelId` | ✅ | `getCreatorLineChannels` |
 | `contactTagId` | ✅ | `getCreatorContactTags`（無ければ `postCreatorContactTags` で新規作成できる。同名は既存 id を返す冪等動作） |
-| `autoWebinarId` | ✅ | `getCreatorAutoWebinars` |
 | `lineRichMenuId` | ✅ | `getCreatorLineRichMenus`（`creatorLineChannelId` で絞り込み可） |
+| `autoWebinarId` | ❌ | ユーザーから受け取る（管理画面のオートウェビナー） |
 | `serviceId` | ❌ | ユーザーから受け取る（管理画面のプラン・サービス管理） |
 
-`serviceId` が必要な trigger/condition（`SERVICE_APPLIED` / `SERVICE_SCHEDULE_REMINDER` / `CONDITION(SERVICE_APPLICATION_STATUS)` / `CONDITION(BANK_TRANSFER_STATUS)`）では、要件ヒアリングの段階で「**該当リソースの ID を教えてください**」を必ず聞き、MCP からは検索・実在確認ができないことを踏まえてユーザー申告のまま扱う（下書き保存時は実在検証されないため、公開前レビューで改めて口頭確認する）。それ以外の ID は対応する一覧取得ツールで実在するものを選んでもらう（一覧を提示する際は名前で選んでもらい、生の ID を会話の主役にしない）。`MARKETING_LEAD_BENEFIT_RECEIVED` は特典提供終了により**新規設定しない**。
+`serviceId` / `autoWebinarId` が必要な trigger/condition（`SERVICE_APPLIED` / `SERVICE_SCHEDULE_REMINDER` / `CONDITION(SERVICE_APPLICATION_STATUS)` / `CONDITION(BANK_TRANSFER_STATUS)` / `CONDITION(AUTO_WEBINAR_PARTICIPATION)` / `CONDITION(AUTO_WEBINAR_WATCH_TIME)`）では、要件ヒアリングの段階で「**該当リソースの ID を教えてください**」を必ず聞き、MCP からは検索・実在確認ができないことを踏まえてユーザー申告のまま扱う（下書き保存時は実在検証されないため、公開前レビューで改めて口頭確認する）。それ以外の ID は対応する一覧取得ツールで実在するものを選んでもらう（一覧を提示する際は名前で選んでもらい、生の ID を会話の主役にしない）。`MARKETING_LEAD_BENEFIT_RECEIVED` は特典提供終了により**新規設定しない**。
 
 ## ライフサイクル運用
 

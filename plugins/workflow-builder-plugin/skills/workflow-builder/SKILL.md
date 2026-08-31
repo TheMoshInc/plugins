@@ -40,10 +40,10 @@ action 側にも参照リソースが必要なケースがある:
 | `LINK_LINE_RICH_MENU` | **個別リッチメニュー**（`lineRichMenuId` を`getCreatorLineRichMenus`で取得・確認可。ワークフローに紐づく LINE公式アカウントのメニューを選ぶこと。API はクリエイター所有なら別チャンネルのメニューでも保存・公開を通してしまうが、実行時に対象コンタクトが見つからず失敗しうる — 一致を強制するのは編集画面のみ） |
 | `CONDITION` (`CONTACT_TAG`) | **コンタクトタグ**（`getCreatorContactTags`で確認可。無ければ`postCreatorContactTags`で新規作成できる） |
 | `CONDITION` (`SERVICE_APPLICATION_STATUS`) | **プラン・サービス**（`serviceId` をユーザーから確認。MCP に検索ツール無し） |
-| `CONDITION` (`AUTO_WEBINAR_PARTICIPATION` / `AUTO_WEBINAR_WATCH_TIME`) | **オートウェビナー**（`autoWebinarId` を`getCreatorAutoWebinars`で取得・確認可） |
+| `CONDITION` (`AUTO_WEBINAR_PARTICIPATION` / `AUTO_WEBINAR_WATCH_TIME`) | **オートウェビナー**（`autoWebinarId` をユーザーから確認。MCP に検索ツール無し） |
 | `CONDITION` (`BANK_TRANSFER_STATUS`) | **プラン・サービス**（`serviceId` をユーザーから確認。MCP に検索ツール無し。対象ゲストの当該プラン・サービスへの注文の銀行振込状況で分岐） |
 
-参照したいリソースが無い場合は、ユーザーに**先に管理画面で作成**してもらってからワークフロー構築に着手する（`serviceId` は MCP に検索手段が無いため、実在の場合も含め常にユーザーから直接確認する）。**例外はコンタクトタグ**: `postCreatorContactTags` で MCP から新規作成できる（同名タグが既にあれば既存の `id` を返す冪等動作。返ってきた `id` はそのまま `contactTagId` に使える）ため、管理画面に誘導せずその場で作成して進めてよい。`MARKETING_LEAD_BENEFIT_RECEIVED`（特典取得）は特典提供終了により**新規設定しない**。既存ワークフローの読み取り・維持のみ行う。
+参照したいリソースが無い場合は、ユーザーに**先に管理画面で作成**してもらってからワークフロー構築に着手する（`serviceId` / `autoWebinarId` は MCP に検索手段が無いため、実在の場合も含め常にユーザーから直接確認する）。**例外はコンタクトタグ**: `postCreatorContactTags` で MCP から新規作成できる（同名タグが既にあれば既存の `id` を返す冪等動作。返ってきた `id` はそのまま `contactTagId` に使える）ため、管理画面に誘導せずその場で作成して進めてよい。`MARKETING_LEAD_BENEFIT_RECEIVED`（特典取得）は特典提供終了により**新規設定しない**。既存ワークフローの読み取り・維持のみ行う。
 
 ## When to use
 
