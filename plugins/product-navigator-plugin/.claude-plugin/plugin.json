@@ -1,0 +1,5 @@
+{
+  "name": "product-navigator-plugin",
+  "description": "Adds a product-navigator skill for browsing MOSH products and product plans",
+  "version": "0.1.0"
+}

@@ -11,6 +11,7 @@ MOSH が配布する [Claude Code](https://code.claude.com/) プラグインマ�
 | `contact-broadcast-plugin` | コンタクト向け一斉配信（メール / LINE）を作成・運用するための contact-broadcast skill |
 | `sales-reporter-plugin` | 売上を確認・分析するための sales-reporter skill |
 | `file-share-plugin` | ファイル共有（動画・画像・PDF）を操作するための file-share skill |
+| `product-navigator-plugin` | 商品・商品プランを参照するための product-navigator skill |
 
 ## インストール
 
@@ -23,6 +24,7 @@ Claude Code 内で以下を実行:
 /plugin install contact-broadcast-plugin@mosh-plugins
 /plugin install sales-reporter-plugin@mosh-plugins
 /plugin install file-share-plugin@mosh-plugins
+/plugin install product-navigator-plugin@mosh-plugins
 ```
 
 ## 更新
@@ -34,6 +36,7 @@ Claude Code 内で以下を実行:
 /plugin update contact-broadcast-plugin@mosh-plugins  # プラグイン本体を更新
 /plugin update sales-reporter-plugin@mosh-plugins     # プラグイン本体を更新
 /plugin update file-share-plugin@mosh-plugins         # プラグイン本体を更新
+/plugin update product-navigator-plugin@mosh-plugins  # プラグイン本体を更新
 ```
 
 引数を省略するとすべてのマーケットプレイス/プラグインが対象になります。
@@ -46,6 +49,7 @@ Claude Code 内で以下を実行:
 /plugin uninstall contact-broadcast-plugin@mosh-plugins
 /plugin uninstall sales-reporter-plugin@mosh-plugins
 /plugin uninstall file-share-plugin@mosh-plugins
+/plugin uninstall product-navigator-plugin@mosh-plugins
 /plugin marketplace remove mosh-plugins
 ```
 
