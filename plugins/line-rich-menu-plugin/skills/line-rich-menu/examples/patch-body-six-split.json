@@ -1,0 +1,93 @@
+{
+	"_comment": "patchCreatorLineRichMenu の完成形リクエスト。6分割(SIX_SPLIT)=エリア6件、ラベルA〜Fを位置順に並べる。_ で始まるキーは説明用で、実際の呼び出しには含めない。",
+	"pathParams": {
+		"id": 1234
+	},
+	"bodyParams": {
+		"name": "通常メニュー 2026年9月",
+		"layout": "SIX_SPLIT",
+		"backgroundMoshImageId": "01JXXXXXXXXXXXXXXXXXXXXXXX",
+		"areas": [
+			{
+				"_position": "左上",
+				"_pattern": "URL のみ",
+				"label": "A",
+				"action": {
+					"url": "https://mosh.jp/classes/12345",
+					"postbackActions": null
+				}
+			},
+			{
+				"_position": "中央上",
+				"_pattern": "URL のみ",
+				"label": "B",
+				"action": {
+					"url": "https://mosh.jp/classes/12345/reservations",
+					"postbackActions": null
+				}
+			},
+			{
+				"_position": "右上",
+				"_pattern": "postback のみ（テキスト返信）",
+				"label": "C",
+				"action": {
+					"url": null,
+					"postbackActions": [
+						{
+							"postbackActionType": "sendMessage",
+							"messages": [
+								{
+									"messageType": "text",
+									"message": "お問い合わせありがとうございます。営業時間内に順次ご返信します。"
+								}
+							]
+						}
+					]
+				}
+			},
+			{
+				"_position": "左下",
+				"_pattern": "postback のみ（タグ付与）。contactTagId は getCreatorContactTags で実在を確認した値だけを入れる",
+				"label": "D",
+				"action": {
+					"url": null,
+					"postbackActions": [
+						{
+							"postbackActionType": "addContactTag",
+							"contactTagId": 87
+						}
+					]
+				}
+			},
+			{
+				"_position": "中央下",
+				"_pattern": "URL + postback の併用。URL を開きつつタグの付け外しも走る（最大3件）",
+				"label": "E",
+				"action": {
+					"url": "https://mosh.jp/classes/12345/tickets",
+					"postbackActions": [
+						{
+							"postbackActionType": "addContactTag",
+							"contactTagId": 88
+						},
+						{
+							"postbackActionType": "removeContactTag",
+							"contactTagId": 87
+						}
+					]
+				}
+			},
+			{
+				"_position": "右下",
+				"_pattern": "URL のみ",
+				"label": "F",
+				"action": {
+					"url": "https://mosh.jp/@example",
+					"postbackActions": null
+				}
+			}
+		],
+		"chatBarText": "メニュー",
+		"chatBarOpenByDefault": true
+	}
+}

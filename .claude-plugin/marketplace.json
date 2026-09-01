@@ -34,6 +34,11 @@
       "name": "product-navigator-plugin",
       "source": "./plugins/product-navigator-plugin",
       "description": "Adds a product-navigator skill for browsing MOSH products and product plans"
+    },
+    {
+      "name": "line-rich-menu-plugin",
+      "source": "./plugins/line-rich-menu-plugin",
+      "description": "Adds a line-rich-menu skill for managing MOSH LINE rich menus"
     }
   ]
 }
