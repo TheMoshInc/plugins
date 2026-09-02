@@ -147,6 +147,9 @@ Step 3 で提示・確認する項目は2種類に分かれる。**「確定す�
 - 実行後の報告は「何がどの状態になったか」（例: 下書きとして保存済み・◯月◯日◯時に配信予約済み・予約を解除して下書きに戻した）が一読で分かるように伝える。
 - **配信本文は与えられた情報の言い換え・整形に留める。** 所要時間・対象者・持ち物・実績など、依頼文にも
   既存の配信内容にも無い事実を補って書かない。文面を厚くしたい場合は Step 3 でユーザーに材料を確認する。
+  本文・件名・カードのコピーを**こちらで組む**場合の形式基準（1配信1目的・文字数と吹き出し数の上限・
+  CTA・NG表現・スマホ前提の可読性）は [references/best-practices.md](references/best-practices.md) に従う。
+  **逐語で指定された本文・件名には手を加えない**（この規約が形式基準より優先する）。
 - **後から直せる期限を伝えるなら「配信予定時刻の5分前まで」と正確に言う。** 「配信日時までは変更できます」は誤り
   （予約解除・編集・削除はいずれも配信予定時刻の5分前が締め切り）。期限に自信が無いなら期限に触れない。
 - **配信日時に曜日を添えるなら必ず検算する。自信が持てないなら曜日を書かない。** 基準日から数えた曜日は1日ずれやすく、誤った曜日はユーザーが配信日を勘違いする原因になる（日付と時刻だけでも用は足りる）。
@@ -160,6 +163,7 @@ Step 3 で提示・確認する項目は2種類に分かれる。**「確定す�
 | ファイル | 内容 | いつ読むか |
 |---|---|---|
 | [references/mcp-tools.md](references/mcp-tools.md) | 操作別のパラメータ仕様、状態による可否条件、`filterConditions` の必須キー、送信元 LINE公式アカウントの確定、LINE `contents` の項目別制約 | ツールを呼ぶ直前に該当する操作の節だけ |
+| [references/best-practices.md](references/best-practices.md) | 文面の形式基準（1配信1目的・文字数と吹き出し数の上限・CTA・NG表現・スマホ前提の可読性）とセルフレビューチェックリスト | 本文・件名・カードのコピーを**こちらで組む**とき（逐語で指定されている場合は不要） |
 | [references/tracking-consent.md](references/tracking-consent.md) | クリック計測の同意フロー（提示すべき全項目・管理画面との差異） | 本文に URL を含めてクリック計測を有効にするとき |
 | [examples/email-scheduled-tag-filter.json](examples/email-scheduled-tag-filter.json) | メール予約配信の最小例。タグ1つで絞り込み。`postCreatorContactMessagesEmail` の bodyParams としてそのまま渡せる形（スキーマ検証済み） | メールを新規作成するとき |
 | [examples/line-scheduled-tag-filter.json](examples/line-scheduled-tag-filter.json) | LINE 予約配信の最小例。テキスト1通＋タグ1つで絞り込み。`postCreatorContactMessagesLine` の bodyParams としてそのまま渡せる形（スキーマ検証済み） | LINE を新規作成するとき |
