@@ -71,6 +71,8 @@ action 側にも参照リソースが必要なケースがある:
 - **実行内容（action）**: 何を実行するか、何ステップ並べるか
 - **CV ポイント**: ユーザーに最終的にとってほしい行動はどれか（サービス購入 / 個別相談・説明会の予約 / リスト作成のみ＝配信先を増やすだけで有償提案はしない 等）。これが決まると各メッセージの CTA と締めの一通が決まる
 - **連絡ツール**: LINE / メール / 両方のどれで送るか（集客経路ではなく「どの手段で送るか」）。メール配信は対象コンタクトのメールアドレス保有が前提（[references/best-practices.md](references/best-practices.md) の「トリガー × アクションの相性」参照）
+- **タイミング**: 出来事の**直後**に届けたいのか、後日のある時点で該当していた人に届けば十分なのか。「◯◯したらすぐに」「◯◯した人には即座に」「タグが付いたらいつでも」という言葉が出て、かつ起動条件がその出来事自体（`SERVICE_APPLIED` / `CONTACT_TAG_ADDED`）ではなく `CONDITION` で拾う設計になりそうなら、その要件は**このワークフロー 1 本では実現できない**。専用トリガーの別ワークフローの有無を確認する（[references/best-practices.md](references/best-practices.md) の「単一ワークフローで閉じない要件」）
+- **紐付け導線**（申込・リマインダー・決済失敗起点で LINE 配信・タグ操作を使う設計＝コンテキスト適合表の △ のとき）: 対象の申込者・購入者が事前にトラッキング付き URL をタップして MOSH にログインする導線（既存ワークフロー・一斉配信）がテナント内にあるか。無ければ `SEND_EMAIL` に倒すか、紐付け導線を先に設計する（同じく「単一ワークフローで閉じない要件」）
 - **参照リソース**: 上の「前提条件」表の該当リソースが既にあるか、その ID
 - **メッセージ内容**: メール件名/本文、LINE メッセージ等
 - **クリエイター名・トーン**: メッセージ案を組み立てるときに使う
@@ -126,7 +128,7 @@ MOSHのAPIは `ACTIVE` 化時に埋め込み変数の可否を検証しない（
 2. **JSON を貼らずに自然言語の箇条書きで要約**してユーザーに提示する（「ユーザーへの提示・コミュニケーション規約」§1 参照）。最低限の項目: ワークフロー名 / 公開状態 / トリガー（と参照リソース ID） / アクション（メール件名・本文の要旨、トラッキング有無等）
 3. `serviceId`（および既存ワークフローの `benefitId`）が実在のものか口頭で確認する（この2つだけは INACTIVE の PATCH で実在検証されない。他の参照 ID は保存できた時点で実在が保証されている）
 4. **埋め込み変数チェック**: 各 stage の `action` 内の `sendEmail.message` / `sendLineMessage.messages[].text` から `{{...}}` パターンを全て抽出し、そのステージが従う trigger（先頭 stage の `triggerType`）と `actionType` の組み合わせで [content-schema.md](references/content-schema.md) の対応表に照らして使用可能か確認する。使用不可の変数が1つでもあれば、ユーザーに「この文言は現在のトリガーでは差し込まれず空欄配信になります」と日本語で具体的に指摘し、修正（変数を外す／使える変数に変える／トリガーを変える）してもらう
-5. **机上デバッグ**: [references/best-practices.md](references/best-practices.md) の「机上デバッグチェックリスト」を実行する（トリガー×アクション整合 / ノード接続 / 日程の矛盾 / メッセージ重複・抜け / 埋め込み変数）。問題があれば修正し、懸念点と修正内容を1〜3行で報告する。ユーザーから「見直して」「懸念点は」と言われた場合も同じチェックを実行する
+5. **机上デバッグ**: [references/best-practices.md](references/best-practices.md) の「机上デバッグチェックリスト」を実行する（トリガー×アクション整合 / ノード接続 / 日程の矛盾 / メッセージ重複・抜け / 埋め込み変数 / メッセージ内容の参照整合性）。順序は**まず構文解析**（content-schema.md の構造規律・ノード接続ルール・参照整合性・「埋め込み変数」対応表＝対象者が誰でも JSON とテナント設定だけで一律に決まるもの）**→ 次に意味解析**（content-schema.md の「コンテキスト適合表」＝対象者の紐付け・メール保有・友だち状態で結果が変わるもの。定義は content-schema.md の「検査の二層構造」）。API スキーマは trigger 種別で action 種別を制限しないため、意味の検査は自分で行うしかない。問題があれば修正し、懸念点と修正内容を1〜3行で報告する。ユーザーから「見直して」「懸念点は」と言われた場合も同じチェックを実行する
 6. 「この内容で公開しますか？」と必ずユーザーに確認する（埋め込み変数・机上デバッグに問題がある間は公開に進まない）
 7. 修正が必要なら Step 3 に戻る
 
@@ -247,7 +249,7 @@ MOSHのAPIは `ACTIVE` 化時に埋め込み変数の可否を検証しない（
 
 | ファイル | 内容 |
 |---|---|
-| [references/content-schema.md](references/content-schema.md) | `stages[].trigger` / `stages[].action` の JSON 構造、enum 一覧、actionType 別テンプレ、`*ForUpdate` 差分 |
-| [references/best-practices.md](references/best-practices.md) | ID 参照の確認手順、ライフサイクル運用、動作仕様、トリガー×アクションの相性、ノード接続ルール、机上デバッグチェックリスト、代表ケースと配信間隔の目安、命名規約 |
+| [references/content-schema.md](references/content-schema.md) | `stages[].trigger` / `stages[].action` の JSON 構造、enum 一覧、actionType 別テンプレ、`*ForUpdate` 差分、検査の二層構造（構文→意味）、コンテキスト適合表（トリガーが供給する識別子 × アクションが要求する識別子）、埋め込み変数対応表 |
+| [references/best-practices.md](references/best-practices.md) | ID 参照の確認手順、ライフサイクル運用、動作仕様、トリガー×アクションの相性、単一ワークフローで閉じない要件（即時反応の専用トリガー・紐付け導線）のヒアリング確認文、ノード接続ルール、机上デバッグチェックリスト、代表ケースと配信間隔の目安、命名規約 |
 | [references/mcp-tools.md](references/mcp-tools.md) | 各 MCP ツールのパラメータ仕様 |
 | [examples/inflow-line-tap-followup.json](examples/inflow-line-tap-followup.json) | LINE 流入経路 CV（`INFLOW_ACTION_CONVERTED`）→ 本文 URL のタップでタグ付与（`urlActions`/`postbackActions`）→ 1日待機 → タグ未付与（未クリック）だけに追客、の網羅例。CONDITION の**片方空 branch**（クリック済みは早期終了）を含む。ID はダミー値で、流入経路が属する LINE 公式アカウントと最上位 `creatorLineChannelId` の一致が必須 |
