@@ -31,7 +31,7 @@
 
 ```json
 {
-  "id": "sec-main",
+  "id": "sec-01-hero",
   "type": "section",
   "content": "",
   "styles": {},
@@ -39,13 +39,15 @@
 }
 ```
 
-- `id` — 必須。`"文字列-文字列"` 形式（例: `"sec-001"`, `"hd-main"`）
+- `id` — 必須。`"文字列-文字列"` 形式（例: `"sec-01-hero"`, `"hd-01-hero"`。規約は下記「ID命名規約」）
 - `type` — 必須。下記 PartType 一覧から選ぶ
 - `content` — 必須。セクションなど内容がない場合は空文字 `""`
 - `styles` — 必須。空オブジェクト `{}` でもOK
 - `mobileStyles` — 任意
 
 ## ID命名規約
+
+`id` は `{プレフィックス}-{識別子}`。セクション・子要素の意味的 ID の付け方（`sec-01-hero` / `hd-01-hero` 形式・枝番）の正本は `section-plan.md`「セクション ID の規約」。
 
 | プレフィックス | type |
 |---|---|
@@ -104,7 +106,15 @@
 - `href` / `target` / `rel` — `button` のリンク設定。**`image` にも同じ形で設定可能**（後述）
 - `src` / `alt` — `image` の設定
 - `background.type` — `"color"` | `"image"` | `"gradationColor"`（グラデーション。下記「背景グラデーション」の項を参照）
+  - `type: "color"` の `color` は **hsla のアルファ付きで半透明にできる**（例 `"hsla(0, 0%, 100%, 0.06)"`。編集画面のカラーピッカーが実際に書き出す形式で、保存・再取得で保持されることを確認済み 2026-09-04）。`styles.background` にも同じ値を入れてフォールバックにする。素の要素が画像・賑やかな背景の上に乗って読みにくいときの半透明面に使う（多用しない。`best-practices.md`「囲いの原則」）
 - `sectionType` — `section` の分類メタ情報。下記の許容値以外（`"hero"` など）は無効値なので使わない
+
+### 入れ子セクションの背景は必ず明示する（既定は白）
+
+`section` は背景未指定だと**レンダラー既定の白**で描画される。横並び用の行・列・ラップなど「レイアウトだけが目的の入れ子セクション」に背景を書かないと、ダーク背景のセクション内に白い帯や白い箱が出て、その上の薄色テキストが読めなくなる（2026-09-04 カタログ 数字バーで実機確認）。
+
+- レイアウト用の入れ子セクションには **`styles.background` と `attributes.background` の両方に `hsla(0, 0%, 100%, 0)`（完全透明）** を入れる。編集画面の「背景色」もこの値を書き出す
+- 色を持たせたい入れ子（カード）は明示的に色を入れる。「親と同じだから省略」はしない
 
 ### `section` の背景画像
 
@@ -154,7 +164,7 @@
 
 | type | 必須 | 補足 |
 |---|---|---|
-| `image` | `src` | `alt` も推奨（未設定でもクラッシュはしないがアクセシビリティ上推奨）。`href`/`target`は任意でクリック可能な画像にできる（上記参照）。`image` 要素は実在する画像 URL が確定している場合のみ新規作成する。`src: ""` のまま作らない（画面上で空枠表示になる。画像未提供時は編集画面からのアップロードを案内。`best-practices.md` の「画像の運用」参照） |
+| `image` | `src` | `alt` も推奨（未設定でもクラッシュはしないがアクセシビリティ上推奨）。`href`/`target`は任意でクリック可能な画像にできる（上記参照）。`image` 要素は実在する画像 URL が確定している場合のみ新規作成する。`src: ""` のまま作らない（画面上で空枠表示になる。未提供時は下書き専用のプレースホルダ素材を使う。ルールは SKILL.md 必須ルール・`best-practices.md`「画像の運用」） |
 | `button` | `href` | `target` も推奨（新規タブで開くか指定） |
 | `video` | `src` と `moshVideoId` の両方 | **MCP からは新規作成不可。** どちらか一方だけでは不十分（詳細は下記「`video` の仕様」を参照） |
 | `youtubeVideo` | `src` | YouTube の動画URL（外部URLで問題ない） |
@@ -286,11 +296,11 @@
 
 ## `text` / `heading` のインライン装飾（一文の中で部分的に太字・色・サイズを変える）
 
-`content` には単純な文字列だけでなく、tiptapのdoc構造をそのまま渡せる。1つの`text`/`heading`要素内で、一部の文言だけ太字・色・フォントサイズを変えたい場合はこちらを使う（プレーン文字列を渡した場合、要素全体が`styles`で指定した単一の書式になり、部分的な装飾はできない）。
+`content` には単純な文字列だけでなく、tiptapのdoc構造をそのまま渡せる。 **`textStyle.attrs.backgroundColor`（文字の下地マーカー）は編集画面に操作が無いため空文字のままにする（値を入れると画面から直せない）。部分強調は色・太字・サイズで行う。**1つの`text`/`heading`要素内で、一部の文言だけ太字・色・フォントサイズを変えたい場合はこちらを使う（プレーン文字列を渡した場合、要素全体が`styles`で指定した単一の書式になり、部分的な装飾はできない）。
 
 ```json
 {
-  "id": "tx-001",
+  "id": "tx-01-hero-1",
   "type": "text",
   "styles": { "padding": "0 35px 20px" },
   "content": {
@@ -343,7 +353,7 @@
 
 ```json
 {
-  "id": "sec-001",
+  "id": "sec-01-hero",
   "type": "section",
   "content": "",
   "styles": { "padding": "64px 24px" },
@@ -352,14 +362,14 @@
   },
   "children": [
     {
-      "id": "hd-001",
+      "id": "hd-01-hero",
       "type": "heading",
       "content": "見出しテキスト",
       "styles": { "color": "#000000", "fontSize": "30px" },
       "attributes": { "level": "2" }
     },
     {
-      "id": "tx-001",
+      "id": "tx-01-hero-1",
       "type": "text",
       "content": "本文テキスト",
       "styles": { "color": "#666666", "lineHeight": "1.8" }
@@ -391,7 +401,7 @@
 
 ```json
 {
-  "id": "sec-row-001",
+  "id": "sec-04-merit",
   "type": "section",
   "content": "",
   "styles": { "display": "flex", "gap": "16px", "flexWrap": "nowrap", "padding": "0 0 0 0" },
@@ -408,7 +418,9 @@
 
 - `text` / `heading`: `color` / `fontFamily` / `fontSize` / `lineHeight` / `textAlign` / `padding`
 - `button`: `background` / `color` / `borderRadius` / `width` / `padding` / `textAlign`
-  - 上記は編集画面のプロパティパネルで**変更できる**プロパティ。これに加えて、UI でボタンを挿入すると変更不可の固定デフォルト `display: "inline-block"` / `cursor: "pointer"` / `fontSize: "14px"` / `fontWeight: "bold"` が常に付与される（UI では編集手段がないため値はこの固定値のまま）。ボタンを組み立てる際はこれら固定デフォルトも含めて出力し、`fontSize` は `14px` 以外にしない。
+  - 上記に加えて `fontSize`（固定10段階）/ `fontFamily`（4種）/ `fontStyle`（italic）/ `lineHeight` / `width` も編集画面で変更できる（2026-09-04 `button-properties-panel.tsx` で確認。旧記述「fontSize は 14px 固定」は誤り）
+  - **ボタンの大きさの決め方（編集画面の項目に対応させる）**: 高さ＝「行の高さ」`styles.lineHeight`（`"1"`〜`"3"` を 0.1 刻み。fontSize × lineHeight ＋ 内側余白 28px が実高さ。16px×1.6 で約54px、18px×1.8 で約60px、20px×2 で約68px）／幅＝「ボタンの幅」`styles.width`（`"auto"` / `"100%"` / `"100px"`〜`"800px"` 100px 刻み、任意 px・% も可）／外側の余白＝「余白」`layout.styles.padding`（ボタンの**周囲**に付く。`mobileLayoutStyles` で SP 別指定）
+  - `styles.padding` は**ボタン内側の余白**で編集画面に項目が無い。UI 既定 `"14px 16px"` のまま変更しない（変えると編集画面で再現・修正できない）。大きさは lineHeight / width / fontSize で作る。`display: "inline-block"` / `cursor: "pointer"` も既定のまま引き継ぐ
 - `image`: `width` / `padding`（`styles` 内で使用可能。中央寄せは `styles` ではなく後述の `layout` フィールドで行う）
 
 #### `image` / `button` の中央寄せ（`layout` フィールド）

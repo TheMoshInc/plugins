@@ -10,43 +10,57 @@
 	},
 	"elements": [
 		{
-			"id": "sec-main",
+			"id": "sec-01-hero",
 			"type": "section",
 			"content": "",
-			"styles": { "padding": "80px 48px", "textAlign": "center" },
-			"mobileStyles": { "padding": "48px 16px" },
+			"styles": {
+				"padding": "80px 48px"
+			},
+			"mobileStyles": {
+				"padding": "48px 16px"
+			},
 			"attributes": {
-				"background": { "type": "color", "color": "#1a1a2e" },
+				"background": {
+					"type": "color",
+					"color": "#1a1a2e"
+				},
 				"sectionType": "main"
 			},
 			"children": [
 				{
-					"id": "hd-main",
+					"id": "hd-01-hero",
 					"type": "heading",
 					"content": "あなたのスキルを、世界に届けよう",
 					"styles": {
 						"color": "#ffffff",
 						"fontSize": "36px",
-						"fontWeight": "bold",
-						"padding": "0 0 16px 0"
+						"padding": "0 0 16px 0",
+						"textAlign": "center"
 					},
-					"mobileStyles": { "fontSize": "24px" },
-					"attributes": { "level": "1" }
+					"mobileStyles": {
+						"fontSize": "24px"
+					},
+					"attributes": {
+						"level": "1"
+					}
 				},
 				{
-					"id": "tx-main",
+					"id": "tx-01-hero-1",
 					"type": "text",
 					"content": "オンラインレッスンで、あなたの知識と経験を共有しませんか？",
 					"styles": {
 						"color": "#cccccc",
 						"fontSize": "18px",
 						"lineHeight": "1.8",
-						"padding": "0 0 32px 0"
+						"padding": "0 0 32px 0",
+						"textAlign": "center"
 					},
-					"mobileStyles": { "fontSize": "16px" }
+					"mobileStyles": {
+						"fontSize": "16px"
+					}
 				},
 				{
-					"id": "btn-main",
+					"id": "btn-01-hero",
 					"type": "button",
 					"content": "無料で始める",
 					"styles": {
@@ -60,51 +74,72 @@
 						"fontWeight": "bold",
 						"textAlign": "center"
 					},
-					"mobileStyles": { "width": "100%" },
+					"mobileStyles": {
+						"width": "100%"
+					},
 					"attributes": {
-						"href": "https://example.com/signup",
+						"href": "https://mosh.jp/services/12345?openExternalBrowser=1",
 						"target": "_blank"
+					},
+					"layout": {
+						"styles": {
+							"textAlign": "center"
+						}
 					}
 				}
 			]
 		},
 		{
-			"id": "sec-features",
+			"id": "sec-02-merit",
 			"type": "section",
 			"content": "",
-			"styles": { "padding": "80px 48px", "textAlign": "center" },
-			"mobileStyles": { "padding": "48px 16px" },
+			"styles": {
+				"padding": "80px 48px"
+			},
+			"mobileStyles": {
+				"padding": "48px 16px"
+			},
 			"attributes": {
-				"background": { "type": "color", "color": "#ffffff" },
+				"background": {
+					"type": "color",
+					"color": "#ffffff"
+				},
 				"sectionType": "merit"
 			},
 			"children": [
 				{
-					"id": "hd-features",
+					"id": "hd-02-merit",
 					"type": "heading",
 					"content": "選ばれる3つの理由",
 					"styles": {
 						"color": "#1a1a2e",
 						"fontSize": "30px",
-						"fontWeight": "bold",
-						"padding": "0 0 32px 0"
+						"padding": "0 0 32px 0",
+						"textAlign": "center"
 					},
-					"mobileStyles": { "fontSize": "20px" },
-					"attributes": { "level": "2" }
+					"mobileStyles": {
+						"fontSize": "20px"
+					},
+					"attributes": {
+						"level": "2"
+					}
 				},
 				{
-					"id": "tx-features",
+					"id": "tx-02-merit-1",
 					"type": "text",
-					"content": "簡単セットアップ・柔軟なスケジュール・安心の決済システム。すべてが揃ったプラットフォームです。",
+					"content": "簡単セットアップ・柔軟なスケジュール・fincode・UnivaPay対応の決済。すべてが揃ったプラットフォームです。",
 					"styles": {
 						"color": "#666666",
 						"fontSize": "18px",
-						"lineHeight": "2.0"
+						"lineHeight": "2.0",
+						"textAlign": "center"
 					},
-					"mobileStyles": { "fontSize": "14px" }
+					"mobileStyles": {
+						"fontSize": "14px"
+					}
 				},
 				{
-					"id": "sep-features-cta",
+					"id": "sep-02-merit",
 					"type": "separator",
 					"content": "",
 					"styles": {
@@ -117,31 +152,42 @@
 			]
 		},
 		{
-			"id": "sec-cta",
+			"id": "sec-03-cta",
 			"type": "section",
 			"content": "",
-			"styles": { "padding": "80px 48px", "textAlign": "center" },
-			"mobileStyles": { "padding": "48px 16px" },
+			"styles": {
+				"padding": "80px 48px"
+			},
+			"mobileStyles": {
+				"padding": "48px 16px"
+			},
 			"attributes": {
-				"background": { "type": "color", "color": "#f8f9fa" },
+				"background": {
+					"type": "color",
+					"color": "#f8f9fa"
+				},
 				"sectionType": "description"
 			},
 			"children": [
 				{
-					"id": "hd-cta",
+					"id": "hd-03-cta",
 					"type": "heading",
 					"content": "今すぐ始めましょう",
 					"styles": {
 						"color": "#1a1a2e",
 						"fontSize": "30px",
-						"fontWeight": "bold",
-						"padding": "0 0 24px 0"
+						"padding": "0 0 24px 0",
+						"textAlign": "center"
 					},
-					"mobileStyles": { "fontSize": "20px" },
-					"attributes": { "level": "2" }
+					"mobileStyles": {
+						"fontSize": "20px"
+					},
+					"attributes": {
+						"level": "2"
+					}
 				},
 				{
-					"id": "btn-cta",
+					"id": "btn-03-cta",
 					"type": "button",
 					"content": "無料で始める",
 					"styles": {
@@ -155,10 +201,59 @@
 						"fontWeight": "bold",
 						"textAlign": "center"
 					},
-					"mobileStyles": { "width": "100%" },
+					"mobileStyles": {
+						"width": "100%"
+					},
 					"attributes": {
-						"href": "https://example.com/signup",
+						"href": "https://mosh.jp/services/12345?openExternalBrowser=1",
 						"target": "_blank"
+					},
+					"layout": {
+						"styles": {
+							"textAlign": "center"
+						}
+					}
+				}
+			]
+		},
+		{
+			"id": "sec-04-footer",
+			"type": "section",
+			"content": "",
+			"styles": {
+				"padding": "32px 48px"
+			},
+			"mobileStyles": {
+				"padding": "24px 16px"
+			},
+			"attributes": {
+				"background": {
+					"type": "color",
+					"color": "#1a1a2e"
+				},
+				"sectionType": "footer"
+			},
+			"children": [
+				{
+					"id": "tx-04-footer-1",
+					"type": "text",
+					"content": "特定商取引法に基づく表記 ／ プライバシーポリシー",
+					"styles": {
+						"color": "#cccccc",
+						"fontSize": "12px",
+						"textAlign": "center",
+						"padding": "0 0 8px 0"
+					}
+				},
+				{
+					"id": "tx-04-footer-2",
+					"type": "text",
+					"content": "© 2026 サンプル事業者名",
+					"styles": {
+						"color": "#cccccc",
+						"fontSize": "12px",
+						"textAlign": "center",
+						"padding": "0"
 					}
 				}
 			]
