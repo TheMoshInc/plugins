@@ -1,0 +1,18 @@
+{
+	"folderId": 1,
+	"contentType": "ARTICLE",
+	"title": "はじめての方へ",
+	"body": "このサイトの使い方を説明します。\n\n上から順に読み進めてください。",
+	"description": "初めて参加する方向けの案内です",
+	"chapters": [],
+	"thumbnailAssetId": null,
+	"assetIds": [],
+	"isPublished": false,
+	"isNotifyOnPublish": false,
+	"isCommentEnabled": false,
+	"isCompletionButtonVisible": true,
+	"scheduledPublishAt": null,
+	"scheduledUnpublishAt": null,
+	"visibleAfterPurchaseDays": null,
+	"tagIds": []
+}

@@ -1,0 +1,5 @@
+{
+  "name": "membership-site-builder-plugin",
+  "description": "Adds a membership-site-builder skill for building MOSH membership sites",
+  "version": "0.1.0"
+}

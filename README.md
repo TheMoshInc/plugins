@@ -14,6 +14,7 @@ MOSH が配布する [Claude Code](https://code.claude.com/) プラグインマ�
 | `product-navigator-plugin` | 商品・商品プランを参照するための product-navigator skill |
 | `line-rich-menu-plugin` | LINE リッチメニューを確認・編集・デフォルト設定・削除するための line-rich-menu skill |
 | `product-builder-plugin` | 商品を作成・更新・公開・削除するための product-builder skill |
+| `membership-site-builder-plugin` | 会員サイトのフォルダ・コンテンツ・タグを作成・編集・公開するための membership-site-builder skill |
 
 ## インストール
 
@@ -29,20 +30,22 @@ Claude Code 内で以下を実行:
 /plugin install product-navigator-plugin@mosh-plugins
 /plugin install line-rich-menu-plugin@mosh-plugins
 /plugin install product-builder-plugin@mosh-plugins
+/plugin install membership-site-builder-plugin@mosh-plugins
 ```
 
 ## 更新
 
 ```shell
 /plugin marketplace update mosh-plugins               # カタログを再取得
-/plugin update lp-builder-plugin@mosh-plugins         # プラグイン本体を更新
-/plugin update workflow-builder-plugin@mosh-plugins   # プラグイン本体を更新
-/plugin update contact-broadcast-plugin@mosh-plugins  # プラグイン本体を更新
-/plugin update sales-reporter-plugin@mosh-plugins     # プラグイン本体を更新
-/plugin update file-share-plugin@mosh-plugins         # プラグイン本体を更新
-/plugin update product-navigator-plugin@mosh-plugins  # プラグイン本体を更新
-/plugin update line-rich-menu-plugin@mosh-plugins     # プラグイン本体を更新
-/plugin update product-builder-plugin@mosh-plugins   # プラグイン本体を更新
+/plugin update lp-builder-plugin@mosh-plugins               # プラグイン本体を更新
+/plugin update workflow-builder-plugin@mosh-plugins         # プラグイン本体を更新
+/plugin update contact-broadcast-plugin@mosh-plugins        # プラグイン本体を更新
+/plugin update sales-reporter-plugin@mosh-plugins           # プラグイン本体を更新
+/plugin update file-share-plugin@mosh-plugins               # プラグイン本体を更新
+/plugin update product-navigator-plugin@mosh-plugins        # プラグイン本体を更新
+/plugin update line-rich-menu-plugin@mosh-plugins           # プラグイン本体を更新
+/plugin update product-builder-plugin@mosh-plugins          # プラグイン本体を更新
+/plugin update membership-site-builder-plugin@mosh-plugins  # プラグイン本体を更新
 ```
 
 引数を省略するとすべてのマーケットプレイス/プラグインが対象になります。
@@ -58,6 +61,7 @@ Claude Code 内で以下を実行:
 /plugin uninstall product-navigator-plugin@mosh-plugins
 /plugin uninstall line-rich-menu-plugin@mosh-plugins
 /plugin uninstall product-builder-plugin@mosh-plugins
+/plugin uninstall membership-site-builder-plugin@mosh-plugins
 /plugin marketplace remove mosh-plugins
 ```
 
