@@ -39,6 +39,11 @@
       "name": "line-rich-menu-plugin",
       "source": "./plugins/line-rich-menu-plugin",
       "description": "Adds a line-rich-menu skill for managing MOSH LINE rich menus"
+    },
+    {
+      "name": "product-builder-plugin",
+      "source": "./plugins/product-builder-plugin",
+      "description": "Adds a product-builder skill for creating, updating, publishing and deleting MOSH products"
     }
   ]
 }
