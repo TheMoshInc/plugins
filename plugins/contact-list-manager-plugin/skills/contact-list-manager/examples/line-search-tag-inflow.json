@@ -1,0 +1,25 @@
+{
+  "_comment": "postCreatorContactsLineSearch のリクエスト完成形。「タグ『体験申込』が付いていて、流入経路『Instagramプロフィール』から来た、ブロックしていない友だち」を新しい順に20件。tag/inflowAction の id は getCreatorContactTags / getCreatorScenariosInflowActions で解決した値。filters は使わないキーも null で明示している点に注意（全キー必須）。",
+  "lineChannelId": 123,
+  "keyword": "",
+  "limit": 20,
+  "offset": 0,
+  "sort": "createdAtDesc",
+  "filters": {
+    "contact": {
+      "active": { "value": true, "operator": "eq" },
+      "blocked": { "value": false, "operator": "eq" }
+    },
+    "line": {
+      "createdAt": { "from": "2026-08-01T00:00:00+09:00", "to": null },
+      "name": null
+    },
+    "tag": {
+      "id": [{ "value": 42, "operator": "eq" }]
+    },
+    "inflowAction": {
+      "id": { "value": 7, "operator": "eq" }
+    },
+    "richMenu": null
+  }
+}

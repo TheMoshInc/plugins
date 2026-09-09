@@ -1,0 +1,5 @@
+{
+  "name": "contact-list-manager-plugin",
+  "description": "Adds a contact-list-manager skill for searching, inspecting, deleting and CSV-importing MOSH contacts (LINE friends and email subscribers)",
+  "version": "0.1.0"
+}

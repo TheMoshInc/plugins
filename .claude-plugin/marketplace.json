@@ -49,6 +49,11 @@
       "name": "membership-site-builder-plugin",
       "source": "./plugins/membership-site-builder-plugin",
       "description": "Adds a membership-site-builder skill for building MOSH membership sites"
+    },
+    {
+      "name": "contact-list-manager-plugin",
+      "source": "./plugins/contact-list-manager-plugin",
+      "description": "Adds a contact-list-manager skill for searching, inspecting, deleting and CSV-importing MOSH contacts (LINE friends and email subscribers)"
     }
   ]
 }

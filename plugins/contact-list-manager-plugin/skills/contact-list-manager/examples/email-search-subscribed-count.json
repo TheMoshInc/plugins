@@ -1,0 +1,18 @@
+{
+  "_comment": "postCreatorContactsEmailSearch で「メール配信が届く人は何人か」だけを数える最小リクエスト。limit: 1 にして本文は取らず、レスポンスの filteredCount を答えに使う（totalCount は絞り込み前の有効件数なので使わない）。個人情報を余計に取得しないためにも件数照会では limit を絞る。",
+  "keyword": "",
+  "limit": 1,
+  "offset": 0,
+  "sort": "createdAtDesc",
+  "filters": {
+    "contact": {
+      "active": { "value": true, "operator": "eq" },
+      "subscribed": { "value": true, "operator": "eq" }
+    },
+    "email": {
+      "createdAt": null,
+      "address": null
+    },
+    "tag": null
+  }
+}
