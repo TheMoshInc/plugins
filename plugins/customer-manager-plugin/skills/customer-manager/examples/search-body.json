@@ -1,0 +1,157 @@
+{
+  "_note": "postCustomersSearch に渡す完成形のリクエスト。call の中身をそのままツールの引数に使える。14フィールドすべてが必ず埋まっていることに注目（使わない条件も空配列・空文字・null で埋める）。",
+  "all-customers-first-page": {
+    "依頼の例": "顧客一覧を見せて / 顧客って何人いますか？",
+    "ポイント": "条件は何も指定しない。totalCount が全体の件数になる。",
+    "call": {
+      "bodyParams": {
+        "serviceIds": [],
+        "subscriptionIds": [],
+        "eventDateTime": null,
+        "searchQuery": "",
+        "subscriptionState": null,
+        "paymentMethod": null,
+        "paymentType": null,
+        "paymentStatus": null,
+        "isEmailReceivingAllowed": null,
+        "tagIds": [],
+        "excludeTagIds": [],
+        "userIds": [],
+        "page": 1,
+        "limit": 10
+      }
+    }
+  },
+  "search-by-name": {
+    "依頼の例": "田中さんという顧客を探して / このメールアドレスの人いる？",
+    "ポイント": "searchQuery は顧客名・メールアドレス・MOSH ID の部分一致。どれで来ても同じ1フィールドに入れる。",
+    "call": {
+      "bodyParams": {
+        "serviceIds": [],
+        "subscriptionIds": [],
+        "eventDateTime": null,
+        "searchQuery": "田中",
+        "subscriptionState": null,
+        "paymentMethod": null,
+        "paymentType": null,
+        "paymentStatus": null,
+        "isEmailReceivingAllowed": null,
+        "tagIds": [],
+        "excludeTagIds": [],
+        "userIds": [],
+        "page": 1,
+        "limit": 10
+      }
+    }
+  },
+  "active-subscribers-mail-ok": {
+    "依頼の例": "サブスク継続中で、メール受信OKの顧客を100件まとめて出して",
+    "ポイント": "limit の上限は 100。画面では継続状態フィルターはサブスク型サービスを選んだときだけ出るが、API 側では serviceIds が空でも指定できる。",
+    "call": {
+      "bodyParams": {
+        "serviceIds": [],
+        "subscriptionIds": [],
+        "eventDateTime": null,
+        "searchQuery": "",
+        "subscriptionState": "active",
+        "paymentMethod": null,
+        "paymentType": null,
+        "paymentStatus": null,
+        "isEmailReceivingAllowed": true,
+        "tagIds": [],
+        "excludeTagIds": [],
+        "userIds": [],
+        "page": 1,
+        "limit": 100
+      }
+    }
+  },
+  "email-receiving-stopped": {
+    "依頼の例": "メールの受信を止めている顧客を確認したい",
+    "ポイント": "false は「受信停止中で絞り込む」という有効な条件。「絞り込まない」は null であって false ではない。",
+    "call": {
+      "bodyParams": {
+        "serviceIds": [],
+        "subscriptionIds": [],
+        "eventDateTime": null,
+        "searchQuery": "",
+        "subscriptionState": null,
+        "paymentMethod": null,
+        "paymentType": null,
+        "paymentStatus": null,
+        "isEmailReceivingAllowed": false,
+        "tagIds": [],
+        "excludeTagIds": [],
+        "userIds": [],
+        "page": 1,
+        "limit": 10
+      }
+    }
+  },
+  "tag-filter-with-known-ids": {
+    "依頼の例": "顧客タグID 12 と 15 の顧客から、タグID 30 の人は除いて出して（ユーザーが顧客タグの ID を明示した場合のみ）",
+    "ポイント": "tagIds / excludeTagIds は顧客タグの ID。ID を明示されていないときは空配列のままにする。getCreatorContactTags が返すコンタクトタグの ID は絶対に入れない。",
+    "call": {
+      "bodyParams": {
+        "serviceIds": [],
+        "subscriptionIds": [],
+        "eventDateTime": null,
+        "searchQuery": "",
+        "subscriptionState": null,
+        "paymentMethod": null,
+        "paymentType": null,
+        "paymentStatus": null,
+        "isEmailReceivingAllowed": null,
+        "tagIds": ["12", "15"],
+        "excludeTagIds": ["30"],
+        "userIds": [],
+        "page": 1,
+        "limit": 10
+      }
+    }
+  },
+  "bank-transfer-installment": {
+    "依頼の例": "銀行振込で分割払いした顧客を教えて",
+    "ポイント": "`paymentMethod` の銀行振込は `bank-transfer`（ハイフン区切り）。`bank_transfer` とアンダースコアにしない。他の値（`card` / `cash` / `one_time` / `installment`）は元々ハイフンを含まないため紛れやすい罠はこの値だけ。",
+    "call": {
+      "bodyParams": {
+        "serviceIds": [],
+        "subscriptionIds": [],
+        "eventDateTime": null,
+        "searchQuery": "",
+        "subscriptionState": null,
+        "paymentMethod": "bank-transfer",
+        "paymentType": "installment",
+        "paymentStatus": null,
+        "isEmailReceivingAllowed": null,
+        "tagIds": [],
+        "excludeTagIds": [],
+        "userIds": [],
+        "page": 1,
+        "limit": 10
+      }
+    }
+  },
+  "next-page": {
+    "依頼の例": "続きを見せて（totalCount が 250 で、1ページ目の 100 件を取得済み）",
+    "ポイント": "page を増やす。limit は変えない（変えると取得範囲がずれる）。",
+    "call": {
+      "bodyParams": {
+        "serviceIds": [],
+        "subscriptionIds": [],
+        "eventDateTime": null,
+        "searchQuery": "",
+        "subscriptionState": null,
+        "paymentMethod": null,
+        "paymentType": null,
+        "paymentStatus": null,
+        "isEmailReceivingAllowed": null,
+        "tagIds": [],
+        "excludeTagIds": [],
+        "userIds": [],
+        "page": 2,
+        "limit": 100
+      }
+    }
+  }
+}

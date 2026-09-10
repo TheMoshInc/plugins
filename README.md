@@ -16,6 +16,7 @@ MOSH が配布する [Claude Code](https://code.claude.com/) プラグインマ�
 | `product-builder-plugin` | 商品を作成・更新・公開・削除するための product-builder skill |
 | `membership-site-builder-plugin` | 会員サイトのフォルダ・コンテンツ・タグを作成・編集・公開するための membership-site-builder skill |
 | `contact-list-manager-plugin` | コンタクト（LINE友だち / メール購読者）を検索・確認・削除・CSVインポートするための contact-list-manager skill |
+| `customer-manager-plugin` | サービス購入者（顧客）を検索・一覧・件数確認するための customer-manager skill |
 
 ## インストール
 
@@ -33,6 +34,7 @@ Claude Code 内で以下を実行:
 /plugin install product-builder-plugin@mosh-plugins
 /plugin install membership-site-builder-plugin@mosh-plugins
 /plugin install contact-list-manager-plugin@mosh-plugins
+/plugin install customer-manager-plugin@mosh-plugins
 ```
 
 ## 更新
@@ -49,6 +51,8 @@ Claude Code 内で以下を実行:
 /plugin update product-builder-plugin@mosh-plugins          # プラグイン本体を更新
 /plugin update membership-site-builder-plugin@mosh-plugins  # プラグイン本体を更新
 /plugin update contact-list-manager-plugin@mosh-plugins     # プラグイン本体を更新
+/plugin update customer-manager-plugin@mosh-plugins         # プラグイン本体を更新
+
 ```
 
 引数を省略するとすべてのマーケットプレイス/プラグインが対象になります。
@@ -66,6 +70,7 @@ Claude Code 内で以下を実行:
 /plugin uninstall product-builder-plugin@mosh-plugins
 /plugin uninstall membership-site-builder-plugin@mosh-plugins
 /plugin uninstall contact-list-manager-plugin@mosh-plugins
+/plugin uninstall customer-manager-plugin@mosh-plugins
 /plugin marketplace remove mosh-plugins
 ```
 
