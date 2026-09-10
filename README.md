@@ -7,7 +7,7 @@ MOSH が配布する [Claude Code](https://code.claude.com/) プラグインマ�
 | プラグイン | 説明 |
 | :--- | :--- |
 | `lp-builder-plugin` | ランディングページを構築するための lp-builder skill |
-| `workflow-builder-plugin` | ワークフロー（ステップ配信）を構築するための workflow-builder skill |
+| `workflow-builder-plugin` | ワークフロー（ステップ配信）を構築する workflow-builder skill と、既存ワークフローを点検する workflow-review skill |
 | `contact-broadcast-plugin` | コンタクト向け一斉配信（メール / LINE）を作成・運用するための contact-broadcast skill |
 | `sales-reporter-plugin` | 売上を確認・分析するための sales-reporter skill |
 | `file-share-plugin` | ファイル共有（動画・画像・PDF）を操作するための file-share skill |

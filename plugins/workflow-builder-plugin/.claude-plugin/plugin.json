@@ -1,5 +1,5 @@
 {
   "name": "workflow-builder-plugin",
-  "description": "Adds a workflow-builder skill for constructing MOSH workflows",
-  "version": "0.1.0"
+  "description": "Adds workflow-builder and workflow-review skills for constructing and reviewing MOSH workflows",
+  "version": "0.2.0"
 }

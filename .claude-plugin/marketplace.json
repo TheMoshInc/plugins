@@ -13,7 +13,7 @@
     {
       "name": "workflow-builder-plugin",
       "source": "./plugins/workflow-builder-plugin",
-      "description": "Adds a workflow-builder skill for constructing MOSH workflows"
+      "description": "Adds workflow-builder and workflow-review skills for constructing and reviewing MOSH workflows"
     },
     {
       "name": "contact-broadcast-plugin",
