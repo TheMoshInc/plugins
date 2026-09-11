@@ -108,6 +108,7 @@
 - `background.type` — `"color"` | `"image"` | `"gradationColor"`（グラデーション。下記「背景グラデーション」の項を参照）
   - `type: "color"` の `color` は **hsla のアルファ付きで半透明にできる**（例 `"hsla(0, 0%, 100%, 0.06)"`。編集画面のカラーピッカーが実際に書き出す形式で、保存・再取得で保持されることを確認済み 2026-09-04）。`styles.background` にも同じ値を入れてフォールバックにする。素の要素が画像・賑やかな背景の上に乗って読みにくいときの半透明面に使う（多用しない。`best-practices.md`「囲いの原則」）
 - `sectionType` — `section` の分類メタ情報。下記の許容値以外（`"hero"` など）は無効値なので使わない
+- `showDesktop` / `showMobile` — **どの要素にも設定可能**な表示切り替え。`false` にするとその画面幅では要素ごと非表示になる（DOM自体が出ない。`display:none` ではなく要素の出し分け）。`mobileStyles` で見た目を調整しても崩れが解消しない場合、PC用とモバイル用で**構造ごと分けて用意する**フォールバックとして使える: 同じ内容を2セット作り、一方に `showMobile: false`（PC専用）、もう一方に `showDesktop: false`（モバイル専用、レイアウトを簡略化してよい）を付ける。多用すると保守対象が二重になるので、`mobileStyles` の調整で直る場合はそちらを優先する（2026-09-10 ユーザー提案で明文化）
 
 ### 入れ子セクションの背景は必ず明示する（既定は白）
 
@@ -296,7 +297,7 @@
 
 ## `text` / `heading` のインライン装飾（一文の中で部分的に太字・色・サイズを変える）
 
-`content` には単純な文字列だけでなく、tiptapのdoc構造をそのまま渡せる。 **`textStyle.attrs.backgroundColor`（文字の下地マーカー）は編集画面に操作が無いため空文字のままにする（値を入れると画面から直せない）。部分強調は色・太字・サイズで行う。**1つの`text`/`heading`要素内で、一部の文言だけ太字・色・フォントサイズを変えたい場合はこちらを使う（プレーン文字列を渡した場合、要素全体が`styles`で指定した単一の書式になり、部分的な装飾はできない）。
+`content` には単純な文字列だけでなく、tiptapのdoc構造をそのまま渡せる。 **`textStyle.attrs.backgroundColor`（文字の下地マーカー）は編集画面に操作が無いため空文字のままにする（値を入れると画面から直せない）。部分強調は色・太字・サイズで行う（2026-09-04 ユーザー指摘）。**1つの`text`/`heading`要素内で、一部の文言だけ太字・色・フォントサイズを変えたい場合はこちらを使う（プレーン文字列を渡した場合、要素全体が`styles`で指定した単一の書式になり、部分的な装飾はできない）。
 
 ```json
 {
@@ -422,6 +423,30 @@
   - **ボタンの大きさの決め方（編集画面の項目に対応させる）**: 高さ＝「行の高さ」`styles.lineHeight`（`"1"`〜`"3"` を 0.1 刻み。fontSize × lineHeight ＋ 内側余白 28px が実高さ。16px×1.6 で約54px、18px×1.8 で約60px、20px×2 で約68px）／幅＝「ボタンの幅」`styles.width`（`"auto"` / `"100%"` / `"100px"`〜`"800px"` 100px 刻み、任意 px・% も可）／外側の余白＝「余白」`layout.styles.padding`（ボタンの**周囲**に付く。`mobileLayoutStyles` で SP 別指定）
   - `styles.padding` は**ボタン内側の余白**で編集画面に項目が無い。UI 既定 `"14px 16px"` のまま変更しない（変えると編集画面で再現・修正できない）。大きさは lineHeight / width / fontSize で作る。`display: "inline-block"` / `cursor: "pointer"` も既定のまま引き継ぐ
 - `image`: `width` / `padding`（`styles` 内で使用可能。中央寄せは `styles` ではなく後述の `layout` フィールドで行う）
+  - `image` に `borderRadius` は無い（角丸にできない）。角丸に見せたい場合は「画像を角丸にする（`section` で包む）」の技法を使う（2026-09-09 ユーザー確認）
+
+#### 画像を角丸にする（`section` で包む）
+
+`image` 要素自体には `borderRadius` が無いため、角丸の写真に見せたい場合は**画像と同じ横幅の `section` で `image` を包み、その外側の `section` に `borderRadius` を設定する**。
+
+```json
+{
+  "id": "sec-xx-photo-wrap",
+  "type": "section",
+  "content": "",
+  "styles": { "width": "100%", "borderRadius": "16px", "background": "#ffffff" },
+  "attributes": { "background": { "type": "color", "color": "#ffffff" } },
+  "children": [
+    { "id": "img-xx-photo", "type": "image", "content": "", "styles": { "width": "100%", "padding": "0" }, "attributes": { "src": "https://...", "alt": "説明" } }
+  ]
+}
+```
+
+- 外側 `section` の `width` は `image` の `width`（通常 `"100%"`）と一致させる。ずれるとクリップ位置が画像の意図と合わなくなる
+- `image` 側の `padding` は `"0"` にする（余白が入ると角丸の縁と写真の間に地の色が見えてしまう）
+- **外側 `section`（包み）側の `padding` も `"0"` にする**（2026-09-10 実機で確認）。特に円形（`borderRadius: "50%"`）にする場合は致命的: 包みに上下左右いずれかの padding を入れると、幅（`width`）と実際の高さ（画像の高さ＋padding）がずれて正方形でなくなり、`50%` が真円ではなく歪んだ楕円になる。画像とテキストの間に余白を作りたい場合は、**包み側ではなく隣接する要素側**（次のテキストの上 padding 等）に付ける
+- 角丸の値はプリセットの角丸（`presets.md` の各プリセット定義）に合わせる（例: 紺×金12px、黒×朱0px、橙×緑20px）
+- ヒーロー・特徴・声セクションの写真など、四角い写真が単調に見える場面で使う。多用すると角丸だらけになるので、囲いの原則（`best-practices.md`）同様、1LP内で統一トーンに留める
 
 #### `image` / `button` の中央寄せ（`layout` フィールド）
 

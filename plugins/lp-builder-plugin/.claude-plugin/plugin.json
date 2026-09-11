@@ -1,5 +1,5 @@
 {
   "name": "lp-builder-plugin",
   "description": "Adds an lp-builder skill for constructing landing pages",
-  "version": "0.1.0"
+  "version": "0.2.0"
 }
