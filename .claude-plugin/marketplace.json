@@ -43,7 +43,7 @@
     {
       "name": "product-builder-plugin",
       "source": "./plugins/product-builder-plugin",
-      "description": "Adds a product-builder skill for creating, updating, publishing and deleting MOSH products"
+      "description": "Adds a product-builder skill for creating, updating, publishing and deleting MOSH products and product plans"
     },
     {
       "name": "membership-site-builder-plugin",

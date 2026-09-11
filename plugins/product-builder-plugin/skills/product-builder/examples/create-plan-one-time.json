@@ -1,0 +1,21 @@
+{
+  "name": "単発体験レッスン",
+  "description": "初回の方向けの60分レッスンです。マットはこちらでご用意します。",
+  "orderNum": 0,
+  "publishingStatus": "PRIVATE",
+  "capacity": 20,
+  "showRemaining": true,
+  "remainingThreshold": 5,
+  "price": { "amount": 3000, "currency": "JPY" },
+  "discountPrice": null,
+  "paymentMethods": [
+    { "method": "CARD", "isEnabled": true },
+    { "method": "BANK_TRANSFER", "isEnabled": false }
+  ],
+  "billingCycle": "ONE_TIME",
+  "benefits": [],
+  "installmentType": "LUMP_SUM",
+  "installmentIterations": [],
+  "applicationStartDateTime": "2026-06-01T00:00:00+09:00",
+  "applicationEndDateTime": "2026-06-30T23:59:00+09:00"
+}

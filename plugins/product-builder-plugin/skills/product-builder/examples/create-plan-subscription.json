@@ -1,0 +1,37 @@
+{
+  "name": "月額メンバーシップ",
+  "description": "月2回のオンラインレッスンと、録画の見放題が含まれます。",
+  "orderNum": 0,
+  "publishingStatus": "PRIVATE",
+  "capacity": 0,
+  "showRemaining": false,
+  "remainingThreshold": 0,
+  "price": { "amount": 5000, "currency": "JPY" },
+  "initialPrice": null,
+  "discountPrice": null,
+  "paymentMethods": [
+    { "method": "CARD", "isEnabled": true },
+    { "method": "BANK_TRANSFER", "isEnabled": false }
+  ],
+  "billingCycle": "MONTHLY",
+  "iterations": 12,
+  "benefits": ["月2回のオンラインレッスン", "レッスン録画の見放題"],
+  "installmentType": "LUMP_SUM",
+  "installmentIterations": [],
+  "billingStartType": "immediate",
+  "billingStartAbsoluteDate": null,
+  "billingStartRelativeOffsetDays": 0,
+  "applicationStartDateTime": null,
+  "applicationEndDateTime": null,
+  "applicationPeriods": [
+    {
+      "startDateTime": "2026-06-01T10:00:00+09:00",
+      "endDateTime": "2026-06-01T23:59:00+09:00",
+      "recurringFrequency": "MONTHLY",
+      "recurringInterval": 1,
+      "recurringWeekOfMonth": [1],
+      "recurringDaysOfWeek": [1],
+      "recurringEndDateTime": null
+    }
+  ]
+}

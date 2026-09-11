@@ -62,7 +62,7 @@
 |---|---|
 | `publishingStatus` | `PUBLIC`=公開 / `LIMITED`=限定公開 / `PRIVATE`=非公開 |
 | `billingCycle` | `ONE_TIME`=買い切り / `MONTHLY`=月額 / `YEARLY`=年額 |
-| `paymentMethods[].method` | `CARD`=クレジットカード / `BANK_TRANSFER`=銀行振込 / `CASH`=現金 / `CONVENIENCE_STORE`=コンビニ払い |
+| `paymentMethods[].method` | `CARD`=クレジットカード / `BANK_TRANSFER`=銀行振込 |
 | `salesStatus` | `forSale`=受付中 / `notForSale`=受付停止中 / `soldOut`=満員 / `beforeApplicationPeriod`=受付開始前 / `afterApplicationPeriod`=受付終了 / `outOfApplicationPeriod`=受付期間外 |
 | `installmentType` | `LUMP_SUM`=一括払い / `INSTALLMENT_LUMP_DEPOSIT`=一括払い または 分割払い（一括入金） / `INSTALLMENT`=一括払い または 分割払い（分割入金） |
 
