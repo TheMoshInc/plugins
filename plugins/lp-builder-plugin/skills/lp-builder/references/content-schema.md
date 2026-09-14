@@ -110,6 +110,22 @@
 - `sectionType` — `section` の分類メタ情報。下記の許容値以外（`"hero"` など）は無効値なので使わない
 - `showDesktop` / `showMobile` — **どの要素にも設定可能**な表示切り替え。`false` にするとその画面幅では要素ごと非表示になる（DOM自体が出ない。`display:none` ではなく要素の出し分け）。`mobileStyles` で見た目を調整しても崩れが解消しない場合、PC用とモバイル用で**構造ごと分けて用意する**フォールバックとして使える: 同じ内容を2セット作り、一方に `showMobile: false`（PC専用）、もう一方に `showDesktop: false`（モバイル専用、レイアウトを簡略化してよい）を付ける。多用すると保守対象が二重になるので、`mobileStyles` の調整で直る場合はそちらを優先する（2026-09-10 ユーザー提案で明文化）
 
+**`textAlign` は段落側が正。** `content` が tiptap のとき、MOSH は**段落の `attrs.textAlign`** を見て寄せを決める。`styles.textAlign` だけを `center` にしても効かず、その要素だけ左寄せのまま残る（2026-09-13 実機で確認。ヒーローの数字だけ左に落ちてラベルと軸がずれた）。**tiptap の要素は `styles.textAlign` と段落の `attrs.textAlign` を必ず同じ値にする**。
+
+```json
+"styles": { "textAlign": "center" },
+"content": { "type": "tiptap", "json": { "type": "doc", "content": [
+  { "type": "paragraph", "attrs": { "textAlign": "center", "lineHeight": "" }, "content": [ ... ] }
+]}}
+```
+
+### flex の中身を中央に寄せる（`justifyContent`）
+
+`display: "flex"` のセクションに **`justifyContent: "center"`** を指定でき、保存・再取得後も保持されることを確認済み（2026-09-13 stg で往復確認）。`margin` が使えないため、これが横方向の中央寄せの正攻法になる。
+
+- ただし**実機の描画までは未検証**。確実を期すなら、**左右に透明のスペーサー列（例 25% / 50% / 25%）と併用**する。`justifyContent` が効けば中央、効かなくても中央の列の中に収まる
+- `alignItems` など他の flex プロパティは未確認。使う前に往復テストで保持を確かめる
+
 ### 入れ子セクションの背景は必ず明示する（既定は白）
 
 `section` は背景未指定だと**レンダラー既定の白**で描画される。横並び用の行・列・ラップなど「レイアウトだけが目的の入れ子セクション」に背景を書かないと、ダーク背景のセクション内に白い帯や白い箱が出て、その上の薄色テキストが読めなくなる（2026-09-04 カタログ 数字バーで実機確認）。
@@ -348,6 +364,7 @@
 - `text`ノード — `text`(表示文字列)と`marks`を持つ。`marks`に`textStyle`（color/fontSize等）や`bold`を個別に付けることで、ラン単位で書式を変えられる。
 - `hardBreak`ノード — `\n`ではなく明示的な改行専用ノード。`text`プロパティは持たない独立した要素。直後のテキストと書式の連続性を保つため、同じ`marks`を付けておくとよい。
 - 要素レベルの`styles`（padding等）は引き続き有効。文字の色・サイズはmarks側が優先される。
+- **`textStyle.attrs.fontFamily` を空文字にすると「継承」ではなく既定フォント（`'Noto Sans JP'`）にフォールバックする。** 要素の `styles.fontFamily` が `'Noto Serif JP'` や `'M PLUS Rounded 1c'` の見出しをプレーン文字列から tiptap に変換すると、**書体が黙って変わる**（2026-09-12 実機で確認）。tiptap に変換するときは、**全ランの `fontFamily` に要素と同じ書体名を明示する**こと。
 - 保存後に`getCreatorLandingPage`で取得すると、プレーン文字列で送った`text`/`heading`もこの形式に自動変換されて返ってくる（正引きの参考にできる）。
 
 ## `section` + `children` の例

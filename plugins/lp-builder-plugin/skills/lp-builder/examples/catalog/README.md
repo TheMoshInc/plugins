@@ -1,4 +1,4 @@
-# プリセット JSON（5トーン）
+# プリセット JSON（6トーン）
 
 `references/presets.md` の各プリセットに対応する、そのまま写せる LP 全体の JSON。
 
@@ -11,6 +11,7 @@
 | black_vermilion.json | 黒×朱（強い・和） | D 無料相談 | 9 |
 | yellow_blue.json | 黄×青（フレッシュ・テック） | D 無料相談 | 9 |
 | orange_green.json | 橙×緑（ポップ・親しみ） | A LINE友だち登録 | 10 |
+| purple_magenta.json | 紫×マゼンタ（オプトイン・特典配布） | A LINE友だち登録 | 7 |
 
 **写すときの必須差し替え**
 - **ID**: catalog の ID はサンプルの章順。構成案表で承認した ID（`sec-{2桁順}-{役割}`）に置き換える。章を抜いたら番号を振り直す
