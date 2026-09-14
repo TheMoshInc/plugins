@@ -10,7 +10,8 @@
 				"contactTagAdded": null,
 				"inflowActionConverted": {
 					"inflowActionId": 5
-				}
+				},
+				"scheduledProcessing": null
 			},
 			"action": {
 				"actionType": "SEND_LINE_MESSAGE",
@@ -20,7 +21,7 @@
 						{
 							"messageType": "TEXT",
 							"text": "ご登録ありがとうございます！\nまずはこちらのガイドをご覧ください。\nhttps://example.com/guide",
-							"isTrackingEnabled": false,
+							"isTrackingEnabled": true,
 							"urlActions": [
 								{
 									"url": "https://example.com/guide",
@@ -49,6 +50,7 @@
 				"sendLineMessage": null,
 				"waitTime": {
 					"waitTimeType": "RELATIVE",
+					"actionDate": null,
 					"actionAfterDays": 1,
 					"actionHours": null,
 					"actionMinutes": null

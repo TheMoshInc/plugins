@@ -61,10 +61,11 @@ ARCHIVED  : アーカイブ済（事実上の廃止）
 | `INFLOW_ACTION_CONVERTED` | `inflowActionConverted` | `{ inflowActionId: number }`（流入経路は LINE 公式アカウントに属する。ボディ最上位の `creatorLineChannelId` を流入経路が属するアカウントと一致させること） |
 | `INSTALLMENT_PAYMENT_FAILED` | なし（サブフィールド不要） | 詳細フィールドは不要。同一分割回の決済リトライ失敗では再発火しない |
 | `SUBSCRIPTION_PAYMENT_FAILED` | なし（サブフィールド不要） | 詳細フィールドは不要。初回失敗のみ発火し、同一請求期間内の決済リトライ失敗では再発火しない |
+| `SCHEDULED_PROCESSING` | `scheduledProcessing` | `{ targetType: "contactLine"\|"guest"\|"all", scheduleRules: ScheduleRule[] }`。**出来事ではなく日時で発火する唯一のトリガー**で、発火時点の母集団（`targetType` で決まる）を丸ごと対象にする。`targetType` が `contactLine` / `all` の場合はワークフロー最上位の `creatorLineChannelId` が必須。詳細は後述「SCHEDULED_PROCESSING: `scheduledProcessing`」 |
 
-### trigger テンプレート（必ず6フィールド全部指定）
+### trigger テンプレート（必ず7フィールド全部指定）
 
-`ScenarioTrigger` 型のサブフィールドは `triggerType` + 5つ。`lineChannelContactRegisteredTrigger` は型定義に存在しないため指定禁止。
+`ScenarioTrigger` 型のサブフィールドは `triggerType` + 6つ。`lineChannelContactRegisteredTrigger` は型定義に存在しないため指定禁止。
 
 ```json
 {
@@ -73,9 +74,12 @@ ARCHIVED  : アーカイブ済（事実上の廃止）
   "serviceAppliedTrigger": null,
   "serviceScheduleReminder": null,
   "contactTagAdded": { "contactTagId": 1 },
-  "inflowActionConverted": null
+  "inflowActionConverted": null,
+  "scheduledProcessing": null
 }
 ```
+
+⚠️ **`scheduledProcessing` はキーの省略が不可**（他のサブフィールドと同じく `required`）。使わないトリガーでも `null` を明示しないと `patchCreatorScenario` が 400 で弾く。
 
 `LINE_CHANNEL_CONTACT_REGISTERED` の場合はサブフィールドが全て `null`。LINE公式アカウントはボディ最上位の `creatorLineChannelId` で指定する:
 
@@ -86,11 +90,87 @@ ARCHIVED  : アーカイブ済（事実上の廃止）
   "serviceAppliedTrigger": null,
   "serviceScheduleReminder": null,
   "contactTagAdded": null,
-  "inflowActionConverted": null
+  "inflowActionConverted": null,
+  "scheduledProcessing": null
 }
 ```
 
 `INSTALLMENT_PAYMENT_FAILED` / `SUBSCRIPTION_PAYMENT_FAILED` も同様にサブフィールドが全て `null`（前提となる既存リソースの確認も不要。トリガー自体に ID を持たない）。
+
+`SCHEDULED_PROCESSING` の場合は `scheduledProcessing` だけを実オブジェクトにする:
+
+```json
+{
+  "triggerType": "SCHEDULED_PROCESSING",
+  "marketingLeadBenefitReceivedTrigger": null,
+  "serviceAppliedTrigger": null,
+  "serviceScheduleReminder": null,
+  "contactTagAdded": null,
+  "inflowActionConverted": null,
+  "scheduledProcessing": {
+    "targetType": "contactLine",
+    "scheduleRules": [
+      {
+        "frequency": "weekly",
+        "interval": 1,
+        "startDate": "2026-10-01",
+        "hour": 10,
+        "minute": 0,
+        "daysOfWeek": ["saturday"],
+        "daysOfWeekBySetPos": null,
+        "daysOfMonth": null,
+        "endCondition": null
+      }
+    ]
+  }
+}
+```
+
+### SCHEDULED_PROCESSING: `scheduledProcessing`
+
+日時で発火するトリガー。他のトリガーが「1人に起きた出来事」を起点にするのに対し、これは**発火時点の母集団全員**に対して一斉に実行が作られる。
+
+`scheduledProcessing` のフィールドは 2 つ（どちらも必須）:
+
+| フィールド | 型 | 内容 |
+|---|---|---|
+| `targetType` | `"contactLine"` \| `"guest"` \| `"all"` | 対象母集団。`contactLine`=該当 LINE 公式アカウントの LINE コンタクト（ブロック・無効を除く）／`guest`=クリエイターの MOSH ゲスト（購入者）／`all`=両方。`contactLine` と `all` は**ワークフロー最上位の `creatorLineChannelId` が必須**（未設定だと稼働できない）。`all` は LINE コンタクトと紐付け済みのゲストを重複除外するので、同じ人に二重配信はされない |
+| `scheduleRules` | 配列（**最大1件**） | 発火スケジュール。下書き中は空配列 `[]` を許容するが、公開（`ACTIVE` 化）には1件必須。複数化を見込んで配列だが、現状2件以上は保存できない |
+
+`scheduleRules[]` の各要素（`scenarioScheduledProcessingScheduleRule`。**全フィールド指定必須**、使わないものは `null` を明示）:
+
+| フィールド | 型 | 内容 |
+|---|---|---|
+| `frequency` | `"once"` \| `"daily"` \| `"weekly"` \| `"monthly"` | 発火頻度。`once` は `startDate` に1回だけ |
+| `interval` | integer 1-50 \| null | 繰り返し間隔（`daily`=日、`weekly`=週、`monthly`=月）。`once` のときは `null`、それ以外は指定必須 |
+| `startDate` | string `YYYY-MM-DD` | 発火の起点日（`once` では発火日そのもの）。この日以降が発火対象 |
+| `hour` | integer 0-23 | 発火時刻の時（Asia/Tokyo） |
+| `minute` | integer 0-59 | 発火時刻の分（Asia/Tokyo） |
+| `daysOfWeek` | `["monday"..."sunday"]`（**1件のみ**）\| null | `weekly` のとき、または `monthly` の第n曜日指定のときに指定。それ以外は `null` |
+| `daysOfWeekBySetPos` | integer 1-5 \| null | 第n曜日指定の n。`daysOfWeek` とセットで「第n の指定曜日」を表す（`monthly` の第n曜日指定のときのみ）。それ以外は `null` |
+| `daysOfMonth` | `[1-31]`（**1件のみ**）\| null | `monthly` の日付指定のときに指定。それ以外は `null` |
+| `endCondition` | object \| null | 繰り返しの終了条件。`frequency` が `once` 以外のときに指定できる。終了条件を設けないなら `null` |
+
+`endCondition` の形（`type` / `count` / `date` の3フィールド必須。`count` と `date` は**同時指定不可**で、使わない側を `null` にする）:
+
+```json
+{ "type": "count", "count": 10, "date": null }
+```
+```json
+{ "type": "date", "count": null, "date": "2026-12-31" }
+```
+
+`frequency` 別の組み合わせ（この組み合わせ以外は指定しない）:
+
+| frequency | interval | daysOfWeek | daysOfWeekBySetPos | daysOfMonth |
+|---|---|---|---|---|
+| `once` | `null` | `null` | `null` | `null` |
+| `daily` | 1-50 | `null` | `null` | `null` |
+| `weekly` | 1-50 | 1件 | `null` | `null` |
+| `monthly`（日付指定: 毎月15日） | 1-50 | `null` | `null` | 1件 |
+| `monthly`（第n曜日指定: 第1土曜日） | 1-50 | 1件 | 1-5 | `null` |
+
+⚠️ **存在しない日はスキップされる**（繰り越されない）。`monthly` で `daysOfMonth: [31]` にすると2月・4月等は発火せず、第n曜日指定もその月に該当曜日が n 回無ければ（例: 第5土曜日）その月は発火しない。「毎月必ず1回」を意図しているなら 28 日以前か第1〜4曜日を選ぶようユーザーに確認する。日時はすべて日本時間（Asia/Tokyo）として解釈される。
 
 ## action の構造（POST 用 = `scenarioAction`）
 
@@ -328,10 +408,12 @@ PATCH で分岐内アクションを組むときは、型エラーが出にく�
 
 「検査の二層構造」で言う意味解析の中核。**先頭 stage の `triggerType` が実行コンテキストに供給する識別子**と、**各 action / condition が実行時に要求する識別子**の適合を判定する。スキーマはどの組み合わせも通すので、ここで初めて「動くか」が決まる。
 
-各トリガーが供給する識別子は 2 種類のどちらか一方だけ（両方を供給するトリガーも、どちらも供給しないトリガーも無い）:
+各トリガーが**1人の対象者に**供給する識別子は 2 種類のどちらか一方だけ（1 人の実行コンテキストに両方が積まれることは無い）:
 
 - **コンタクト ID**: コンタクトリスト上の人物。LINE 友だち追加・タグ付与・流入経路 CV・特典取得はこれ
 - **MOSH ID**: MOSH アカウント（ゲスト）。プラン・サービス申込・開催リマインダー・決済失敗系はこれ
+
+例外は `SCHEDULED_PROCESSING` で、**どちらを供給するかが `targetType` で変わる**（`contactLine`=コンタクト ID / `guest`=MOSH ID）。`all` は母集団が 2 群の混在になり、**同じワークフローの中で対象者ごとに供給される識別子が違う**ため、下表では「一方は ○、もう一方は △」ではなく**両方 △**として扱う（どちらのステップも母集団の片側で失敗しうる）。
 
 | triggerType | 供給する識別子 | `SEND_EMAIL`<br>[要: どちらか]※4 | `SEND_LINE_MESSAGE`<br>[要: コンタクト]※5 | `ADD_CONTACT_TAG` / `REMOVE_CONTACT_TAG`<br>[要: コンタクト] | `LINK_LINE_RICH_MENU` / `UNLINK_LINE_RICH_MENU`<br>[要: コンタクト]※5 | `CONDITION(CONTACT_TAG)`<br>[要: コンタクト] | `CONDITION(SERVICE_APPLICATION_STATUS)`<br>[要: MOSH] | `CONDITION(AUTO_WEBINAR_*)`<br>[要: MOSH] | `CONDITION(BANK_TRANSFER_STATUS)`<br>[要: MOSH] |
 |---|---|---|---|---|---|---|---|---|---|
@@ -343,6 +425,9 @@ PATCH で分岐内アクションを組むときは、型エラーが出にく�
 | `SERVICE_SCHEDULE_REMINDER` | MOSH ID のみ | ○ | △ | △ | △ | △ | ○ | ○ | ○ |
 | `INSTALLMENT_PAYMENT_FAILED` | MOSH ID のみ | ○ | △ | △ | △ | △ | ○ | ○ | ○ |
 | `SUBSCRIPTION_PAYMENT_FAILED` | MOSH ID のみ | ○ | △ | △ | △ | △ | ○ | ○ | ○ |
+| `SCHEDULED_PROCESSING`（`targetType: contactLine`） | コンタクト ID のみ | ○※4 | ○ | ○ | ○ | ○ | △ | △ | △ |
+| `SCHEDULED_PROCESSING`（`targetType: guest`） | MOSH ID のみ | ○ | △ | △ | △ | △ | ○ | ○ | ○ |
+| `SCHEDULED_PROCESSING`（`targetType: all`） | 対象者ごとに片方（※6） | ○※4 | △ | △ | △ | △ | △ | △ | △ |
 
 凡例:
 
@@ -357,6 +442,7 @@ PATCH で分岐内アクションを組むときは、型エラーが出にく�
 - ※3 紐付け（コンタクト↔MOSH ID）が成立する経路: ①トラッキング有効（`isTrackingEnabled: true`）なメッセージ本文の URL、またはリッチメニューのゲートウェイリンクを**コンタクトがタップ**し、②その遷移先で **MOSH にログイン状態で到達**する（未ログインなら Cookie に保持され、次回ログイン時に紐付く）。1 コンタクトに紐付く MOSH ID は 1 つで、別の MOSH ID と既に紐付いていれば上書きされない。紐付けは事後には遡らないので、**紐付け前に実行された △ のステップは失敗したまま**。①の「トラッキング有効な URL」を配信できる場所は**ワークフローに限らない**: コンタクト向けメッセージ配信（一斉配信）も同じ紐付け経路（トラッキング用の短縮 URL）を使う。トグルの有無はメッセージ種別で異なり、**TEXT（LINE）と メール本文は `isTrackingEnabled: true` のときだけ**、**CAROUSEL / IMAGE_CAROUSEL / RICH_MESSAGE のタップ遷移先 URL はトグル無しで常にトラッキング**される（ワークフロー・一斉配信とも）。したがってテナント内に紐付けの入口があるかは、他のワークフローと一斉配信の両方を横断して探す（具体的な調べ方は [best-practices.md](best-practices.md) の「単一ワークフローで閉じない要件」参照）
 - ※4 `SEND_EMAIL` の宛先解決: MOSH ID があれば MOSH アカウントのメールアドレス、無ければコンタクトの**有効かつ購読中**のメールアドレス。コンタクト起点でメールアドレスを持たないコンタクト（LINE 友だち追加だけで作られたコンタクト等）は `CONTACT_NOT_FOUND` で失敗する。識別子は適合していても**メールアドレス保有**という別条件があるので ○※4 とした
 - ※5 `SEND_LINE_MESSAGE` / `LINK_LINE_RICH_MENU` / `UNLINK_LINE_RICH_MENU` は、コンタクトが解決できても**該当する LINE 公式アカウントの友だちでなければ** `CONTACT_NOT_FOUND`。照合先のアカウントは `SEND_LINE_MESSAGE` / `UNLINK_LINE_RICH_MENU` が**ワークフロー**の `creatorLineChannelId`、`LINK_LINE_RICH_MENU` だけは**リッチメニューが属する**アカウント（ワークフローのアカウントは照合に使われない）。タグ付与起点でメール由来のコンタクトが対象になる場合、ワークフローと別アカウントのリッチメニューを `LINK_LINE_RICH_MENU` に指定した場合などに起きる
+- ※6 `SCHEDULED_PROCESSING` の `targetType: all`: 母集団は「該当 LINE 公式アカウントの LINE コンタクト」＋「そのコンタクトと紐付いていない MOSH ゲスト」の 2 群で、実行は対象者 1 人ごとにどちらか一方の識別子だけを持つ。したがって LINE 系ステップはゲスト側で、MOSH ID を要求する `CONDITION` はコンタクト側で、それぞれ紐付けが無ければ失敗する。**母集団の片側を確実に落としたくないなら `all` を選ばず、`contactLine` か `guest` に寄せてステップを揃える**（確認日 2026-09-12）
 
 この表が意味解析の中核（△・※4・※5 はいずれも対象者の紐付け・メール保有・友だち状態で成否が分かれる）。次節「埋め込み変数」の対応表は、使えるかどうかが trigger × action の組み合わせだけで決まり対象者に依存しないため**構文側**に属する（保存・公開で弾かれない点は同じ）。[best-practices.md](best-practices.md) の「トリガー × アクションの相性」はこの表を前提に、△ の実務上の扱いと、LINE 公式アカウントの一致など**識別子以外の相性**（こちらは対象者非依存＝構文側）を扱う。
 
@@ -369,8 +455,8 @@ PATCH で分岐内アクションを組むときは、型エラーが出にく�
 | 変数名 | 意味 / データソース | 使える条件 |
 |---|---|---|
 | `line_name` | コンタクトのLINEプロフィール表示名 | `actionType: SEND_LINE_MESSAGE` の時のみ（`SEND_EMAIL`では常に空文字） |
-| `guest_name` | ゲスト（Moshユーザー）の名前 | `actionType: SEND_EMAIL` かつ `triggerType` が `SERVICE_APPLIED` / `SERVICE_SCHEDULE_REMINDER` / `INSTALLMENT_PAYMENT_FAILED` / `SUBSCRIPTION_PAYMENT_FAILED` の時のみ。それ以外は空文字 |
-| `service_name` | トリガーに紐づくプラン・サービス名 | `triggerType` が `SERVICE_APPLIED` / `SERVICE_SCHEDULE_REMINDER` / `INSTALLMENT_PAYMENT_FAILED` / `SUBSCRIPTION_PAYMENT_FAILED` の時（決済失敗系も実行コンテキストに対象プラン・サービスの参照が積まれるため値が入る）。それ以外のトリガー（既存の `MARKETING_LEAD_BENEFIT_RECEIVED` / `LINE_CHANNEL_CONTACT_REGISTERED` / `CONTACT_TAG_ADDED` / `INFLOW_ACTION_CONVERTED`）では常に空文字 |
+| `guest_name` | ゲスト（Moshユーザー）の名前 | `actionType: SEND_EMAIL` かつ `triggerType` が `SERVICE_APPLIED` / `SERVICE_SCHEDULE_REMINDER` / `INSTALLMENT_PAYMENT_FAILED` / `SUBSCRIPTION_PAYMENT_FAILED` の時のみ。`SCHEDULED_PROCESSING` は `targetType: guest`（および `all` のゲスト側の対象者）でのみ値が入り、`contactLine` 側の対象者では空文字になる＝`all` では**同じ配信の中で入る人と空の人が混ざる**ため使わない。それ以外は空文字 |
+| `service_name` | トリガーに紐づくプラン・サービス名 | `triggerType` が `SERVICE_APPLIED` / `SERVICE_SCHEDULE_REMINDER` / `INSTALLMENT_PAYMENT_FAILED` / `SUBSCRIPTION_PAYMENT_FAILED` の時（決済失敗系も実行コンテキストに対象プラン・サービスの参照が積まれるため値が入る）。それ以外のトリガー（既存の `MARKETING_LEAD_BENEFIT_RECEIVED` / `LINE_CHANNEL_CONTACT_REGISTERED` / `CONTACT_TAG_ADDED` / `INFLOW_ACTION_CONVERTED` / `SCHEDULED_PROCESSING`）では常に空文字 |
 | `reservation_time_range` | 予約日時の範囲（`YYYY年M月D日 HH:mm〜HH:mm`, JST） | `SERVICE_SCHEDULE_REMINDER`は常に対応。`SERVICE_APPLIED`はプラン・サービスの`serviceType`が「予約(event)」または「個別(private)」の場合のみ（コンテンツ/サブスク/オンライン単体のプラン・サービスでは空文字） |
 | `zoom_url` | ZoomのjoinURL | `reservation_time_range`と同条件に加えて、プラン・サービスの`locationType`がオンライン/ハイブリッドかつクリエイターがZoom連携済みの場合のみ。条件を満たさない場合は静かに空文字になる（保存・送信はブロックされない） |
 

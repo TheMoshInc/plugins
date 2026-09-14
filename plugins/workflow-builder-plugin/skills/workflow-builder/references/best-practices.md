@@ -63,6 +63,7 @@
 - 開催前に複数タイミングでリマインドしたい場合は、**1本のワークフローに WAIT_TIME で繋がず、タイミングごとに別ワークフローへ分ける**。理由と組み方は次節「予約リマインドは複数のトリガーに分ける」が正本
 - `INFLOW_ACTION_CONVERTED` トリガーの流入経路は LINE 公式アカウントに属する。**ワークフロー最上位の `creatorLineChannelId` を、流入経路が属するアカウントと一致させる**（`getCreatorScenariosInflowActions` のレスポンスの `creatorLineChannelId` で確認する。不一致だとトリガーと配信のアカウントがずれ、公開時に API が弾く。[content-schema.md](content-schema.md) の「検査の二層構造」の確認済みの事実）
 - `LINK_LINE_RICH_MENU` の `lineRichMenuId` も同様に、**ワークフロー最上位の `creatorLineChannelId` と同じチャンネルのリッチメニューを選ぶ**（`getCreatorLineRichMenus` のレスポンスの `creatorLineChannelId` で確認する）。API はクリエイター所有なら別チャンネルのメニューでも保存・公開を通してしまうが、実行時は**リッチメニュー側**のアカウントの友だちかどうかで対象コンタクトを探すため（[content-schema.md](content-schema.md) の適合表 ※5）、ワークフロー側のアカウントの友だちしかいない対象は失敗する。一致を強制するのは編集画面のみなので、MCP 経由で組むときは自分で確認する
+- `SCHEDULED_PROCESSING`（スケジュール設定）は**対象母集団を `targetType` で選ぶ**ため、ステップ側もその母集団に揃える。`contactLine` なら LINE 配信・タグ操作、`guest` なら `SEND_EMAIL` と MOSH 前提の `CONDITION` が素直に動く。`all` は 1 本のワークフローの中でコンタクト側とゲスト側が混在し、**どのステップも母集団の片側で必ず △（実行時に対象を解決できず失敗）になる**ので、「全員に同じことをする」という要望でも、確実に届けたいなら `contactLine` / `guest` に寄せて 2 本に分けることを提案する（適合表の ※6）
 - `CONTACT_TAG_ADDED` トリガーのワークフロー内で、その起動タグ自体を `REMOVE_CONTACT_TAG` → `ADD_CONTACT_TAG` の順で操作しない（対象コンタクトに対して自分自身を再トリガーし、無限に往復しうる）。起動タグと同じタグを終端で付け直す設計は避け、進捗管理には別タグを使う
 
 ## 予約リマインドは複数のトリガーに分ける（`SERVICE_SCHEDULE_REMINDER` の再評価タイミング）

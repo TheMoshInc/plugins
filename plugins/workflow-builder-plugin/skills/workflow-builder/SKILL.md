@@ -30,6 +30,7 @@ MCP ツール (`*Scenario*` および `*InflowAction*` / `*TrackingConsent*`) �
 | `INFLOW_ACTION_CONVERTED`（流入経路 CV） | **流入経路** が1つ以上（`inflowActionId` を`getCreatorScenariosInflowActions`で取得可）。流入経路は LINE 公式アカウントに属するため、**ワークフロー最上位の `creatorLineChannelId` を流入経路が属するアカウントと一致させる**（一覧レスポンスの `creatorLineChannelId` で確認） |
 | `INSTALLMENT_PAYMENT_FAILED`（分割決済失敗） | 不要（トリガー自体が ID を持たない。既存リソースの確認も不要） |
 | `SUBSCRIPTION_PAYMENT_FAILED`（サブスク決済失敗） | 不要（トリガー自体が ID を持たない。既存リソースの確認も不要。初回失敗のみ発火し、同一請求期間内の決済リトライ失敗では再発火しない） |
+| `SCHEDULED_PROCESSING`（スケジュール設定） | 対象母集団（`targetType`）次第。`contactLine` / `all` は **LINE公式アカウント** が連携済み（`creatorLineChannelId` を`getCreatorLineChannels`で取得・確認可）、`guest` は不要。発火日時・頻度・終了条件はユーザーに確認する（content-schema の「SCHEDULED_PROCESSING: `scheduledProcessing`」参照） |
 
 action 側にも参照リソースが必要なケースがある:
 
@@ -195,9 +196,9 @@ MOSHのAPIは `ACTIVE` 化時に埋め込み変数の可否を検証しない（
 }
 ```
 
-### B. `trigger` も `triggerType` + 5サブオブジェクト全て指定
+### B. `trigger` も `triggerType` + 6サブオブジェクト全て指定
 
-`ScenarioTrigger` 型のサブフィールドは `triggerType` 以外に 5 つ（`marketingLeadBenefitReceivedTrigger` / `serviceAppliedTrigger` / `serviceScheduleReminder` / `contactTagAdded` / `inflowActionConverted`）。対応する 1 フィールドだけ実オブジェクト、他は `null`。`lineChannelContactRegisteredTrigger` は型定義に存在しないため指定禁止。`LINE_CHANNEL_CONTACT_REGISTERED` の場合はサブフィールドが全て `null` で、LINE公式アカウントはボディ最上位の `creatorLineChannelId` で指定する。詳細は content-schema 参照。
+`ScenarioTrigger` 型のサブフィールドは `triggerType` 以外に 6 つ（`marketingLeadBenefitReceivedTrigger` / `serviceAppliedTrigger` / `serviceScheduleReminder` / `contactTagAdded` / `inflowActionConverted` / `scheduledProcessing`）。対応する 1 フィールドだけ実オブジェクト、他は `null`（**`scheduledProcessing` を書き忘れると 400 になる**）。`lineChannelContactRegisteredTrigger` は型定義に存在しないため指定禁止。`LINE_CHANNEL_CONTACT_REGISTERED` の場合はサブフィールドが全て `null` で、LINE公式アカウントはボディ最上位の `creatorLineChannelId` で指定する。詳細は content-schema 参照。
 
 ### C. PATCH 時は `*ForUpdate` 系を使う
 
