@@ -29,7 +29,7 @@
 | `thumbnailAssetId` | 整数 または `null` | MCP から画像を上げられない | `null` |
 | `assetIds` | 配列 | 動画・音声・ファイルの ID。MCP から上げられない | `[]` |
 | `isPublished` | 真偽値 | 動画・音声は本体が無いと `true` にできない | `false` |
-| `isNotifyOnPublish` | 真偽値 | `isPublished` と同時に `true` にすると会員全員へ通知が届き、**取り消せない** | `false` |
+| `isNotifyOnPublish` | 真偽値 | `isPublished` と同時に `true` にすると購入者（会員）へメールで通知が届き、**取り消せない**。LINE 通知は送られない | `false` |
 | `isCommentEnabled` | 真偽値 | コメントの受け付け | `false` |
 | `isCompletionButtonVisible` | 真偽値 | 閲覧完了ボタンの表示。`false` だと会員側に出ない | `true`（管理画面で作ったときと同じ既定値） |
 | `scheduledPublishAt` | 日時文字列 または `null` | オフセット必須。`visibleAfterPurchaseDays` と同時に指定できない | `null` |
@@ -79,7 +79,7 @@
 | `isFixedViewingOrder` | 設定順に見てもらう設定が ON / OFF |
 | `isCommentEnabled` | コメントを受け付ける / 受け付けない |
 | `isCompletionButtonVisible` | 閲覧完了ボタンを出す / 出さない |
-| `isNotifyOnPublish` | 公開時に会員へ通知する / しない |
+| `isNotifyOnPublish` | 公開時に購入者へメールで通知する / しない（LINE では届かない） |
 | `visibleAfterPurchaseDays` | 「購入から◯日後に公開」。`null` なら設定なし |
 
 ## 表示名への変換
@@ -125,7 +125,7 @@
 
 守らないと、取り消せない通知が飛ぶ・会員のデータが消える・壊れた状態で保存される。
 
-- **`isNotifyOnPublish` を確認せずにコンテンツを公開しない。** 公開前に `getCreatorMembershipSiteContent` で読み、`true` なら通知が届くことを伝えて、不要なら同じリクエストで `false` を送る。公開中のコンテンツに `isNotifyOnPublish: true` だけを送るのも同じ結果になる（購入後◯日で公開の設定があるコンテンツでは、日数を満たした会員から順に届く）
+- **`isNotifyOnPublish` を確認せずにコンテンツを公開しない。** 公開前に `getCreatorMembershipSiteContent` で読み、`true` なら購入者へメール通知が届くこと（LINE では届かない）を伝えて、不要なら同じリクエストで `false` を送る。公開中のコンテンツに `isNotifyOnPublish: true` だけを送るのも同じ結果になる（購入後◯日で公開の設定があるコンテンツでは、日数を満たした会員から順に届く）
 - **`isFixedViewingOrder` を、ユーザーに頼まれていないのに `false` で送らない。** サイト設定は全置換なので、直前に読んだ値をそのまま送る。`true` → `false` は全会員の閲覧完了状態を消し、元に戻せない
 - **サイト設定の全置換で、`themeColor` を確かめずに送り返さない。** 指定できるのは 8 色だけで、読んだ値がその中に無いときはそのまま送ると弾かれ、他の項目の更新も一緒に失敗する。どの色にするかをユーザーに確認してから送る
 - **`chapters` / `assetIds` / `tagIds` を、現在値を読まずに送らない。** 配列ごと置き換わる。空配列を送るとすべて外れる

@@ -59,9 +59,10 @@ MCP から動画・音声を上げられないため、**作れるのは非公�
 
 ## 似たコンテンツを増やすとき
 
-`postCreatorMembershipSiteContentDuplicate` で複製してから書き換えるほうが、一から組み立てるより早く、チャプターとタグと本体の紐付けも引き継がれる。ただし次の 3 点は引き継がれないため、複製後に `patchCreatorMembershipSiteContent` で入れ直す。
+`postCreatorMembershipSiteContentDuplicate` で複製してから書き換えるほうが、一から組み立てるより早く、チャプターとタグと本体の紐付けも引き継がれる。ただし次の 4 点は引き継がれないため、複製後に `patchCreatorMembershipSiteContent` で入れ直す。
 
 - 予約公開・予約非公開・購入後◯日で公開
+- 公開時の通知（必ず OFF になる。公開時に通知したいなら公開前に `isNotifyOnPublish: true` を入れ直す）
 - コメントの受け付け（必ず無効になる）
 - タイトル（「〈元のタイトル〉のコピー」になる）
 

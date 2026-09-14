@@ -53,6 +53,13 @@ MCP ツール（`*MembershipSite*` 系。以下ツール名は OpenAPI の opera
 - 動画・音声・画像のアップロードと、それを使う公開作業 → MCP にツールが無いため管理画面を案内する
 - コンテンツ・フォルダ・タグの並び替え → MCP にツールが無いため管理画面を案内する
 - 会員（ゲスト）の招待・閲覧権限の付与・ブロック、会員一覧の参照、視聴状況の確認 → MCP にツールが無い（会員数だけは `getCreatorMembershipSiteDashboardMembers` で取れる）
+- **プラン別の閲覧権限の設定**（閲覧できる期間・日数、限定公開、閲覧対象にするフォルダ、今後追加されるフォルダを自動で含めるか）→ MCP にツールが無いため管理画面（会員サイト設定 → 連携商品）を案内する。フォルダの公開状態やコンテンツの「購入後◯日で公開」で代替しない（意味が違う）
+- **ダッシュボードの閲覧完了率・会員一覧の CSV 出力** → MCP にツールが無いため管理画面を案内する（取れるのは会員数のみ）
+- **バナー（ヘッダーリンク）の追加・変更・削除**（バナー画像・バナー名・タップ時の URL）→ MCP にツールが無いため管理画面（会員サイト設定）を案内する
+- **フォルダの複製** → MCP にツールが無い（複製できるのはコンテンツ 1 件ずつ）。フォルダを作り直してコンテンツを 1 件ずつ複製・移動する回り道はコンテンツ数が多いと失敗しやすいため、管理画面のフォルダ複製を案内する
+- **複数コンテンツの一括設定**（公開/非公開・公開時の通知・コメント・閲覧完了ボタン・タグの一括変更）→ 一括ツールは無い。件数が少なければ `patchCreatorMembershipSiteContent` を 1 件ずつ（前の結果を受けてから次を）呼んで代替できる。件数が多いときは管理画面の一括設定を案内する
+- **動画の一括アップロード、AI による要約・目次（チャプター）の自動生成、旧サービス（旧会員サイト）からのコンテンツ・コメントの移行** → MCP にツールが無いため管理画面を案内する
+- **本文への動画埋め込み（Vimeo 等）・見出し・チェックリストなどの装飾** → `body` の Tiptap JSON を直接組み立てる手段を持たないため、本文はプレーンテキストの段落までにし、埋め込みや装飾は管理画面の本文エディタで行うよう案内する
 - 会員サイトを売る商品・プランの作成や価格の設定 → `product-navigator` スキルで参照し、変更は管理画面
 - 会員向けのお知らせ配信・一斉配信 → `contact-broadcast` スキル
 - ランディングページ → `lp-builder` スキル、ステップ配信 → `workflow-builder` スキル
@@ -87,7 +94,7 @@ MCP ツール（`*MembershipSite*` 系。以下ツール名は OpenAPI の opera
 3. タグを使うなら先に `getCreatorMembershipSiteTags` で既存を確認し、無いものだけ `postCreatorMembershipSiteTags` で作る
 4. `postCreatorMembershipSiteContents`（[references/content-schema.md](references/content-schema.md) の全項目を埋める。記事の最小例は [examples/article-content-draft.json](examples/article-content-draft.json)。例の `folderId` はダミー値なので、取得した値に置き換えてから送る）
 
-似たコンテンツを増やすときは、一から組み立てるより `postCreatorMembershipSiteContentDuplicate` が早い。複製したものはタイトルが「〈元のタイトル〉のコピー」になり、必ず非公開・コメント無効で作られる。
+似たコンテンツを増やすときは、一から組み立てるより `postCreatorMembershipSiteContentDuplicate` が早い。複製したものはタイトルが「〈元のタイトル〉のコピー」になり、必ず非公開・公開時の通知 OFF で作られる（予約公開・購入後◯日公開も外れる）。
 
 **同じサイトへ続けて作るときは、前の呼び出しの結果を受け取ってから次を呼ぶ。** 並行して呼ぶと並び順の採番が衝突して失敗する。
 
@@ -116,7 +123,7 @@ MCP ツール（`*MembershipSite*` 系。以下ツール名は OpenAPI の opera
 
 **公開の前に必ず確認する。**
 
-- コンテンツを公開するときは、先に `getCreatorMembershipSiteContent` で `isNotifyOnPublish` を読む。`true` のまま公開すると会員全員へ通知が届き、**取り消せない**。通知が要らないなら同じリクエストで `isNotifyOnPublish: false` も送る
+- コンテンツを公開するときは、先に `getCreatorMembershipSiteContent` で `isNotifyOnPublish` を読む。`true` のまま公開すると購入者（会員）へ**メール**で通知が届き、**取り消せない**（LINE 通知は送られない）。通知が要らないなら同じリクエストで `isNotifyOnPublish: false` も送る
 - 動画・音声は本体が紐づいていないと公開できない。MCP からは紐付けられないため、公開は管理画面で行ってもらう
 - サイトを非公開から公開に変えるときだけ、公開できるサイト数の上限を判定する
 
@@ -158,7 +165,7 @@ MCP ツール（`*MembershipSite*` 系。以下ツール名は OpenAPI の opera
 
 | 操作 | 何が起きるか |
 |---|---|
-| `isNotifyOnPublish: true` での公開 | 会員全員へ通知が届き、取り消せない。公開中のコンテンツに `isNotifyOnPublish: true` だけを送った場合も、次の配信で同じ通知が届く |
+| `isNotifyOnPublish: true` での公開 | 購入者（会員）へメールで通知が届き、取り消せない（LINE 通知は送られない）。公開中のコンテンツに `isNotifyOnPublish: true` だけを送った場合も、次の配信で同じ通知が届く |
 | `isFixedViewingOrder` を `true` から `false` へ | 全ゲストの閲覧完了状態が消える（どこまで見たかの再生位置は残る）。元に戻せない |
 | サイト・フォルダ・コンテンツ・タグの削除 | 復元できない。消える範囲は [references/content-schema.md](references/content-schema.md) の表 |
 
