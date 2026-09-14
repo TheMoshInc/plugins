@@ -45,14 +45,14 @@ MCP ツール（`*MembershipSite*` 系。以下ツール名は OpenAPI の opera
 - フォルダを作る・名前や表示形式を変える・公開状態を切り替える・削除するとき
 - コンテンツ（動画・記事・音声）を作る・書き換える・別のフォルダへ移す・複製する・削除するとき
 - コンテンツにタグを付けたい、タグを作る・名前を変える・削除するとき
-- サイトの中に何がどれだけ入っているかを確認したいとき
+- サイトの中に何がどれだけ入っているかを確認したいとき、会員数を確認したいとき
 - `*MembershipSite*` 系ツールが必要な文脈
 
 ## When NOT to use
 
 - 動画・音声・画像のアップロードと、それを使う公開作業 → MCP にツールが無いため管理画面を案内する
 - コンテンツ・フォルダ・タグの並び替え → MCP にツールが無いため管理画面を案内する
-- 会員（ゲスト）の招待・閲覧権限の付与・ブロック、会員数や視聴状況の確認 → MCP にツールが無い
+- 会員（ゲスト）の招待・閲覧権限の付与・ブロック、会員一覧の参照、視聴状況の確認 → MCP にツールが無い（会員数だけは `getCreatorMembershipSiteDashboardMembers` で取れる）
 - 会員サイトを売る商品・プランの作成や価格の設定 → `product-navigator` スキルで参照し、変更は管理画面
 - 会員向けのお知らせ配信・一斉配信 → `contact-broadcast` スキル
 - ランディングページ → `lp-builder` スキル、ステップ配信 → `workflow-builder` スキル
@@ -66,7 +66,7 @@ MCP ツール（`*MembershipSite*` 系。以下ツール名は OpenAPI の opera
 1. `getCreatorMembershipSites` で一覧を取得し、ユーザーが言ったサイト名から対象を特定する。名前が一致しないときは候補を挙げて選んでもらう（勝手に決めない）
 2. `totalCount` が取得件数より多ければ `offset` をずらして続きを取る（`limit` 既定 20）
 3. サイトの中身を見るときは `getCreatorMembershipSiteFolders`。フォルダと、その中のコンテンツの概要（タイトル・種類・公開状態・タグ）が 1 回で全件返る
-4. サイトの設定値（テーマカラー等）を見るときは `getCreatorMembershipSite`、タグを見るときは `getCreatorMembershipSiteTags`
+4. サイトの設定値（テーマカラー等）を見るときは `getCreatorMembershipSite`、タグを見るときは `getCreatorMembershipSiteTags`、会員数を見るときは `getCreatorMembershipSiteDashboardMembers`
 
 ### 2. 要件ヒアリング
 
@@ -97,7 +97,7 @@ MCP ツール（`*MembershipSite*` 系。以下ツール名は OpenAPI の opera
 
 | ツール | 送り方 |
 |---|---|
-| `patchCreatorMembershipSite`（サイト設定） | **全置換**。7 項目すべて必須。先に `getCreatorMembershipSite` で現在値を読み、変えない項目はその値をそのまま送り返す |
+| `patchCreatorMembershipSite`（サイト設定） | **全置換**。7 項目すべて必須。先に `getCreatorMembershipSite` で現在値を読み、変えない項目はその値をそのまま送り返す。ただし `themeColor` は 8 色から選ぶ項目で、読んだ値がその 8 色に無いときはそのまま送り返せない |
 | `patchCreatorMembershipSiteFolder` / `patchCreatorMembershipSiteContent` / `patchCreatorMembershipSiteTag` | **送った項目だけ**変わる。ただし 1 項目も送らないリクエストは受け付けない |
 
 コンテンツの `chapters` / `assetIds` / `tagIds` は、部分更新のツールでも**配列ごと置き換わる**。1 つ足すだけでも `getCreatorMembershipSiteContent` で現在値を取り、足したものを含む配列全体を送る。空配列を送るとすべて外れる。
@@ -124,8 +124,8 @@ MCP ツール（`*MembershipSite*` 系。以下ツール名は OpenAPI の opera
 
 削除ツールはすべて**復元できない**。依頼されたときだけ使い、次の順で進める。
 
-1. 対象を読み戻し、**名前で**提示する（サイトなら `getCreatorMembershipSite` でサイト名 ＋ `getCreatorMembershipSiteFolders` でフォルダ数とコンテンツ数、フォルダなら中のコンテンツ件数と公開中の件数、コンテンツならタイトルと公開状態、タグなら付いているコンテンツの件数）
-2. 何が一緒に消えるかを伝える（[references/content-schema.md](references/content-schema.md) の「削除で消えるもの」）
+1. 対象を読み戻し、**名前で**提示する（サイトなら `getCreatorMembershipSite` でサイト名 ＋ `getCreatorMembershipSiteFolders` でフォルダ数とコンテンツ数 ＋ `getCreatorMembershipSiteDashboardMembers` で会員数、フォルダなら中のコンテンツ件数と公開中の件数、コンテンツならタイトルと公開状態、タグなら付いているコンテンツの件数）
+2. 何が一緒に消えるかを伝える（[references/content-schema.md](references/content-schema.md) の「削除で消えるもの」）。サイトを消すときは、会員数が消えるゲストの**下限**であることも添える（0 人と返っても、データが消えるゲストがいる）
 3. 「削除しますか？」と確認を取る
 4. 実行し、一覧を読み戻して消えたことを確認する
 
@@ -138,7 +138,7 @@ MCP ツール（`*MembershipSite*` 系。以下ツール名は OpenAPI の opera
 1. **JSON をそのまま見せない。** 自然言語の箇条書きか表に整形して提示する。ユーザーが明示的に求めたときだけ JSON を出す。ただし本文（Tiptap JSON）と生の内部 ID は、求められても出さない
 2. **HTTP 用語・ステータスコードを文面に出さない。** 「保存できました」「動画が紐づいていないため公開できませんでした」のように、起きたことと理由を平易な日本語で伝える
 3. **生の内部 ID を出さない。** 会員サイト・フォルダ・コンテンツ・タグはすべて名前（タイトル）で示す。`slug` も内部の値なので出さない
-4. **英字の設定値は日本語に変換して出す**（変換表は [references/content-schema.md](references/content-schema.md)）。`VIDEO` や `CAROUSEL` をそのまま見せない
+4. **英字の設定値は日本語に変換して出す**（変換表は [references/content-schema.md](references/content-schema.md)）。`video` や `carousel` をそのまま見せない
 5. **本文はそのまま貼らない。** `body` は現在のエディタが保存した Tiptap JSON 文字列で返り、旧サイトから移行したものは HTML 断片、初期データはプレーンテキストのこともある。テキストを取り出して要約する
 6. 参照 ID が未確定でも、推測値・ダミー値・0 を入れない。取得ツールで確かめるか、ユーザーに聞く
 
@@ -150,7 +150,7 @@ MCP ツール（`*MembershipSite*` 系。以下ツール名は OpenAPI の opera
 
 ### B. 動画・音声は非公開でしか作れない
 
-`contentType` が `VIDEO`・`AUDIO` のコンテンツは、本体の動画・音声が紐づいていないと公開できない（`isPublished: true` にすると弾かれる）。MCP からは上げられないため、`isPublished: false` で作り、本体の紐付けと公開は管理画面で行うようユーザーに伝える。記事（`ARTICLE`）はそのまま公開まで作れる。
+`contentType` が `video`・`audio` のコンテンツは、本体の動画・音声が紐づいていないと公開できない（`isPublished: true` にすると弾かれる）。MCP からは上げられないため、`isPublished: false` で作り、本体の紐付けと公開は管理画面で行うようユーザーに伝える。記事（`article`）はそのまま公開まで作れる。
 
 公開中の動画・音声コンテンツから本体を外すこともできない。外すなら同じリクエストで `isPublished: false` も送る。
 
@@ -191,6 +191,8 @@ MCP ツール（`*MembershipSite*` 系。以下ツール名は OpenAPI の opera
 | フォルダを公開にすればコンテンツも見えると考える | サイト・フォルダ・コンテンツの 3 つがすべて公開のときだけ会員から見える |
 | 本文に Markdown の記法を書く | Markdown として解釈されない。改行は段落になるが、見出しや太字の記法は文字のまま会員に表示される |
 | 空のフォルダだと思って削除する | 中身の有無は確認されずそのまま消える。先に中のコンテンツ件数を数えて提示する |
+| 読んだ `themeColor` をそのままサイト設定の更新に送る | 指定できるのは 8 色だけ。8 色に無い値を送ると、その更新全体が弾かれる。どの色にするかをユーザーに確認する |
+| タグ名の前後に空白を付けて別のタグにする | 前後の空白は落として保存され、重複の判定でも空白を落として比べる。空白だけの名前は作れない |
 
 ## エラーが返ったとき
 
@@ -201,14 +203,15 @@ MCP ツール（`*MembershipSite*` 系。以下ツール名は OpenAPI の opera
 | サイトの作成上限・公開上限（`QUOTA_ERROR`） | 上限に達したこと。不要なサイトを削除するか非公開に戻すか、契約の見直しを案内する |
 | 商品のプランで提供中のサイトを削除しようとした | 商品側の紐付けを外してからでないと削除できないこと |
 | 閲覧順の固定を ON にできない | 有効な閲覧権限を持つ会員が既にいるか、一部のフォルダだけを見せる権限があること。詳しい理由は [references/content-schema.md](references/content-schema.md) の対応表 |
-| 同じ名前のタグが既にある | 既存のタグ名を示し、そのタグを使うか別の名前にするかを確認する |
+| 同じ名前のタグが既にある | 既存のタグ名を示し、そのタグを使うか別の名前にするかを確認する（前後の空白が違うだけの名前は同じ名前として扱われる） |
+| テーマカラーに指定できない色を送った | 選べる 8 色を示し、どれにするかを確認する。サイト設定の更新は 7 項目まとめて送るため、この 1 項目で更新全体が止まる |
 | 動画・音声の本体が無いまま公開しようとした | 本体を紐づけないと公開できないこと。管理画面での作業を案内する |
 | 見つからない | 対象の特定からやり直す。他のクリエイターのサイトや存在しない対象を指定した場合も同じ応答になる |
 | 認証エラー | MOSH との接続（API トークンの設定）を見直すよう案内する |
 
 ## References
 
-- [references/mcp-tools.md](references/mcp-tools.md) — 使用する MCP ツール 18 件のパラメータ詳細
+- [references/mcp-tools.md](references/mcp-tools.md) — 使用する MCP ツール 19 件のパラメータ詳細
 - [references/content-schema.md](references/content-schema.md) — コンテンツ作成・更新の全項目仕様、日本語変換表、削除で消えるもの、絶対に避けること
 - [references/best-practices.md](references/best-practices.md) — サイト構成の組み立て方とセルフレビューチェックリスト
 - [examples/article-content-draft.json](examples/article-content-draft.json) — 記事コンテンツを作るときの最小の送信内容。`folderId` はダミー値なので、`getCreatorMembershipSiteFolders` で取得した値に置き換えてから送る

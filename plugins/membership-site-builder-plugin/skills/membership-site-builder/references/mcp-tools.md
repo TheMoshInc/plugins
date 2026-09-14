@@ -1,6 +1,6 @@
 # MCP Tool リファレンス
 
-membership-site-builder で使用する MCP ツール 18 件のパラメータ詳細。
+membership-site-builder で使用する MCP ツール 19 件のパラメータ詳細。
 
 > ツール名は OpenAPI の `operationId` で記載する。MCP クライアントが実際に提示するツール名にはサーバー識別子の接頭辞（例: `mcp__<server>__getCreatorMembershipSites`）が付くが、その形はユーザー環境により異なるため本ドキュメントでは付けない。
 
@@ -29,7 +29,7 @@ pathParams: { id }
 
 サイトの設定値 7 項目（`name` / `isPublished` / `isFixedViewingOrder` / `headerLogoImageId` / `themeColor` / `homeIconImageId` / `homeTitle`）に `id` / `slug` / `createdAt` / `updatedAt` を加えて返す。フォルダ・コンテンツ・タグは含まれない。
 
-**`patchCreatorMembershipSite` の前には必ずこれを呼ぶ**（全置換のため、変えない項目の現在値が要る）。
+**`patchCreatorMembershipSite` の前には必ずこれを呼ぶ**（全置換のため、変えない項目の現在値が要る）。ただし `themeColor` だけは、返ってきた値をそのまま送り返せないことがある（`patchCreatorMembershipSite` の項を参照）。
 
 ### `postCreatorMembershipSites` — 会員サイトを作成
 
@@ -56,8 +56,23 @@ bodyParams: { name, isPublished, isFixedViewingOrder, headerLogoImageId, themeCo
 - `isPublished`: 公開 / 非公開
 - `isFixedViewingOrder`: 設定順に閲覧させる制約。`true` → `false` は**全ゲストの閲覧完了状態が消え、元に戻せない**
 - `headerLogoImageId` / `homeIconImageId`: 文字列 または `null`（`null` で外す。MCP から新しい画像は付けられない）
-- `themeColor`: `#` + 16 進 6 桁（例: `#FA6F78`）
+- `themeColor`: 下の 8 色のいずれか。大文字で書く（小文字は弾かれる）
 - `homeTitle`: ホーム画面表示名
+
+テーマカラーに指定できる 8 色:
+
+| 値 | 色 |
+|---|---|
+| `#FA6F78` | ピンク |
+| `#D92500` | レッド |
+| `#F06A1F` | オレンジ |
+| `#AE4F0F` | ブラウン |
+| `#15803D` | グリーン |
+| `#0369A1` | ブルー |
+| `#5B21B6` | パープル |
+| `#111827` | ブラック |
+
+`getCreatorMembershipSite` で読んだ値がこの 8 色に無いときは、そのまま送り返すと弾かれ、**他の項目の更新も一緒に失敗する**。どの色に変えるかをユーザーに確認してから送る。
 
 閲覧順の固定を ON にできないときの理由コード:
 
@@ -75,6 +90,18 @@ pathParams: { id }
 ```
 
 復元できない。消える範囲は [content-schema.md](content-schema.md) の「削除で消えるもの」を参照。商品のプランで提供中のサイトは削除できない。
+
+実行前に、サイト名（`getCreatorMembershipSite`）・フォルダ数とコンテンツ数（`getCreatorMembershipSiteFolders`）・会員数（`getCreatorMembershipSiteDashboardMembers`）を取得して提示する。会員数に入るのは有効な閲覧権限が残る会員だけで、それ以外のゲストのデータも消えるため、**会員数は消えるゲストの下限**になる。0 人と返っても消えるゲストがいることを添えて伝える。
+
+### `getCreatorMembershipSiteDashboardMembers` — 会員数を取得
+
+```
+pathParams: { id }
+```
+
+`{ activeMemberCount }` を返す。数えるのは有効な閲覧権限を 1 件以上持つ会員だけで、ブロック・一時停止された権限と、有効期限または閲覧可能日数を過ぎた権限は数えない。そのため、サイトに在籍しているゲストの数より少ないことがある。
+
+会員の一覧・氏名・視聴状況は返らない。サイトを削除する前の件数提示に使う。
 
 ## フォルダ
 
@@ -98,7 +125,7 @@ bodyParams: { name, displayType, isPublished }
 ```
 
 - `name`: 1〜100 文字
-- `displayType`: `"CAROUSEL"` | `"FOLDER_VIEW"` | `"TILE"`（日本語表記は [content-schema.md](content-schema.md)）
+- `displayType`: `"carousel"` | `"folderView"` | `"tile"`（日本語表記は [content-schema.md](content-schema.md)）
 - `isPublished`: `true` にすると、閲覧権限のある会員にすぐ公開される。下書きとして用意するなら `false`
 
 レスポンスは `{ id }`。既存フォルダの末尾に追加される。
@@ -132,6 +159,8 @@ pathParams: { id }
 
 `{ tags: [{ id, name }] }` を表示順で返す。1 件も無い場合は空配列。
 
+`name` は保存されている値をそのまま返すため、前後に空白が残った名前が返ることがある。
+
 ### `postCreatorMembershipSiteTags` — タグを作成
 
 ```
@@ -139,9 +168,9 @@ pathParams: { id }
 bodyParams: { name }
 ```
 
-- `name`: 1〜50 文字。**サイト内で一意**
+- `name`: 1〜50 文字。**サイト内で一意**。前後の空白は取り除かれて保存され、空白だけの名前は弾かれる
 
-同じ名前のタグが既にあると弾かれる。作る前に必ず一覧を引き、あればその `id` を使い回す（コンテンツに付ける目的なら作成は不要）。弾かれたときは一覧を引き直して既存のタグ名をユーザーに示し、そのタグを使うか別の名前にするかを確認する。
+同じ名前のタグが既にあると弾かれる。重複の判定でも、保存済みのタグ名から前後の空白を取り除いて比べる。作る前に必ず一覧を引き、あればその `id` を使い回す（コンテンツに付ける目的なら作成は不要）。弾かれたときは一覧を引き直して既存のタグ名をユーザーに示し、そのタグを使うか別の名前にするかを確認する。
 
 タグが会員側の一覧に出るのは、その会員に見えているコンテンツに 1 件以上付いているときだけ。作成しただけでは会員サイトに出ない。
 
@@ -152,7 +181,7 @@ pathParams: { id, tagId }
 bodyParams: { name }
 ```
 
-変えられるのは名前だけで、コンテンツとの結びつきは残る。既にある名前へは変更できない。
+変えられるのは名前だけで、コンテンツとの結びつきは残る。既にある名前へは変更できない。前後の空白は取り除かれて保存され、空白だけの名前は弾かれる。`getCreatorMembershipSiteTags` で読んだ名前に空白が残っていた場合、そのまま送り返すと空白の落ちた名前で保存される。
 
 ### `deleteCreatorMembershipSiteTag` — タグを削除
 
