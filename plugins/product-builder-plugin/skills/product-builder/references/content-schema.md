@@ -208,6 +208,123 @@
 
 `productId` はここだけ**数値**で渡す。他のプラン操作では文字列。
 
+## 提供コンテンツの項目
+
+`getCreatorProductPlanOfferedContents` が返す `offeredContents[]` の 1 件。会員サイトと予約メニューが同じ形で並び、**`calendarBookingItem` が `null` なら会員サイト、入っていれば予約メニュー**。
+
+| 項目 | 意味・扱い |
+|---|---|
+| `id` | 提供コンテンツ ID。解除（`deleteCreatorProductPlanOfferedContent`）で使う。**提示しない** |
+| `title` | 会員サイト名または予約メニュー名。提示の主キーにする。名前が空のときは `(未設定)` |
+| `description` | 説明。会員サイト・予約メニューでは空文字が返る。申込者向けサイト（旧会員サイト）では文章が入っていることがある |
+| `iconImageUrl` | アイキャッチ画像の URL。無ければ空文字 |
+| `membershipSiteId` | 紐付いている会員サイトの ID（数値）。**ライセンス設定のパスに使う**。申込者向けサイト（旧会員サイト）と予約メニューでは `null`。**提示しない** |
+| `isPublished` | 会員サイトの公開状態。申込者向けサイトと予約メニューでは常に `false` なので、「非公開」と説明しない |
+| `calendarBookingItem` | 予約メニュー固有の項目（下表）。会員サイトでは `null` |
+| `createdAt` / `updatedAt` | 作成・更新日時 |
+
+`calendarBookingItem` の中身:
+
+| 項目 | 意味・扱い |
+|---|---|
+| `calendarBookingItemId` | 予約メニュー ID。**提示しない** |
+| `slotType` | 枠種別（下の変換表） |
+| `publishStatus` | 予約メニューの公開状態（下の変換表） |
+| `acceptStartAt` / `acceptEndAt` | 予約の受付開始・終了日時。`null` は常時受付 |
+
+一覧と一緒に返る `isUsingLegacySite` が `true` なら、申込者向けサイト（旧会員サイト）を使っている。
+
+## 会員サイトの紐付けリクエスト
+
+`postCreatorProductPlanOfferedContent` は `useLegacyMembershipSite` と `membershipSiteId` の**両方が必須**で、組み合わせで操作が決まる。`membershipSiteId` は省略できず、使わないときは `null` を送る。
+
+| 操作 | `useLegacyMembershipSite` | `membershipSiteId` | 起きること |
+|---|---|---|---|
+| 会員サイトを紐付ける（変更も同じ） | `false` | 会員サイト ID（数値） | いままでの会員サイトの紐付けは外れ、**申込者向けサイトは非公開になる**。ライセンスが自動作成される |
+| 申込者向けサイト（旧会員サイト）を使う | `true` | `null` | プランの申込者向けサイトを紐付ける。会員サイトが紐付いていれば、その紐付けは外れずに残る。非公開にした申込者向けサイトは自動では公開に戻らない |
+| 会員サイトを使わない | `false` | `null` | 会員サイトの紐付けをすべて外し、**申込者向けサイトを非公開にする** |
+
+- `true` と会員サイト ID を同時に送ると拒否される
+- **同じ会員サイトを再指定すると「変更がないためスキップしました。」で成功する**（失敗ではない）
+- 購入者がいるプランでは、紐付いている会員サイトの変更・申込者向けサイトへの切り替え・「使わない」への切り替えが拒否される。`getCreatorProductPlan` の `isDeletable: false` なら呼ばずに伝える。何も紐付いていないプランへの初回の紐付けは、購入者がいてもできる
+- 予約メニューの紐付けは、このリクエストでは変わらない
+
+会員サイトを新しく紐付けたとき（別の会員サイトへ変えたときも）、そのプランのライセンスは次の既定値で自動作成される。変えたければ `putCreatorMembershipSiteProductPlanLicenseSetting` で更新する。
+
+| 項目 | 自動作成時の値 |
+|---|---|
+| 閲覧できるフォルダ | 紐付けた時点の全フォルダ |
+| `isNewFoldersIncluded` | `true`（今後追加されるフォルダも閲覧可） |
+| `accessDurationDays` | `null`（無期限） |
+
+## ライセンス設定の項目
+
+`getCreatorMembershipSiteProductPlanLicenseSetting` / `putCreatorMembershipSiteProductPlanLicenseSetting`。パスは `membershipSiteId`（**数値**。提供コンテンツ一覧の値）/ `productId` / `planId`。
+
+| 項目 | 取得 | 更新 | 意味・扱い |
+|---|---|---|---|
+| `folders[]` | ○ | — | 会員サイトの全フォルダ。`id`（**提示しない**）/ `name`（提示に使う）/ `isViewable`（このプランで閲覧できるか） |
+| `viewableFolderIds` | — | 必須 | 閲覧可能にするフォルダの ID（数値）の配列。**送った内容に置き換わる**。重複不可。会員サイトに無い ID は拒否 |
+| `isNewFoldersIncluded` | ○ | 必須 | 今後追加されるフォルダも自動で閲覧可能にするか |
+| `accessDurationDays` | ○ | 必須 | 閲覧期限（購入からの日数）。**1〜1000**。`null` は無期限。**省略不可** |
+
+更新の組み立ては、取得した `folders` のうち `isViewable: true` の `id` を土台にして、足す・外すを反映する。
+
+```
+取得:  folders = [A(可), B(可), C(不可)]
+希望:  C も見せたい
+送信:  viewableFolderIds = [A, B, C]     ← [C] だけ送ると A・B が見られなくなる
+```
+
+**閲覧順の固定が有効な会員サイト**（`getCreatorMembershipSite` の `isFixedViewingOrder: true`）では、全フォルダを閲覧可能にし `isNewFoldersIncluded: true` にした設定しか保存できない。フォルダを分ける依頼には、先に閲覧順の固定を外す必要があることを伝える。閲覧順の固定を外すとゲストの閲覧完了状態が消えて元に戻せないことも併せて伝える。
+
+**公開中・限定公開のプラン**（`publishingStatus: PUBLIC` / `LIMITED`）、または **`isDeletable: false`（購入者がいる可能性のある）プラン**で、いま閲覧可能なフォルダを外すと、そのフォルダを購入済みのゲストも見られなくなる。承認を取ってから送る。
+
+## サンクスページ／メールの項目
+
+購入直後の画面と申し込み完了メールに載る内容。`getCreatorProductPlanSettingsThanks` / `patchCreatorProductPlanSettingsThanks`。
+
+| 項目 | 取得 | 更新 | 意味・扱い |
+|---|---|---|---|
+| `content` | ○ | **必須** | 本文。10,000 文字まで。**変えないときも現在値をそのまま送る**。未設定なら空文字 |
+| `bannerMediaId` | ○ | 任意 | タップで移動するバナー画像の ID。**省略＝維持、`null`＝削除**。未設定なら `null`。**提示しない** |
+| `bannerLinkUrl` | ○ | 任意 | バナーをタップしたときの移動先。`http://` / `https://` で始まる URL のみ。**省略＝維持、`null`＝削除**。未設定なら `null` |
+
+「省略」と「`null`」の違いをまとめる。
+
+| 送り方 | `bannerMediaId` / `bannerLinkUrl` の結果 |
+|---|---|
+| 項目を入れない | 保存済みの値のまま |
+| `null` | 削除される |
+| 値を入れる | その値に変わる |
+
+- **バナー画像が無い状態でリンク先だけは設定できない。** 保存済みの画像が無く `bannerMediaId` も送らないのに `bannerLinkUrl` を送ると拒否される。画像を消すときはリンク先も `null` にする
+- `bannerMediaId` はユーザーがアップロードした自分の画像の ID だけが通る。存在しない・他人の画像は拒否される。**それらしい ID を作らない**
+- 銀行振込の購入では、この画面と完了メールは入金確認後に表示・送信される
+
+## 自動リダイレクトの項目
+
+購入完了後に指定ページへ自動で移動させる設定。`patchCreatorProductPlanSettingsRedirect` / `deleteCreatorProductPlanSettingsRedirect`。**現在値を取得するツールは無い。**
+
+| 項目 | 更新 | 意味・扱い |
+|---|---|---|
+| `redirectUrl` | 必須 | 移動先の URL |
+| `pendingSecond` | 必須 | 移動までの待機秒数。**0〜15** の整数 |
+
+- **現在値は読めない。** 設定の有無・移動先・秒数はユーザーに確認し、設定済みなら上書きになることを伝える。正確な現在値が要るなら管理画面で確認してもらう
+- 作成と更新は同じツールで、2 項目とも毎回送る
+- 削除は**未設定でも成功する**。有無を確かめるためだけに削除を呼ばず、「解除します（あとから再設定できます）」と伝えて承認を取ってから呼ぶ
+- 読み戻せないので、提示するのは送った値（削除なら「未設定にしました」）
+- 銀行振込で支払ったゲストにはリダイレクトが働かない
+
+## 感想レポートの項目
+
+購入後に感想レポートの投稿依頼メールを自動で送るかどうか。`getCreatorProductPlanSettingsReviewReport` / `patchCreatorProductPlanSettingsReviewReport`。
+
+| 項目 | 取得 | 更新 | 意味・扱い |
+|---|---|---|---|
+| `isAutoRequestEnabled` | ○ | 必須 | `true` で自動送信する。**一度も設定していないプランは `true` で返る**（「未設定」ではなく「有効」と伝える） |
+
 ## enum の日本語変換表
 
 | 項目 | 値 → 表示 |
@@ -219,6 +336,12 @@
 | `salesStatus` | `forSale`=受付中 / `notForSale`=受付停止中 / `soldOut`=満員 / `beforeApplicationPeriod`=受付開始前 / `afterApplicationPeriod`=受付終了 / `outOfApplicationPeriod`=受付期間外 |
 | `recurringFrequency` | `NONE`=繰り返しなし / `DAILY`=日毎 / `WEEKLY`=週ごと / `MONTHLY`=月ごと |
 | `billingStartType` | `immediate`=購入後すぐ / `absolute`=指定日から / `relative`=購入から N 日後 |
+| `calendarBookingItem.slotType` | `FREE_SLOT`=自由枠 / `FIXED_SLOT`=固定枠 |
+| `calendarBookingItem.publishStatus` | `DRAFT`=下書き / `OPEN`=受付中 / `STOPPED`=受付停止 |
+| `isUsingLegacySite` | `true`=申込者向けサイト（旧会員サイト）を使用中 / `false`=使用していない |
+| `isNewFoldersIncluded` | `true`=今後追加されるフォルダも含める / `false`=含めない |
+| `accessDurationDays` | `null`=無期限 / 数値=「購入から N 日間」 |
+| `isAutoRequestEnabled` | `true`=感想レポートの投稿依頼を自動送信する / `false`=自動送信しない |
 
 ## 公開の条件
 
@@ -281,6 +404,23 @@
 | 割引前の価格は価格より大きい金額で設定してください | `discountPrice` が価格以下 | 割引前の価格と価格のどちらが正しいかを確かめる |
 | 割引前の価格は1円以上で設定してください | `discountPrice` が 0 以下 | 割引表示が不要なら `null` にする |
 
+提供コンテンツ・購入後設定・ライセンス設定のものは次のとおり。
+
+| メッセージ | 意味 | 案内すること |
+|---|---|---|
+| このプランには購入者がいるため、紐付けを解除できません。 | 購入者がいるプランで会員サイト・予約メニューの紐付けを外そうとした | 解除できない旨を伝える。プランを整理したいなら非公開を選択肢として示す |
+| このプランには購入者がいるため、申込者向けサイトから他の会員サイトへ変更できません。 | 購入者がいるプランで申込者向けサイトから会員サイトへ変えようとした | 変更できない旨を伝える。新しいプランを作って紐付ける案を示す |
+| このプランには購入者がいるため、紐付け先の会員サイトを変更できません。 | 購入者がいるプランで別の会員サイトへ変えようとした、または会員サイトから申込者向けサイトへ切り替えようとした | 同上 |
+| 旧会員サイトの紐付けは削除できません。 | 申込者向けサイトの紐付けを `deleteCreatorProductPlanOfferedContent` で外そうとした | `postCreatorProductPlanOfferedContent` の「会員サイトを使わない」に切り替える（申込者向けサイトが非公開になる影響を伝える） |
+| 申込者向けサイトと会員サイトは同時に設定できません。どちらか一方を選択してください。 | `useLegacyMembershipSite: true` と `membershipSiteId` を同時に送った | どちらを使うかを確かめて送り直す |
+| この予約枠は既に予約に使われているため、紐付けを解除できません。 | 予約に使われたことがある予約メニューを外そうとした（キャンセル済みも数える） | 解除できない旨を伝える |
+| バナー画像が未設定のときはリンク先 URL を指定できません。先にバナー画像を設定するか、リンク先 URL を null にしてください。 | バナー画像が無い状態で `bannerLinkUrl` を指定した | 画像 ID をユーザーに確認して一緒に送るか、リンク先を `null` にする |
+| bannerLinkUrl は http:// または https:// で始まる URL を指定してください。 | リンク先の形式が `http(s)` でない | URL を確認し直す |
+| 指定された画像が見つかりません。 | `bannerMediaId` が存在しないか、自分の画像でない | 画像 ID をユーザーに確認し直す |
+| 閲覧順の固定が有効な会員サイトでは、フォルダを分けたライセンス設定はできません。すべてのフォルダを閲覧可能にし、今後追加されるフォルダも含めてください。 | 閲覧順の固定が有効なサイトで一部のフォルダだけ閲覧可にした、または `isNewFoldersIncluded: false` にした | 全フォルダ + `true` で送り直すか、先に閲覧順の固定を外す必要があることを伝える（`membership-site-builder` スキル） |
+| viewableFolderIds に重複したIDは指定できません。 | 同じフォルダ ID を 2 回入れた | 重複を除いて送り直す |
+| 指定されたフォルダIDに無効な値が含まれています。 | その会員サイトに無いフォルダ ID を含めた | 取得した `folders` の ID だけを使って送り直す |
+
 ## 絶対に避けること
 
 書き込みを伴うため、取り返しのつかない事故につながる項目をここに集約する。
@@ -295,7 +435,16 @@
 - **承認なしで公開状態を変えない・削除しない。** どちらもユーザーの事業に直接影響する
 - **削除を「試して」確かめない。** `isDeletable: false` なら実行せずに伝える。削除は取り消せない
 - **リッチテキストの内部形式を手で編集しない。** 全文置き換えか、管理画面での編集を案内する
-- 生の内部 ID（`id` / `productId` / `productPlanId` / `moshServiceId` / `slug` / `imageIds` の値）を提示しない
-- enum の英字値（`PUBLIC` / `MONTHLY` / `forSale` 等）をそのまま表示しない
+- **承認なしで会員サイトを紐付けない・変えない・外さない。** 申込者向けサイト（旧会員サイト）が非公開になり、ゲストの閲覧に影響する
+- **購入者がいるプランで、紐付いている提供コンテンツの変更・解除を試さない。** `isDeletable: false` なら呼ばずに伝える（初回の紐付けは対象外）
+- **ライセンスの `viewableFolderIds` を一部だけ送らない。** 送った内容に置き換わる。外れたフォルダは購入済みのゲストも見られなくなる
+- **公開中・限定公開のプラン、または購入者がいる可能性のあるプランから閲覧できるフォルダを、承認なしで外さない**
+- **承認なしで自動リダイレクトを削除しない。** 未設定でも成功するので、有無を確かめる目的でも呼ばない
+- **サンクスページ／メールで `content` を省かない・バナーを消すつもりで項目を省略しない。** 省略は「維持」、削除は `null`
+- **バナー画像の ID を捏造しない。** ユーザーから示された ID だけを使う
+- 生の内部 ID（`id` / `productId` / `productPlanId` / `moshServiceId` / `slug` / `imageIds` の値 / `membershipSiteId` / `offeredContentId` / `calendarBookingItemId` / `folders[].id` / `bannerMediaId`）を提示しない
+- enum の英字値（`PUBLIC` / `MONTHLY` / `forSale` / `FREE_SLOT` 等）をそのまま表示しない
 - `publicUrl: null` を「エラー」「取得失敗」と説明しない（非公開商品の正常な値）
 - `capacity: 0` を「定員 0 人」と説明しない（定員なし）
+- 自動リダイレクトの現在値を推測して「いまは◯◯に設定されています」と提示しない（読むツールが無い。送った値だけを提示する）
+- 「変更がないためスキップしました。」を失敗として報告しない（同じ会員サイトを再指定したときの正常な応答）

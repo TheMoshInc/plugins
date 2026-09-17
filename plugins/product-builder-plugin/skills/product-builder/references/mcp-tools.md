@@ -139,13 +139,155 @@
 
 `productId` / `productPlanId`（ともにパス。数値文字列）で指定する。自分が所有する商品のプランのみ取得でき、他のユーザーのプランを指定すると「見つからない」旨のエラーになる。
 
-**更新の前には必ずこれを呼ぶ**（部分更新に対応していないため、現在値が要る）。`isNameEditable` / `isPriceEditable` / `isDeletable` もここで読める。
+**更新の前には必ずこれを呼ぶ**（部分更新に対応していないため、現在値が要る）。`isNameEditable` / `isPriceEditable` / `isDeletable` もここで読める。`membershipSites` にプランに紐づく会員サイトの名前と ID が入る。
+
+## 提供コンテンツ（会員サイト・予約メニュー）
+
+プランで提供する会員サイト・予約メニューの紐付け。`productId` / `productPlanId` はいずれもパスで、**数値文字列**。
+
+### `getCreatorProductPlanOfferedContents` — プランに紐づく提供コンテンツ一覧を取得
+
+会員サイトと予約メニューが種別の違う提供コンテンツとして**同じ配列**に並ぶ。ページングされない。
+
+レスポンス: `{ offeredContents: [...], totalCount, isUsingLegacySite }`。各要素の項目は [content-schema.md](content-schema.md) の「提供コンテンツの項目」。`isUsingLegacySite` が `true` なら、いま申込者向けサイト（旧会員サイト）を使っている。
+
+紐付けが無ければ空配列。書き込みの前後でこれを読み、**変更前と変更後を会員サイト名・予約メニューのタイトルで提示する**。
+
+### `postCreatorProductPlanOfferedContent` — プランに会員サイトを紐付け
+
+| パラメータ | 必須 | 制約 |
+|---|---|---|
+| `useLegacyMembershipSite` | ○ | `true` で申込者向けサイト（旧会員サイト）を使う |
+| `membershipSiteId` | ○ | 紐付ける会員サイトの ID（**数値**）または `null`。**省略はできない** |
+
+2 つの組み合わせで 3 通りの操作になる（詳細は [content-schema.md](content-schema.md) の「会員サイトの紐付けリクエスト」）。
+
+| `useLegacyMembershipSite` | `membershipSiteId` | 操作 |
+|---|---|---|
+| `false` | 数値 | その会員サイトを紐付ける（変更も同じ）。**申込者向けサイトは非公開になる** |
+| `true` | `null` | 申込者向けサイト（旧会員サイト）を使う。紐付いている会員サイトは外れない。非公開にした申込者向けサイトは自動では公開に戻らない |
+| `false` | `null` | 会員サイトを使わない。会員サイトの紐付けをすべて外し、**申込者向けサイトを非公開にする** |
+
+`true` と数値を同時に送ると拒否される。
+
+拒否される操作:
+
+| 操作 | 結果 |
+|---|---|
+| 購入者がいるプランで、別の会員サイトへ変える・申込者向けサイトへ切り替える・会員サイトを使わない設定にする | 拒否される。`getCreatorProductPlan` の `isDeletable: false` なら呼ばずに伝える |
+| 購入者がいるプランで、申込者向けサイトから会員サイトへ変える | 同上 |
+| 自分の会員サイトでない `membershipSiteId` | 「見つからない」旨のエラー |
+| 申込者向けサイトが用意されていないプランで `useLegacyMembershipSite: true` | 「見つからない」旨のエラー |
+
+購入者の有無で止まるのは**すでに紐付いているものの変更・解除**だけ。何も紐付いていないプランへの初回の紐付けは、購入者がいてもできる。
+
+**同じ会員サイトを再指定すると「変更がないためスキップしました」で成功する。** 会員サイトを新しく紐付けたときは、そのプランのライセンスが「全フォルダ閲覧可・今後追加分も含む・無期限」で自動作成される。予約メニューの紐付けは、このツールでは変わらない。
+
+### `deleteCreatorProductPlanOfferedContent` — プランから提供コンテンツの紐付けを解除
+
+`productId` / `productPlanId` / `offeredContentId`（いずれもパス。数値文字列）で対象を指定する。`offeredContentId` は一覧の `id`。会員サイトも予約メニューも同じツールで外す。
+
+拒否される操作:
+
+| 操作 | 結果 |
+|---|---|
+| 申込者向けサイト（旧会員サイト）の紐付けを外す | 拒否される。`postCreatorProductPlanOfferedContent` で「会員サイトを使わない」を選ぶ |
+| 購入者がいるプランの紐付けを外す | 拒否される（会員サイト・予約メニューとも） |
+| 一度でも予約に使われた予約メニューを外す | 拒否される。キャンセル済みの予約も数える |
+
+例外として、**削除済み（アーカイブ済み）の予約メニュー**の紐付けは、予約の有無・購入者の有無にかかわらず外せる。
+
+会員サイトの紐付けをこのツールで外しても、申込者向けサイトの公開状態は変わらない。
+
+### 参照に使う他ドメインのツール
+
+| ツール | 使いどころ |
+|---|---|
+| `getCreatorMembershipSites` | 会員サイト名から `membershipSiteId` を特定する（`id` / `name` / `isPublished` が返る） |
+| `getCreatorMembershipSite` | 会員サイトの閲覧順の固定（`isFixedViewingOrder`）を確認する |
+
+## 購入後設定
+
+購入完了後にゲストが見る画面・受け取るメールと、その後の導線。`productId` / `productPlanId` はいずれもパスで、数値文字列。3 つの設定は互いに独立している。サンクスページ／メールと感想レポートには取得ツールがあるが、**自動リダイレクトの現在値を取得するツールは無い**（作成／更新と削除のみ）。
+
+### `getCreatorProductPlanSettingsThanks` — サンクスページ／メール設定を取得
+
+レスポンス: `{ content, bannerMediaId, bannerLinkUrl }`。未設定の項目は `content` が空文字、バナーの 2 項目が `null`。
+
+### `patchCreatorProductPlanSettingsThanks` — サンクスページ／メール設定を更新
+
+| パラメータ | 必須 | 制約 |
+|---|---|---|
+| `content` | ○ | 本文。10,000 文字まで。**毎回必須**（変えないときも現在値を送る） |
+| `bannerMediaId` | — | バナー画像の ID。**省略＝維持、`null`＝削除** |
+| `bannerLinkUrl` | — | バナーをタップしたときの移動先。`http://` / `https://` で始まる URL のみ。**省略＝維持、`null`＝削除** |
+
+拒否される操作:
+
+| 操作 | 結果 |
+|---|---|
+| `bannerLinkUrl` に `http(s)` 以外の URL | 拒否される |
+| 自分の画像でない・存在しない `bannerMediaId` | 拒否される |
+| バナー画像が無い状態（保存済みも `null`）で `bannerLinkUrl` だけ指定する | 拒否される。先に画像を設定するか、リンク先も `null` にする |
+
+### `patchCreatorProductPlanSettingsRedirect` — 自動リダイレクト設定を作成／更新
+
+| パラメータ | 必須 | 制約 |
+|---|---|---|
+| `redirectUrl` | ○ | 移動先の URL |
+| `pendingSecond` | ○ | 移動までの待機秒数。**0〜15** の整数 |
+
+作成と更新は同じツール。2 項目とも毎回送る。**現在値を読むツールが無い**ので、設定済みかどうか・移動先・秒数はユーザーに確認し、設定済みなら上書きになることを伝えてから送る。送信後は読み戻せないため、送った値を提示する。
+
+### `deleteCreatorProductPlanSettingsRedirect` — 自動リダイレクト設定を削除
+
+パラメータはパスのみ。**未設定でも成功する**（2 回呼んでも成功する）ため、有無を確かめるためだけに呼ばない。「自動リダイレクトを解除します（あとから再設定できます）」と伝えて承認を取ってから呼ぶ。
+
+### `getCreatorProductPlanSettingsReviewReport` — 感想レポート設定を取得
+
+レスポンス: `{ isAutoRequestEnabled }`。**一度も設定していないプランは `true`（有効）で返る。**
+
+### `patchCreatorProductPlanSettingsReviewReport` — 感想レポート設定を更新
+
+| パラメータ | 必須 | 制約 |
+|---|---|---|
+| `isAutoRequestEnabled` | ○ | 購入後に感想レポートの投稿依頼メールを自動で送るか |
+
+## ライセンス設定（会員サイトの閲覧権限）
+
+会員サイトが紐付いたプランで、購入したゲストが閲覧できるフォルダと期間を決める。パスは `membershipSiteId`（**数値**）/ `productId` / `planId`（数値文字列）の 3 つで、**プラン ID のパラメータ名だけ `planId`**。`membershipSiteId` は `getCreatorProductPlanOfferedContents` の値を使う。
+
+### `getCreatorMembershipSiteProductPlanLicenseSetting` — プランのライセンス設定を取得
+
+レスポンス: `{ folders: [{ id, name, isViewable }], isNewFoldersIncluded, accessDurationDays }`。`folders` は会員サイトの**全フォルダ**にフォルダ名と閲覧可否が付いた一覧。**フォルダ名を別ツールで引く必要はない。**
+
+会員サイトが紐付いていないプラン・自分の会員サイトでない `membershipSiteId` は「見つからない」旨のエラー。
+
+### `putCreatorMembershipSiteProductPlanLicenseSetting` — プランのライセンス設定を更新
+
+| パラメータ | 必須 | 制約 |
+|---|---|---|
+| `viewableFolderIds` | ○ | 閲覧可能にするフォルダの ID（数値）の配列。**送った内容に置き換わる**。重複不可 |
+| `isNewFoldersIncluded` | ○ | 今後追加されるフォルダも自動で閲覧可能にするか |
+| `accessDurationDays` | ○ | 閲覧期限（日数）。**1〜1000**。無期限は `null`（省略不可） |
+
+拒否される操作:
+
+| 操作 | 結果 |
+|---|---|
+| 閲覧順の固定が有効な会員サイトで、一部のフォルダだけ閲覧可にする・`isNewFoldersIncluded: false` にする | 拒否される。全フォルダ + `true` にするか、先に閲覧順の固定を外す |
+| `viewableFolderIds` に重複がある・その会員サイトに無いフォルダ ID を含む | 拒否される |
+
+公開中・限定公開のプラン、または `isDeletable: false`（購入者がいる可能性のある）プランで、いま閲覧可能なフォルダを外すと、**そのフォルダを購入済みのゲストも見られなくなる**。送る前に承認を取る。
 
 ## このスキルで扱えない操作
 
 | 操作 | 案内先 |
 |---|---|
-| 商品画像のアップロード・一覧取得 | 管理画面（画像 ID はユーザーから受け取る） |
+| 商品画像・サンクスページのバナー画像のアップロード・一覧取得 | 管理画面（画像 ID はユーザーから受け取る） |
 | 事業者情報の登録・確認 | 管理画面 |
-| クーポン・特典コンテンツ・収益分配の設定 | 管理画面 |
+| 予約メニューをプランに紐付ける | 管理画面（解除はこのスキルで可能） |
+| 自動リダイレクトの現在値の確認 | 管理画面（作成／更新と削除のみ可） |
+| クーポン・収益分配・決済リンクの設定 | 管理画面 |
+| 会員サイトそのもの（フォルダ・コンテンツ・タグ・閲覧順の固定などのサイト設定） | `membership-site-builder` スキル |
 | 購入者・売上の確認 | `sales-reporter` スキル |
