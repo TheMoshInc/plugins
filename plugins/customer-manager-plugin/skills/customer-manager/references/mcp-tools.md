@@ -19,8 +19,8 @@
 
 | フィールド | 型 | 使わないときの値 | 画面での呼び名 | 補足 |
 |---|---|---|---|---|
-| `serviceIds` | integer[] | `[]` | プラン・サービス | ID を得る MCP ツールが無い（後述） |
-| `subscriptionIds` | integer[] | `[]` | プラン・サービス（サブスク種別） | 上流の `subscriptionServiceIds`。個々の契約IDではなく**サブスク型サービスのID** |
+| `serviceIds` | integer[] | `[]` | プラン・サービス | 本スキル単体では ID を得る手段が無いが、`product-navigator` の `moshServiceId` 経由で得られる（後述） |
+| `subscriptionIds` | integer[] | `[]` | プラン・サービス（サブスク種別） | 上流の `subscriptionServiceIds`。個々の契約IDではなく**サブスク型サービスのID**（`serviceIds` と同じ経路で取得可） |
 | `eventDateTime` | ISO8601 or null | `null` | 開催日時 | 分単位の完全一致。範囲指定不可（下記の注意） |
 | `searchQuery` | string | `""` | 名前・メールアドレス | 顧客名 / メールアドレス / MOSH ID の部分一致 |
 | `subscriptionState` | enum or null | `null` | 継続状態 | `active`=継続中 / `canceled`=解約済み |
@@ -78,10 +78,19 @@
 |---|---|---|
 | 顧客タグの一覧取得・作成 | `getCreatorCustomerTags` / `postCreatorCustomerTags` | タグ名からIDを引けない。ユーザーに確認するか管理画面を案内 |
 | 顧客へのタグ付け・タグ剥がし | `putCreatorCustomerTags` / `postCreatorCustomerTagCustomers` / `deleteCreatorCustomerTagCustomer` | 管理画面「顧客一覧」 |
-| 絞り込み用サービス一覧の取得 | `getCreatorCustomersFiltersServices` | `serviceIds` は空配列。サービス名で絞りたい依頼は管理画面を案内 |
+| 絞り込み用サービス一覧の直接取得 | `getCreatorCustomersFiltersServices` | 本スキル単体では代替不可。**ただし下記の `product-navigator` 経由の代替がある** |
 | 顧客のプロフィール詳細・予約履歴・カルテ | `getCreatorCustomer` / `getCreatorCustomerReservations` / `getCreatorCustomerNote` / `putCreatorCustomerNote` | 管理画面「顧客一覧」の顧客詳細 |
 
 **他ドメインの MCP ツールで代用しない。** `getCreatorContactTags`（コンタクトタグ一覧）は取得できるが、返る id は顧客タグとは**別体系**なので `tagIds` / `excludeTagIds` に渡してはならない（[customer-vs-contact.md](customer-vs-contact.md)）。
+
+## serviceIds / subscriptionIds は `product-navigator` 経由で取得できる
+
+`getCreatorCustomersFiltersServices` は MCP に無いが、**商品プランとして販売している商品の serviceId は `product-navigator` スキルから取得できる。**
+
+- `product-navigator` の `getCreatorProductPlan` / `getCreatorProductPlans` のレスポンスに含まれる `moshServiceId`（文字列、例: `"123"`）が、`postCustomersSearch` の `serviceIds` / `subscriptionIds`（整数）と**同一のID**（顧客絞り込み用サービス一覧の `id`（整数）が商品プランの `moshServiceId` と直接突き合わせで解決されることを確認済み。2026-09 時点）
+- 使い方: `moshServiceId` を数値に変換して `serviceIds` に入れる。「サブスク型」のプランなら `subscriptionIds` に入れる（画面の見分け方は `product-navigator` 側のプランのサブスク種別表示に従う）
+- **商品プランに紐づいていない古い形式のサービス**（イベント・プライベートセッション等を商品プラン化せず単体で販売している場合）にはこの経路が無い。その場合のみ、ID不明のまま空配列でユーザーに確認する（必須ルールB）
+- 「サービス名で絞りたい」だけで商品名の手がかりが無い依頼は、まず商品名・プラン名を聞くか `product-navigator` で検索する
 
 ## エラー応答
 

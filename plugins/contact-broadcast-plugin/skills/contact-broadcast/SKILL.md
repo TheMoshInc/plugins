@@ -1,6 +1,6 @@
 ---
 name: contact-broadcast
-description: MOSH のコンタクトリスト向け一斉配信（コンタクトメッセージ: メール / LINE）を MCP 経由で作成・編集・予約解除・削除・検索するスキル。「メルマガ送りたい」「LINEで一斉配信」「配信の下書きを作って」「配信予約を変更・キャンセルして」「配信履歴を見せて」など、`*ContactMessages*` 系 MCP ツールを使うリクエストで必ず起動し、即時配信禁止・トラッキング同意・素材制約などの運用ルールを適用する。対象はコンタクトリスト（顧客・LINE友だち）向け配信のみで、ゲスト向け配信は別系統のため対象外（MCP ツール未提供）。
+description: MOSH のコンタクトリスト向け一斉配信（コンタクトメッセージ: メール / LINE）を MCP 経由で作成・編集・予約解除・削除・検索するスキル。「メルマガ送りたい」「LINEで一斉配信」「配信の下書きを作って」「配信予約を変更・キャンセルして」「配信履歴を見せて」「LINEの送信可能数を教えて」「今月あと何通送れる？」など、`*ContactMessages*` 系 MCP ツールおよび LINE公式アカウントの当月送信数照会（`getCreatorLineChannelsMessageQuotas`）を使うリクエストで必ず起動し、即時配信禁止・トラッキング同意・素材制約などの運用ルールを適用する。対象はコンタクトリスト（LINE友だち・メール購読者）向け配信のみで、顧客＝ゲスト（サービス購入者）向けの一斉配信は別系統のため対象外（`customer-broadcast` スキルの担当）。
 ---
 
 # MOSH コンタクトリスト向け一斉配信（コンタクトメッセージ）
@@ -20,11 +20,12 @@ MCP ツール（`*ContactMessagesEmail*` / `*ContactMessagesLine*`）を使っ�
 - 予約を解除したい（文面は残す）／配信を削除したいとき
 - 配信の履歴・予定を一覧・検索したいとき
 - `*ContactMessages*` 系ツールが必要な文脈
+- **LINE の当月の送信可能数（「今月あと何通送れる？」「LINEの送信可能数を教えて」）を知りたいとき。配信を作る流れとは独立して、この確認だけで完結してよい**（→「LINE の当月送信可能数」節）
 
 ## When NOT to use
 
 - 何かをきっかけに自動で送る配信（ステップ配信・タグ付与での自動送信など） → `workflow-builder` スキル。本スキルが扱うのは**その場で作る一斉配信のみ**
-- ゲスト（サービス購入者）向けの配信 → 別系統で **MCP ツールが提供されていない**。管理画面での操作を案内する
+- 顧客（サービス購入者）向けの一斉配信 → `customer-broadcast` スキル。「顧客に」「購入者に」「申し込んだ人に」のように宛先が購入者を指す依頼はこちら
 - LP（ランディングページ）の作成・編集 → `lp-builder` スキル
 - 配信するコンタクト自体の作成・タグ付け・インポートなど、コンタクト管理そのもの
 
@@ -39,6 +40,7 @@ MCP ツール（`*ContactMessagesEmail*` / `*ContactMessagesLine*`）を使っ�
 | 一覧・検索 | `postCreatorContactMessagesEmailSearch` | `postCreatorContactMessagesLineSearch` |
 | 詳細取得 | `getCreatorContactMessagesEmail` | `getCreatorContactMessagesLine` |
 
+- 上表以外に **LINE だけ** `getCreatorLineChannelsMessageQuotas`（当月の送信可能数の確認）がある（メールに相当するものは無い）→「LINE の当月送信可能数」節。
 - **下書きの新規作成は `post〜Email` / `post〜Line` の `isDraft: true`**。`post〜Draft` は「既存の配信予定を下書きに戻す」専用で、新規作成には使えない。
 - 「キャンセルしたい」と言われたら、文面を残すか（→ 予約解除）完全に消すか（→ 削除）を確認して使い分ける。
 
@@ -79,6 +81,7 @@ Step 3 で提示・確認する項目は2種類に分かれる。**「確定す�
   候補の絞り方・ユーザーに見せる名前の作り方は [references/mcp-tools.md](references/mcp-tools.md) の「送信元 LINE公式アカウントの確定」を参照
 - 配信対象をタグで絞る場合は `getCreatorContactTags` でタグの id を確認する
 - 既存の配信を編集・解除・削除する場合は、一覧（`post〜Search`）で対象の `taskName` と `scheduledAt` を確認する
+- LINE の場合、**任意で** `getCreatorLineChannelsMessageQuotas` を呼び、送信元アカウントの当月の残り通数を確認してよい（→「LINE の当月送信可能数」節）。友だち全員宛など件数が多い配信・月末の配信・ユーザーが残数を気にしている場面で使う
 - 本文にクリック計測対象の URL を含める場合は [references/tracking-consent.md](references/tracking-consent.md) の手順に入る
 
 取得できない値は**推測して埋めず**、ユーザーに確認する。
@@ -109,6 +112,16 @@ Step 3 で提示・確認する項目は2種類に分かれる。**「確定す�
 ### 5. 結果の報告
 
 何がどの状態になったかを伝える（「コミュニケーション」節の文体規約に従う）。
+
+## LINE の当月送信可能数（`getCreatorLineChannelsMessageQuotas`）
+
+接続済み LINE公式アカウントごとに、**LINE 側の**当月の送信上限と送信済み数を返す読み取り専用ツール（引数なし）。
+
+- **「今月あと何通送れる？」と単独で聞かれたら、配信作成の流れには入らずこのツールだけを呼んで答える。** アカウント名と残り通数を伝えて終わり、配信の下書きを勝手に作らない。
+- 配信を作る・編集する流れでは Step 2 で任意に確認する。残りが少ない・上限に達しているときは Step 3 の提示に一言添える。
+- **伝えてよいのは残数と上限だけ。** 残数は「約◯通」と幅を持たせ、**上限の有無にかかわらず、その配信が通るかどうかは断定しない**（理由は下記 references の節）。**`monthlyLimit: null`（上限なし）のときも同様。** 「上限なし＝気にせず送ってよい」と言わない。LINE側に上限が無いことと、MOSH側の配信可能数の上限が無いことは別問題（MOSH側の残数を確認する手段はない）。
+
+値の読み方（`monthlyLimit` / `totalUsage` の意味・アカウント名への引き当て・一覧に出ないアカウントの扱い・MOSH 側の配信可能数の上限との違い）は [references/mcp-tools.md](references/mcp-tools.md) の「当月送信可能数の確認」を参照。
 
 ## LINE の素材制約
 
@@ -162,7 +175,7 @@ Step 3 で提示・確認する項目は2種類に分かれる。**「確定す�
 
 | ファイル | 内容 | いつ読むか |
 |---|---|---|
-| [references/mcp-tools.md](references/mcp-tools.md) | 操作別のパラメータ仕様、状態による可否条件、`filterConditions` の必須キー、送信元 LINE公式アカウントの確定、LINE `contents` の項目別制約 | ツールを呼ぶ直前に該当する操作の節だけ |
+| [references/mcp-tools.md](references/mcp-tools.md) | 操作別のパラメータ仕様、状態による可否条件、`filterConditions` の必須キー、送信元 LINE公式アカウントの確定、当月送信可能数の読み方、LINE `contents` の項目別制約 | ツールを呼ぶ直前に該当する操作の節だけ |
 | [references/best-practices.md](references/best-practices.md) | 文面の形式基準（1配信1目的・文字数と吹き出し数の上限・CTA・NG表現・スマホ前提の可読性）とセルフレビューチェックリスト | 本文・件名・カードのコピーを**こちらで組む**とき（逐語で指定されている場合は不要） |
 | [references/tracking-consent.md](references/tracking-consent.md) | クリック計測の同意フロー（提示すべき全項目・管理画面との差異） | 本文に URL を含めてクリック計測を有効にするとき |
 | [examples/email-scheduled-tag-filter.json](examples/email-scheduled-tag-filter.json) | メール予約配信の最小例。タグ1つで絞り込み。`postCreatorContactMessagesEmail` の bodyParams としてそのまま渡せる形（スキーマ検証済み） | メールを新規作成するとき |

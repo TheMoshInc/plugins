@@ -1,5 +1,5 @@
 {
   "name": "contact-broadcast-plugin",
   "description": "Adds a contact-broadcast skill for sending MOSH contact broadcasts",
-  "version": "0.1.0"
+  "version": "0.2.0"
 }

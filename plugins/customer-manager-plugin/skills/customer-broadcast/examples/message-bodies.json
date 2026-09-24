@@ -1,0 +1,188 @@
+{
+  "_note": "顧客宛メッセージの完成形リクエスト。call の中身をそのままツールの引数に使える。作成は15フィールドすべてが必ず埋まっていること、そして配列の型が混在すること（数値配列 = customerIds / serviceIds / subscriptionIds、文字列配列 = tagIds / excludeTagIds）に注目。scheduledDateTime はタイムゾーンオフセット付きで、現在時刻の10分後以降でなければ422になる（例の日時はそのまま使わず、実行時の現在時刻を基準に決め直すこと）。",
+
+  "1-preview-all-customers": {
+    "依頼の例": "顧客全員にお知らせを送りたい（まず何名に届くか確認する）",
+    "ツール": "postCustomersSearch",
+    "ポイント": "作成の前に必ずこれを呼んで totalCount（宛先件数）を確認する。isEmailReceivingAllowed は必ず null（顧客宛メッセージ側にこの条件が無いため、値を入れると配信の宛先より狭い件数になる）。limit は件数を見るだけなので 10 で足りる。",
+    "call": {
+      "bodyParams": {
+        "serviceIds": [],
+        "subscriptionIds": [],
+        "eventDateTime": null,
+        "searchQuery": "",
+        "subscriptionState": null,
+        "paymentMethod": null,
+        "paymentType": null,
+        "paymentStatus": null,
+        "isEmailReceivingAllowed": null,
+        "tagIds": [],
+        "excludeTagIds": [],
+        "userIds": [],
+        "page": 1,
+        "limit": 10
+      }
+    }
+  },
+
+  "2-create-all-customers": {
+    "依頼の例": "顧客全員に、9月20日10時にお知らせを送って",
+    "ツール": "postCustomersMessages",
+    "ポイント": "isAllCustomers: true のときは customerIds を空配列にする。検索条件をすべて既定値にすると「全顧客」になる。title は管理用の名前でゲストには届かない。",
+    "call": {
+      "bodyParams": {
+        "title": "9月のお知らせ",
+        "message": "いつもご利用ありがとうございます。\n9月20日より、オンラインレッスンの予約受付を開始します。\n詳細はマイページからご確認ください。",
+        "scheduledDateTime": "2026-09-20T10:00:00+09:00",
+        "customerIds": [],
+        "isAllCustomers": true,
+        "serviceIds": [],
+        "subscriptionIds": [],
+        "eventDateTime": null,
+        "searchQuery": "",
+        "tagIds": [],
+        "excludeTagIds": [],
+        "subscriptionState": null,
+        "paymentMethod": null,
+        "paymentType": null,
+        "paymentStatus": null
+      }
+    }
+  },
+
+  "3-preview-filtered": {
+    "依頼の例": "サブスクを継続中の顧客だけに送りたい（件数の確認）",
+    "ツール": "postCustomersSearch",
+    "ポイント": "4-create-filtered と同じ条件をそのまま入れる。値を1つでも変えると、確認した件数と実際の宛先がずれる。",
+    "call": {
+      "bodyParams": {
+        "serviceIds": [],
+        "subscriptionIds": [],
+        "eventDateTime": null,
+        "searchQuery": "",
+        "subscriptionState": "active",
+        "paymentMethod": null,
+        "paymentType": null,
+        "paymentStatus": null,
+        "isEmailReceivingAllowed": null,
+        "tagIds": [],
+        "excludeTagIds": [],
+        "userIds": [],
+        "page": 1,
+        "limit": 10
+      }
+    }
+  },
+
+  "4-create-filtered": {
+    "依頼の例": "サブスクを継続中の顧客だけに、9月20日10時にお知らせを送って",
+    "ツール": "postCustomersMessages",
+    "ポイント": "isAllCustomers: true のまま、検索条件で絞る。これが「条件に該当する全顧客に送る」の形。3-preview-filtered で確認した条件と一字一句同じにする。",
+    "call": {
+      "bodyParams": {
+        "title": "継続中の方向け 9月のお知らせ",
+        "message": "いつもご受講ありがとうございます。\n9月20日より、継続中の方限定で新しいレッスン動画を公開します。\nマイページからご視聴ください。",
+        "scheduledDateTime": "2026-09-20T10:00:00+09:00",
+        "customerIds": [],
+        "isAllCustomers": true,
+        "serviceIds": [],
+        "subscriptionIds": [],
+        "eventDateTime": null,
+        "searchQuery": "",
+        "tagIds": [],
+        "excludeTagIds": [],
+        "subscriptionState": "active",
+        "paymentMethod": null,
+        "paymentType": null,
+        "paymentStatus": null
+      }
+    }
+  },
+
+  "5-create-specific-customers": {
+    "依頼の例": "顧客ID 1001 と 1002 の2名にだけ送って（ユーザーが顧客IDを明示した場合のみ）",
+    "ツール": "postCustomersMessages",
+    "ポイント": "isAllCustomers: false + customerIds。customerIds は【数値】の配列（tagIds / excludeTagIds は【文字列】配列なので型が混在する）。isAllCustomers が false でも検索条件は AND で効き続けるため、個別指定するときは他の条件をすべて既定値にする。指定した顧客が条件から外れると届かない。",
+    "call": {
+      "bodyParams": {
+        "title": "個別のご連絡",
+        "message": "先日お問い合わせいただいた件について、ご連絡いたします。\n次回のレッスン日程を9月22日に変更しました。",
+        "scheduledDateTime": "2026-09-20T10:00:00+09:00",
+        "customerIds": [1001, 1002],
+        "isAllCustomers": false,
+        "serviceIds": [],
+        "subscriptionIds": [],
+        "eventDateTime": null,
+        "searchQuery": "",
+        "tagIds": [],
+        "excludeTagIds": [],
+        "subscriptionState": null,
+        "paymentMethod": null,
+        "paymentType": null,
+        "paymentStatus": null
+      }
+    }
+  },
+
+  "6-preview-specific-customers": {
+    "依頼の例": "5-create-specific-customers の宛先件数の確認",
+    "ツール": "postCustomersSearch",
+    "ポイント": "customerIds（数値）を userIds（【文字列】）に変換して渡す。[1001, 1002] → [\"1001\", \"1002\"]。型変換を忘れるとスキーマ検証で弾かれる。",
+    "call": {
+      "bodyParams": {
+        "serviceIds": [],
+        "subscriptionIds": [],
+        "eventDateTime": null,
+        "searchQuery": "",
+        "subscriptionState": null,
+        "paymentMethod": null,
+        "paymentType": null,
+        "paymentStatus": null,
+        "isEmailReceivingAllowed": null,
+        "tagIds": [],
+        "excludeTagIds": [],
+        "userIds": ["1001", "1002"],
+        "page": 1,
+        "limit": 10
+      }
+    }
+  },
+
+  "7-edit-reschedule-only": {
+    "依頼の例": "予約した「9月のお知らせ」を9月21日15時に変更して（本文は変えない）",
+    "ツール": "patchCreatorCustomersMessage",
+    "ポイント": "全置換なので、変えない title と message も getCustomersMessage で取得した現在値をそのまま入れる。pathParams の id は【文字列】。宛先はこのツールでは変更できない。",
+    "call": {
+      "pathParams": {
+        "id": "123"
+      },
+      "bodyParams": {
+        "title": "9月のお知らせ",
+        "message": "いつもご利用ありがとうございます。\n9月20日より、オンラインレッスンの予約受付を開始します。\n詳細はマイページからご確認ください。",
+        "scheduledDateTime": "2026-09-21T15:00:00+09:00"
+      }
+    }
+  },
+
+  "8-list-and-detail-and-delete": {
+    "依頼の例": "顧客に送ったメッセージの履歴を見せて / 予約を取り消して",
+    "ポイント": "一覧の page と、詳細・削除の id はいずれも【文字列】。一覧は1ページ10件固定で本文を含まないため、本文が要るものだけ getCustomersMessage で個別に取る。削除は復元できないので、対象のメッセージ名と配信日時を提示して承認を得てから呼ぶ。",
+    "calls": {
+      "getCustomersMessages": {
+        "queryParams": {
+          "page": "1"
+        }
+      },
+      "getCustomersMessage": {
+        "pathParams": {
+          "id": "123"
+        }
+      },
+      "deleteCustomersMessage": {
+        "pathParams": {
+          "id": "123"
+        }
+      }
+    }
+  }
+}

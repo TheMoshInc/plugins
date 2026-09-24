@@ -1,5 +1,5 @@
 {
   "name": "customer-manager-plugin",
-  "description": "Adds a customer-manager skill for searching and listing MOSH customers (service purchasers)",
-  "version": "0.1.0"
+  "description": "Adds customer-manager and customer-broadcast skills for searching MOSH customers (service purchasers) and sending them broadcast messages",
+  "version": "0.2.0"
 }
