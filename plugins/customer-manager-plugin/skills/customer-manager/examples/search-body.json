@@ -89,8 +89,8 @@
     }
   },
   "tag-filter-with-known-ids": {
-    "依頼の例": "顧客タグID 12 と 15 の顧客から、タグID 30 の人は除いて出して（ユーザーが顧客タグの ID を明示した場合のみ）",
-    "ポイント": "tagIds / excludeTagIds は顧客タグの ID。ID を明示されていないときは空配列のままにする。getCreatorContactTags が返すコンタクトタグの ID は絶対に入れない。",
+    "依頼の例": "VIP か VIP候補 のタグが付いた顧客から、休眠 タグの人は除いて出して",
+    "ポイント": "tagIds / excludeTagIds は顧客タグの ID（文字列）。タグ名は getCreatorCustomerTags の一覧で完全一致を確認して id に変換する（この例では VIP=12 / VIP候補=15 / 休眠=30）。getCreatorContactTags が返すコンタクトタグの ID は絶対に入れない。",
     "call": {
       "bodyParams": {
         "serviceIds": [],

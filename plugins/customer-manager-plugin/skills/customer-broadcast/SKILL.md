@@ -1,6 +1,6 @@
 ---
 name: customer-broadcast
-description: MOSH の顧客＝ゲスト（サービス購入者）宛の一斉配信メッセージを MCP 経由で作成・確認・編集・削除するスキル。「顧客にお知らせを送りたい」「購入者全員にメッセージを送って」「ゲストに一斉配信したい」「特定のゲスト向けに配信したい」「このサービスを買った人だけに連絡したい」「送信予約した顧客メッセージの日時を変えて」「予約したメッセージを取り消して」「顧客に送ったメッセージの履歴を見せて」など、`postCustomersMessages` / `getCustomersMessages` / `getCustomersMessage` / `patchCreatorCustomersMessage` / `deleteCustomersMessage` を使うリクエストで必ず起動し、送信前の宛先件数の確認・承認ゲート・予約配信しか作れないことなどの運用ルールを適用する。LINE友だち・メール購読者（コンタクトリスト）向けのメルマガ・LINE一斉配信は別系統のため対象外（contact-broadcast の担当）。顧客を検索・件数確認するだけなら customer-manager の担当。
+description: MOSH の顧客＝ゲスト（サービス購入者）宛の一斉配信メッセージを MCP 経由で作成・確認・編集・削除するスキル。「顧客にお知らせを送りたい」「購入者全員にメッセージを送って」「ゲストに一斉配信したい」「特定のゲスト向けに配信したい」「このサービスを買った人だけに連絡したい」「送信予約した顧客メッセージの日時を変えて」「予約したメッセージを取り消して」「顧客に送ったメッセージの履歴を見せて」など、`postCustomersMessages` / `getCustomersMessages` / `getCustomersMessage` / `patchCreatorCustomersMessage` / `deleteCustomersMessage` を使うリクエストで必ず起動し、送信前の宛先件数の確認・承認ゲート・予約配信しか作れないことなどの運用ルールを適用する。LINE友だち・メール購読者（コンタクトリスト）向けのメルマガ・LINE一斉配信は別系統のため対象外（contact-broadcast の担当）。顧客の検索・件数確認・詳細確認、顧客タグの作成・付与・解除は customer-manager の担当。
 ---
 
 # MOSH 顧客宛の一斉配信（顧客管理からのメッセージ）
@@ -26,10 +26,11 @@ MCP ツール5本（`*CustomersMessage*` 系）で、管理画面「顧客・連
 ## When NOT to use
 
 - **メルマガ・LINE の一斉配信（コンタクトリスト宛）** → `contact-broadcast` スキル。宛先が LINE友だち・メール購読者で、**プランの配信可能数にカウントされる**別系統の配信（境界は下の判断表）
-- **顧客の検索・件数確認だけで、配信はしない** → `customer-manager` スキル
+- **顧客の検索・件数確認・詳細確認だけで、配信はしない** → `customer-manager` スキル
+- **顧客へのタグ付け・タグ外し・顧客タグの作成** → `customer-manager` スキル（配信の宛先を絞るためにタグを付けたい場合も、タグ付けは customer-manager で先に済ませる）
 - **コンタクト自体の検索・削除・CSVインポート** → `contact-list-manager` スキル
 - **何かをきっかけに自動で送る配信（ステップ配信・タグ付与での自動送信）** → `workflow-builder` スキル。本スキルが扱うのは**その場で作る一斉配信のみ**
-- **顧客へのタグ付け・顧客カルテ・プロフィール編集・削除** → MCP に手段が無い。管理画面「顧客一覧」を案内する
+- **顧客カルテ・プロフィール編集・顧客の削除** → MCP に手段が無い。管理画面「顧客一覧」を案内する
 
 ### 顧客宛かコンタクト宛かの判断
 
@@ -92,7 +93,7 @@ Step 3 で扱う項目は2種類に分かれる。**「確定すべき項目」�
 
 **作成の前に必ず `postCustomersSearch` を同じ検索条件で呼び、宛先の件数を確認する**（必須ルールD）。条件の移し替え表は [references/mcp-tools.md](references/mcp-tools.md) の「宛先の件数確認」。件数が 0 のまま作成するとサーバー側でエラーになるので、条件を見直す。
 
-ID を必要とする条件（サービス・顧客タグ・特定顧客）が依頼に含まれていて ID が手元に無ければ、その条件は使わずユーザーに確認する（必須ルールC）。
+ID を必要とする条件（サービス・顧客タグ・特定顧客）が依頼に含まれていたら、サービスは `product-navigator`、顧客タグは `getCreatorCustomerTags`、特定顧客は `postCustomersSearch` で解決する。解決できなければその条件は使わずユーザーに確認する（必須ルールC）。
 
 ### 3. 内容の提示（人ゲート）
 
@@ -132,7 +133,7 @@ MCP から作れるのは**現在時刻の 10 分後以降の予約配信だけ*
 
 ### C. ID を推測・創作しない
 
-`tagIds` / `excludeTagIds` は、**MCP に一覧を取得する手段が無い**。ユーザーが明示した値か、`postCustomersSearch` の結果に実際に含まれていた値（顧客が持つ`tags[]`など）だけを使い、それ以外は空配列のままにしてユーザーに確認する。タグ名だけを手がかりに ID を決め打ちしない。
+`tagIds` / `excludeTagIds` は、タグ名から `getCreatorCustomerTags`（顧客タグ一覧）で**名前が完全一致するタグ**の id を引いて使う（`customer-manager` 必須ルールBと同じ経路）。完全一致が無い・似た名前が複数あるときは、空配列のままユーザーに確認する。検索結果の顧客の `tags[]` を眺めてタグを探したり、タグ名だけで ID を決め打ちしたりしない。
 
 **`serviceIds` / `subscriptionIds` はこの限りではない。** 商品プランとして売っている商品なら、`product-navigator` スキル（`getCreatorProductPlan` / `getCreatorProductPlans`）の `moshServiceId`（文字列）を数値化したものがそのまま使える（`customer-manager` 必須ルールBと同じ経路。詳細は [references/mcp-tools.md](references/mcp-tools.md)）。商品プランに紐づかない古い形式のサービスにはこの経路が無く、その場合のみ空配列でユーザーに確認する。
 
@@ -140,7 +141,7 @@ MCP から作れるのは**現在時刻の 10 分後以降の予約配信だけ*
 
 **【最重要・無言の失敗】IDが分からないからといって、`isAllCustomers: false` のまま `customerIds` を空配列にして「とりあえず作成」しない。** これはエラーにならず、実装上 `isAllCustomers: true`（全顧客）と完全に同じ扱いになる（詳細は [references/mcp-tools.md](references/mcp-tools.md) の「宛先の2モード」）。個別指定の依頼で ID が特定できるまでは、作成に進まずユーザーに確認する。
 
-**顧客タグとコンタクトタグは別のID体系。** `getCreatorContactTags` が返すコンタクトタグの id を `tagIds` / `excludeTagIds` に渡すと、エラーにならず想定と違う相手に届く（無言の失敗）。正本は `customer-manager` の [`references/customer-vs-contact.md`](../customer-manager/references/customer-vs-contact.md)。
+**顧客タグとコンタクトタグは別のID体系。** `getCreatorContactTags` が返すコンタクトタグの id（整数）を `tagIds` / `excludeTagIds` に渡すと、エラーにならず想定と違う相手に届く（無言の失敗）。正本は `customer-manager` の [`references/customer-vs-contact.md`](../customer-manager/references/customer-vs-contact.md)。
 
 宛先モード（`isAllCustomers`）の切り替え方、15フィールドの既定値、フィールドごとの型は [references/mcp-tools.md](references/mcp-tools.md) と [examples/message-bodies.json](examples/message-bodies.json) が正本。**記憶で組まず必ず例をベースにする**（同じボディ内で数値配列と文字列配列が混在し、個別指定でも他の検索条件が効き続けるという2点を間違えやすい）。
 

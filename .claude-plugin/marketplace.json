@@ -58,7 +58,7 @@
     {
       "name": "customer-manager-plugin",
       "source": "./plugins/customer-manager-plugin",
-      "description": "Adds customer-manager and customer-broadcast skills for searching MOSH customers (service purchasers) and sending them broadcast messages"
+      "description": "Adds customer-manager and customer-broadcast skills for searching MOSH customers (service purchasers), viewing their details and reservations, managing customer tags, and sending them broadcast messages"
     }
   ]
 }

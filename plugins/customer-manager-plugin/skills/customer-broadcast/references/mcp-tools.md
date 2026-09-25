@@ -29,7 +29,7 @@
 | `subscriptionIds` | integer[] | `[]` | プラン・サービス（サブスク種別） | 同上（`serviceIds` と同じ経路） |
 | `eventDateTime` | ISO8601 or null | `null` | 開催日時 | 分単位の完全一致。範囲検索ではない |
 | `searchQuery` | string | `""` | 名前・メールアドレス | 顧客名 / メールアドレス / MOSH ID の部分一致 |
-| `tagIds` | **string[]** | `[]` | 顧客タグ | OR条件。**コンタクトタグとは別体系** |
+| `tagIds` | **string[]** | `[]` | 顧客タグ | OR条件。id は `getCreatorCustomerTags` で名前から引く。**コンタクトタグとは別体系** |
 | `excludeTagIds` | **string[]** | `[]` | 除外タグ | OR条件 |
 | `subscriptionState` | `active` / `canceled` / null | `null` | 継続状態 | — |
 | `paymentMethod` | `card` / `cash` / `bank-transfer` / null | `null` | 支払い方法 | 銀行振込は**ハイフン区切り** |

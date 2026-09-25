@@ -16,7 +16,7 @@ MOSH が配布する [Claude Code](https://code.claude.com/) プラグインマ�
 | `product-builder-plugin` | 商品・商品プランを作成・更新・公開・削除するための product-builder skill |
 | `membership-site-builder-plugin` | 会員サイトのフォルダ・コンテンツ・タグを作成・編集・公開するための membership-site-builder skill |
 | `contact-list-manager-plugin` | コンタクト（LINE友だち / メール購読者）を検索・確認・削除・CSVインポートするための contact-list-manager skill |
-| `customer-manager-plugin` | サービス購入者（顧客＝ゲスト）を検索・一覧・件数確認する customer-manager skill と、顧客宛の一斉配信を作成・編集・削除する customer-broadcast skill |
+| `customer-manager-plugin` | サービス購入者（顧客＝ゲスト）の検索・件数確認、顧客詳細・申込履歴の確認、顧客タグの作成・付与・解除を行う customer-manager skill と、顧客宛の一斉配信を作成・編集・削除する customer-broadcast skill |
 
 ## インストール
 
