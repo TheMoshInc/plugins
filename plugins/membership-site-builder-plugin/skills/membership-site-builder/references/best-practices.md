@@ -10,7 +10,8 @@
 | `folderId` | `getCreatorMembershipSiteFolders` でフォルダ名から特定する | 先にフォルダを作る（コンテンツはフォルダ無しには置けない） |
 | `contentId` | `getCreatorMembershipSiteFolders` の `contents[].title` から特定する | 同名のコンテンツが複数あるときは、フォルダ名と公開状態を添えて選んでもらう |
 | `tagIds` | `getCreatorMembershipSiteTags` でタグ名から特定する | 無いものだけ `postCreatorMembershipSiteTags` で作る |
-| `assetIds` / `thumbnailAssetId` | 取得経路が無い | 新規作成では `[]` と `null` を渡す。既存コンテンツを更新するときは `getCreatorMembershipSiteContent` の値をそのまま使う |
+| `assetIds` | [media-upload.md](media-upload.md) の手順で発行する | 既存アセットは一覧できない。既存コンテンツを更新するときは `getCreatorMembershipSiteContent` の値をそのまま使う |
+| `thumbnailAssetId` | 取得経路が無い | 新規作成では `null`。既存の値はそのまま使う |
 
 ## サイトを一から作るとき
 
@@ -33,13 +34,9 @@
 
 ## 動画・音声を含むとき
 
-MCP から動画・音声を上げられないため、**作れるのは非公開の下書きまで**。次のように分けて進める。
+進め方は [media-upload.md](media-upload.md)（送れない環境の扱いも同ファイル）。変換には数分かかるため、その間にタイトル・概要・タグ・チャプターを決めておくと早い。
 
-1. タイトル・概要・本文・タグ・チャプターまでを `isPublished: false` で作る
-2. ユーザーに「本体の動画（音声）の紐付けと公開は管理画面で行う」ことを伝える
-3. 管理画面での作業が済んだあとに公開状態を確認したいと言われたら、`getCreatorMembershipSiteFolders` で読み戻す
-
-チャプターは本体が無くても先に入れておける（`startTime` は秒数）。
+チャプターは本体が無くても先に入れておける（`startTime` は秒数）。AI 要約・目次を自動で作るなら、アップロードの発行時に指定する（後からは MCP で付けられない）。
 
 ## 記事コンテンツの本文
 
@@ -59,12 +56,7 @@ MCP から動画・音声を上げられないため、**作れるのは非公�
 
 ## 似たコンテンツを増やすとき
 
-`postCreatorMembershipSiteContentDuplicate` で複製してから書き換えるほうが、一から組み立てるより早く、チャプターとタグと本体の紐付けも引き継がれる。ただし次の 4 点は引き継がれないため、複製後に `patchCreatorMembershipSiteContent` で入れ直す。
-
-- 予約公開・予約非公開・購入後◯日で公開
-- 公開時の通知（必ず OFF になる。公開時に通知したいなら公開前に `isNotifyOnPublish: true` を入れ直す）
-- コメントの受け付け（必ず無効になる）
-- タイトル（「〈元のタイトル〉のコピー」になる）
+`postCreatorMembershipSiteContentDuplicate` で複製してから書き換えるほうが、一から組み立てるより早い。引き継がれない設定（一覧は [mcp-tools.md](mcp-tools.md) の同ツール）は、複製後に `patchCreatorMembershipSiteContent` で入れ直す。
 
 ## セルフレビューチェックリスト
 
@@ -77,7 +69,7 @@ MCP から動画・音声を上げられないため、**作れるのは非公�
 | 3 | `isFixedViewingOrder` を、ユーザーの依頼なしに `false` へ変えていないか |
 | 4 | `chapters` / `assetIds` / `tagIds` を送るとき、現在値を含む配列全体にしたか |
 | 5 | 公開しようとしているコンテンツの `isNotifyOnPublish` を確認し、通知の要否をユーザーに確かめたか |
-| 6 | 動画・音声のコンテンツを `isPublished: false` で作り、管理画面での作業を案内したか |
+| 6 | 動画・音声のコンテンツを公開する前に、SKILL.md 必須ルール B を満たしたか |
 | 7 | `scheduledPublishAt` と `visibleAfterPurchaseDays` が同時に入っていないか |
 | 8 | 日時にタイムゾーンオフセットを付けたか |
 | 9 | 削除の前に、対象の名前と消える範囲を提示して承認を得たか |

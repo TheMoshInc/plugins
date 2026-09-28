@@ -1,6 +1,6 @@
 # MCP Tool リファレンス
 
-membership-site-builder で使用する MCP ツール 19 件のパラメータ詳細。
+membership-site-builder で使用する MCP ツール 21 件のパラメータ詳細。
 
 > ツール名は OpenAPI の `operationId` で記載する。MCP クライアントが実際に提示するツール名にはサーバー識別子の接頭辞（例: `mcp__<server>__getCreatorMembershipSites`）が付くが、その形はユーザー環境により異なるため本ドキュメントでは付けない。
 
@@ -113,7 +113,7 @@ pathParams: { id }
 
 **サイトの中身を見る唯一の入口。** コンテンツだけを一覧するツールは存在しない。
 
-各フォルダが `id` / `name` / `displayType` / `isPublished` / `createdAt` / `updatedAt` と、配下コンテンツの概要 `contents` を表示順で持つ。コンテンツ概要に入るのは `id` / `slug` / `title` / `description` / `thumbnailUrl` / `isPublished` / `contentType` / `scheduledPublishAt` / `scheduledUnpublishAt` / `visibleAfterPurchaseDays` / `tagNames` / `tagIds` / `createdAt` / `updatedAt`。**本文とチャプターは含まない。**
+各フォルダが `id` / `name` / `displayType` / `isPublished` / `createdAt` / `updatedAt` と、配下コンテンツの概要 `contents` を表示順で持つ。コンテンツ概要に入るのは `id` / `slug` / `title` / `description` / `thumbnailUrl` / `isPublished` / `contentType` / `scheduledPublishAt` / `scheduledUnpublishAt` / `visibleAfterPurchaseDays` / `unpublishAfterPurchaseDays` / `tagNames` / `tagIds` / `createdAt` / `updatedAt`。**本文とチャプターは含まない。**
 
 ページングは無く、全フォルダ・全コンテンツの概要が 1 回で返る。概要は 1 件あたり最大 10,000 文字のため、コンテンツ数が多いサイトでは応答が大きくなる。
 
@@ -209,7 +209,7 @@ pathParams: { id, contentId }
 
 ```
 pathParams: { id }
-bodyParams: 16 項目すべて必須（content-schema.md の表を参照）
+bodyParams: 17 項目すべて必須（content-schema.md の表を参照）
 ```
 
 `folderId` は `getCreatorMembershipSiteFolders`、`tagIds` は `getCreatorMembershipSiteTags` で先に取得する。レスポンスは `{ id }`。フォルダ内の末尾に追加される。
@@ -218,15 +218,15 @@ bodyParams: 16 項目すべて必須（content-schema.md の表を参照）
 
 ```
 pathParams: { id, contentId }
-bodyParams: { folderId?, title?, body?, description?, chapters?, thumbnailAssetId?, assetIds?, isPublished?, isNotifyOnPublish?, isCommentEnabled?, isCompletionButtonVisible?, scheduledPublishAt?, scheduledUnpublishAt?, visibleAfterPurchaseDays?, tagIds? }
+bodyParams: { folderId?, title?, body?, description?, chapters?, thumbnailAssetId?, assetIds?, isPublished?, isNotifyOnPublish?, isCommentEnabled?, isCompletionButtonVisible?, scheduledPublishAt?, scheduledUnpublishAt?, visibleAfterPurchaseDays?, unpublishAfterPurchaseDays?, tagIds? }
 ```
 
-送った項目だけが変わる。1 項目も送らないと弾かれる。各項目の型・上限は作成と同じ（[content-schema.md](content-schema.md)）。
+送った項目だけが変わる。`unpublishAfterPurchaseDays` は原則送らない（例外は SKILL.md 必須ルール G）。1 項目も送らないと弾かれる。各項目の型・上限は作成と同じ（[content-schema.md](content-schema.md)）。
 
 - `chapters` / `assetIds` / `tagIds` は**配列ごと置き換わる**。現在値を読んでから全体を送る
 - `contentType` は変更できない。種類を変えるなら作り直す
 - `folderId` を送ると別のフォルダへ移せる。同じ会員サイト内のフォルダを指定する
-- `scheduledPublishAt` と `visibleAfterPurchaseDays` の排他は、送らなかった項目に既存の値を当てはめてから判定される
+- `scheduledPublishAt` と `visibleAfterPurchaseDays`、`scheduledUnpublishAt` と `unpublishAfterPurchaseDays` の排他は、送らなかった項目に既存の値を当てはめてから判定される
 - `thumbnailAssetId`: MCP から画像を上げられないため、新しいサムネイルは付けられない（外すなら `null`）
 
 ### `deleteCreatorMembershipSiteContent` — コンテンツを削除
@@ -253,3 +253,38 @@ pathParams: { id, contentId }
 - 複製先は元と同じフォルダで、別のフォルダは指定できない
 
 レスポンスは複製後の `{ id }`。実行後は、タイトルが変わることと非公開で作られることをユーザーに伝える。
+
+## アセット（動画・音声）
+
+手順全体と失敗時の扱いは [media-upload.md](media-upload.md)。
+
+### `postCreatorMembershipSiteAssets` — アップロード先を発行
+
+```
+pathParams: { id }
+bodyParams: { assetType, fileSizeBytes, isGenerateSubtitles, isGenerateAiSummary }
+```
+
+- `assetType`: `"video"`（上限 20GB）| `"audio"`（上限 500MB）。コンテンツの `contentType` と揃える
+- `fileSizeBytes`: アップロードするファイルの実バイト数
+- `isGenerateSubtitles`: 字幕を自動生成するか（音声は指定に関わらず文字起こしを作る。会員側に字幕表示は無い）
+- `isGenerateAiSummary`: AI 要約・目次（チャプター）を自動生成するか。`true` なら字幕の指定に関わらず文字起こしを作る
+
+レスポンスは `uploadUrl` / `assetId` / `uploadId`。**ファイル本体の PUT はこのツールでは行わない。** `uploadUrl` の有効期限は発行から 1 時間。使い方の注意は [media-upload.md](media-upload.md) の「守ること」。
+
+### `getCreatorMembershipSiteAsset` — 処理状態を取得
+
+```
+pathParams: { id, assetId }
+```
+
+`status` と再生トークンを返す。PUT のあと 10 秒程度の間隔で READY になるまで呼ぶ。
+
+| `status` | 意味 | 次の動き |
+|---|---|---|
+| `WAITING_UPLOAD` | 本体を受け取っていない | PUT 前なら PUT する。PUT を終えたのにこのままなら失敗しているので発行からやり直す |
+| `PROCESSING` | 変換中（長さに応じて数分） | 待って再取得 |
+| `READY` | 再生できる | コンテンツに紐づけてよい |
+| `ERRORED` | 失敗（期限切れを含む） | 使えない。発行からやり直す |
+
+`isGenerateAiSummary: true` で発行したアセットは、READY 後にこのツールを呼んだ時点で AI 要約・目次の生成が始まる。

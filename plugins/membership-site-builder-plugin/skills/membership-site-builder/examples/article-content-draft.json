@@ -14,5 +14,6 @@
 	"scheduledPublishAt": null,
 	"scheduledUnpublishAt": null,
 	"visibleAfterPurchaseDays": null,
+	"unpublishAfterPurchaseDays": null,
 	"tagIds": []
 }

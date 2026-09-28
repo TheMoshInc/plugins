@@ -16,7 +16,7 @@
 
 ## コンテンツ作成の全項目（`postCreatorMembershipSiteContents`）
 
-**16 項目すべて必須。** 使わない項目にも下の「使わないときの値」を渡す。
+**17 項目すべて必須。** 使わない項目にも下の「使わないときの値」を渡す。
 
 | 項目 | 型 | 制約 | 使わないときの値 |
 |---|---|---|---|
@@ -27,14 +27,15 @@
 | `description` | 文字列 | 10,000 文字以内 | `""` |
 | `chapters` | 配列 | `{ startTime, title }` の配列。他のキーは受け付けない | `[]` |
 | `thumbnailAssetId` | 整数 または `null` | MCP から画像を上げられない | `null` |
-| `assetIds` | 配列 | 動画・音声・ファイルの ID。MCP から上げられない | `[]` |
-| `isPublished` | 真偽値 | 動画・音声は本体が無いと `true` にできない | `false` |
+| `assetIds` | 配列 | 動画・音声の ID（[media-upload.md](media-upload.md)）。種類は `contentType` と揃える | `[]` |
+| `isPublished` | 真偽値 | 動画・音声は本体が無いと `true` にできない（公開条件は SKILL.md 必須ルール B） | `false` |
 | `isNotifyOnPublish` | 真偽値 | `isPublished` と同時に `true` にすると購入者（会員）へメールで通知が届き、**取り消せない**。LINE 通知は送られない | `false` |
 | `isCommentEnabled` | 真偽値 | コメントの受け付け | `false` |
 | `isCompletionButtonVisible` | 真偽値 | 閲覧完了ボタンの表示。`false` だと会員側に出ない | `true`（管理画面で作ったときと同じ既定値） |
 | `scheduledPublishAt` | 日時文字列 または `null` | オフセット必須。`visibleAfterPurchaseDays` と同時に指定できない | `null` |
-| `scheduledUnpublishAt` | 日時文字列 または `null` | オフセット必須 | `null` |
+| `scheduledUnpublishAt` | 日時文字列 または `null` | オフセット必須。`unpublishAfterPurchaseDays` と同時に指定できない | `null` |
 | `visibleAfterPurchaseDays` | 整数 または `null` | 0〜366。`scheduledPublishAt` と同時に指定できない | `null` |
+| `unpublishAfterPurchaseDays` | 整数 または `null` | **常に `null`。** 管理画面に設定欄が無い（SKILL.md 必須ルール G） | `null` |
 | `tagIds` | 配列 | 最大 20 件。`getCreatorMembershipSiteTags` の id | `[]` |
 
 ### チャプター
@@ -92,7 +93,7 @@
 | フォルダの `folderId` | `getCreatorMembershipSiteFolders` の `name` |
 | コンテンツの `contentId` | `getCreatorMembershipSiteFolders` の `contents[].title` |
 | タグの `tagId` | `getCreatorMembershipSiteTags` の `name`（コンテンツ概要の `tagNames` は `tagIds` と同順） |
-| `assetIds` / `thumbnailAssetId` | 引く経路が無い。件数だけ伝えるか触れない |
+| `assetIds` / `thumbnailAssetId` | 名前を引く経路が無い。「動画 1 本が紐づいています」のように件数と種類で伝える |
 | `slug` | 外部公開用の値。ユーザーに出さない |
 
 ## 削除で消えるもの
