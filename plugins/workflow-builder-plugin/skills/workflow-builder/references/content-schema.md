@@ -45,7 +45,7 @@ ARCHIVED  : アーカイブ済（事実上の廃止）
 | **構文解析**（字句解析を含む） | ワークフロー単体の JSON 構造、または同一テナント内の設定状態だけから、**対象者が誰であっても一律に**判定できるもの。①フィールド型・enum 値・「対応する 1 サブフィールドだけ実オブジェクト、残りは `null`」の規律・ID の型・`messages[]` の形（本ファイル「trigger の構造」〜「ID の型一覧」）②木の整形性＝WAIT_TIME 終端禁止・両 branch 空禁止・CONDITION はそれを含む stages 配列（トップレベル／branch 内とも）の最後の要素であること＝合流構成の禁止（[best-practices.md](best-practices.md) の「ノード接続ルール」）③参照整合性＝参照先の実在、流入経路・リッチメニューが属する LINE 公式アカウントとワークフローの一致、`urlActions[].url` と本文 URL の一致、`urlActions` と `isTrackingEnabled` の組み合わせ、`messages` 空配列（本ファイル「TEXT の `urlActions`」「INACTIVE 状態の PATCH 検証」＋ best-practices「トリガー × アクションの相性」「メッセージ内容の参照整合性」）④埋め込み変数の使用可否（「埋め込み変数」対応表。使えるかどうかは trigger × action の組み合わせだけで決まる）⑤同一ワークフロー内の順序矛盾（タグ付与前にそのタグで判定している構成は、判定時点でタグが必ず未付与なので構造上100%falseになる） | ①と③の一部（PATCH 時の参照 ID 実在検証・公開時の流入経路チャンネル一致）、および②の CONDITION 後続ステージ禁止（合流構成）は API が 400 で弾く。それ以外は API は弾かず、実行時に**対象者を選ばず一律に**失敗する（`urlActions` + `isTrackingEnabled: false`）か、エラーにならず一律に意図と異なる動作になる（両 branch 空・順序矛盾・URL 不一致・埋め込み変数の空文字）。弾かれなくても対象者非依存なので構文側 |
 | **意味解析** | 個々の対象者の属性・その時点の状態で**結果が変わる**もの。①トリガーが供給する識別子と action / condition が要求する識別子の適合＝コンタクト↔MOSH ID の紐付け有無（後述「コンテキスト適合表」の △）②`SEND_EMAIL` の宛先＝メールアドレス保有（同表 ※4）③LINE 系ステップの対象＝該当 LINE 公式アカウントの友だち状態・ブロック（同表 ※5）④**テナント横断の充足性**＝①の紐付けが成立する入口（トラッキング有効 URL の配信）がテナント内の他ワークフロー・一斉配信に存在するか、`CONDITION` の一時点判定では拾えない「直後・いつでも」の意図を担う専用トリガーのワークフローが存在するか（「CONDITION は一時点の判定」節） | **保存・公開では弾かれない**。対象者ごとに成否が分かれ、失敗した対象者は `FAILED`（後続ステップも打ち切り）になる。構造だけでは「失敗しうる」までしか言えず、対象者の状態（紐付け・メール保有・友だち状態）をユーザーに確認して初めて判定できる。④はワークフロー単体では判定できず、テナント内の他のワークフロー・一斉配信を横断して裏取りする（具体的な調べ方は [best-practices.md](best-practices.md) の「単一ワークフローで閉じない要件」参照） |
 
-> **確認済みの事実（2026-09-02）**: API スキーマは `triggerType` と `actionType` を独立した enum として持ち、trigger 種別によって置ける action 種別を**構造的には制限していない**（両者を突き合わせる相互制約のバリデーションは無い）。公開時の相互チェックも「LINE 関連の trigger / action があるならワークフローに `creatorLineChannelId` が必須」「流入経路が属する LINE 公式アカウントとワークフローの `creatorLineChannelId` が一致」の 2 点だけ。したがってトリガー × ステップの組み合わせはどれもスキーマを通り、動くかどうかは対象者の紐付け状態に依存する＝**意味解析**の領域。「コンテキスト適合表」で判定する。
+> **確認済みの事実**: API スキーマは `triggerType` と `actionType` を独立した enum として持ち、trigger 種別によって置ける action 種別を**構造的には制限していない**（両者を突き合わせる相互制約のバリデーションは無い）。公開時の相互チェックも「LINE 関連の trigger / action があるならワークフローに `creatorLineChannelId` が必須」「流入経路が属する LINE 公式アカウントとワークフローの `creatorLineChannelId` が一致」の 2 点だけ。したがってトリガー × ステップの組み合わせはどれもスキーマを通り、動くかどうかは対象者の紐付け状態に依存する＝**意味解析**の領域。「コンテキスト適合表」で判定する。
 
 ## trigger の構造
 
@@ -288,6 +288,29 @@ ImageCarouselItem の形（`postbackActions` の仕様は CarouselItem と同じ
 }
 ```
 
+**`CAROUSEL`（`imageUrl`）/ `IMAGE_CAROUSEL`（`image`）/ `RICH_MESSAGE`（`imageUrl`）の画像は MCP からアップロードできる（MCP対応済み）**: これらはスキーマ上 `format: uri` の単なる文字列で、`VIDEO` の `previewMoshImageId` のような特別な ID 紐付けは無い。ユーザーから渡された画像ファイルがある場合、次項「`previewMoshImageId` の取得方法」と同じアップロードフローで画像を作成し、`getCreatorMaterialImage`（`pathParams: { id: materialId }`）が返す `imageUrl` をそのまま `imageUrl`/`image` に設定すればよい。`ready` になる前の URL を使うと配信時に画像が表示されないため、`postCreatorMaterialImage` が成功した（＝`ready`になった）ことを確認してから取得する。ワークフロー用途で不要なら、この場合も `deleteCreatorMaterialImage` で画像素材の紐付けだけ削除してよい（画像本体URLは生き続ける）。ユーザーが既に実在する外部の画像URLを持っている場合は、`VIDEO`と異なりそのまま使ってよい（MOSHホスト画像である必要はない）。
+
+**VIDEO の `muxAssetId` の取得方法（MCP対応済み）**: `muxAssetId` は捏造・流用不可。ユーザーから渡された mp4 を以下の手順で MCP からアップロードして採番する。
+
+1. `postCreatorLineMessageMuxAsset` を呼ぶ（引数無し）。レスポンス `{ id (=muxAssetId), uploadUrl }` を受け取る
+2. `uploadUrl`（署名付きURL）へ Bash で `curl -X PUT --data-binary @<file> "<uploadUrl>"`。**200MB まで**。この PUT は MCP が代行しないので自分で実行する
+3. `getCreatorLineMessageMuxAsset`（`pathParams: { id: muxAssetId }`）を**10秒間隔**でポーリングし、`staticRenditions` に `name: "highest.mp4"` かつ `status: "ready"` の要素が現れるまで待つ（`playbackId` が空文字の間はまだ未完了）。`status` が `ERRORED` になったら 1. からやり直す
+4. 完了したら `muxAssetId` をそのまま `VIDEO` メッセージの `muxAssetId` に使う
+
+この手順で得られる `muxAssetId` はワークフローとは独立に MOSH 側へ保存される（どの `messages[]` にも紐付けなくても失われない）。ただし **`previewMoshImageId` が無いまま `VIDEO` メッセージだけ先に保存することはできない**理由は次項の末尾を参照。
+
+**`previewMoshImageId`（動画のサムネイル代わりに表示する静止画）の取得方法**: `muxAssetId` と異なりサーバー側で実在検証されないため、捏造すると「保存はできるが配信時に壊れた画像になる」無言の失敗になる。`previewMoshImageId` は MOSH 共通の「Core Media（画像）」IDで、`postCreatorMaterialImageUpload` → PUT → `postCreatorMaterialImage` のアップロードフローで得られる `moshMediaId` と同じ ID 空間（両方とも内部的に同じ `createMedia`／`postMediumSearch(type: images)` を経由する。手順は本スキル単体で完結し、他スキルのインストールを前提としない）。次の手順で取得する。
+
+1. `wc -c < "<ファイルパス>"` でファイルサイズ（bytes）を実測し（申告推測しない。ずれてもエラーにならず表示だけ壊れる無言の失敗になる）、`postCreatorMaterialImageUpload`（`fileName`・`mimeType`＝`image/jpeg`|`image/png`|`image/webp`のいずれか・`fileSizeBytes`＝実測値）でアップロードセッションを発行し、`moshMediaId` と `uploadUrl` を受け取る
+2. `uploadUrl`（**発行から15分で失効**）へ Bash で `curl -X PUT --data-binary @<file> -H "Content-Type: <mimeTypeと同じ値>" "<uploadUrl>"` を実行する。失効後に失敗したら手順1からやり直す（`moshMediaId` も変わるため古い値は使わない）
+3. `postCreatorMaterialImage`（`title` は任意の名前、`moshMediaId`、`fileSizeBytes` は手順1と同じ実測値を渡す）を呼ぶ。**変換が終わる前（`ready` になる前）は 400 で弾かれる**ため、失敗したら**同じ `moshMediaId`/`fileSizeBytes`/`title` のまま**5秒ほど待って登録だけを最大3回まで再試行する（枠の発行とPUTはやり直さない。やり直すと孤児のメディアレコードが増える）。3回とも拒否されたら止めて、本体は送信済みだが変換待ちであることをユーザーに伝える（`moshMediaId` は生きているので後から登録だけ再開できる）
+4. 成功したら、手順1で得た `moshMediaId` をそのまま `previewMoshImageId` に設定する
+5. 手順3で作成される「画像素材」はワークフロー用途では不要な副産物なので、`previewMoshImageId` を控えたら `deleteCreatorMaterialImage` でその素材を削除してよい（削除されるのは素材の紐付けのみで、`previewMoshImageId` として使っている Core Media 側の画像本体は消えない）
+
+確実な取得経路が用意できない場合（ユーザーが画像を渡せない等）は、捏造せず VIDEO メッセージの追加を保留してユーザーに相談する。同じアップロードフローはより詳しく `file-share` スキルの [references/upload-guide.md](../../file-share/references/upload-guide.md) にも書かれている（インストール済みなら合わせて参照してよいが、本節だけで手順は完結する）。
+
+**`messages[]` の各要素はスキーマ上 `previewMoshImageId` が必須（`min(1)` の文字列）で、これは PATCH（下書き保存）時にも構造検証される。** `benefitId`/`serviceId` のように「保存は通り、稼働時にだけ検証される」参照IDとは扱いが異なり、`VIDEO` メッセージオブジェクトを `messages[]` に入れる時点で両方揃っていないと 400 になる。「`muxAssetId` だけ入れて `previewMoshImageId` は後で埋める」という半端な `VIDEO` メッセージは保存できない。`messages` 配列自体は0件のままでも下書き保存できるため、動画メッセージを保留する場合は配列からその要素を外しておく。
+
 RichMessageCell の形（`postbackActions` の仕様は CarouselItem と同じ。`cells` の要素数は
 `splitPattern` に対応: `ONE_BLOCK`=1 / `LEFT_RIGHT_SPLIT`=2 / `TOP_BOTTOM_SPLIT`=2 / `GRID_FOUR`=4。
 マスは左上から右下への行優先順）:
@@ -442,7 +465,7 @@ PATCH で分岐内アクションを組むときは、型エラーが出にく�
 - ※3 紐付け（コンタクト↔MOSH ID）が成立する経路: ①トラッキング有効（`isTrackingEnabled: true`）なメッセージ本文の URL、またはリッチメニューのゲートウェイリンクを**コンタクトがタップ**し、②その遷移先で **MOSH にログイン状態で到達**する（未ログインなら Cookie に保持され、次回ログイン時に紐付く）。1 コンタクトに紐付く MOSH ID は 1 つで、別の MOSH ID と既に紐付いていれば上書きされない。紐付けは事後には遡らないので、**紐付け前に実行された △ のステップは失敗したまま**。①の「トラッキング有効な URL」を配信できる場所は**ワークフローに限らない**: コンタクト向けメッセージ配信（一斉配信）も同じ紐付け経路（トラッキング用の短縮 URL）を使う。トグルの有無はメッセージ種別で異なり、**TEXT（LINE）と メール本文は `isTrackingEnabled: true` のときだけ**、**CAROUSEL / IMAGE_CAROUSEL / RICH_MESSAGE のタップ遷移先 URL はトグル無しで常にトラッキング**される（ワークフロー・一斉配信とも）。したがってテナント内に紐付けの入口があるかは、他のワークフローと一斉配信の両方を横断して探す（具体的な調べ方は [best-practices.md](best-practices.md) の「単一ワークフローで閉じない要件」参照）
 - ※4 `SEND_EMAIL` の宛先解決: MOSH ID があれば MOSH アカウントのメールアドレス、無ければコンタクトの**有効かつ購読中**のメールアドレス。コンタクト起点でメールアドレスを持たないコンタクト（LINE 友だち追加だけで作られたコンタクト等）は `CONTACT_NOT_FOUND` で失敗する。識別子は適合していても**メールアドレス保有**という別条件があるので ○※4 とした
 - ※5 `SEND_LINE_MESSAGE` / `LINK_LINE_RICH_MENU` / `UNLINK_LINE_RICH_MENU` は、コンタクトが解決できても**該当する LINE 公式アカウントの友だちでなければ** `CONTACT_NOT_FOUND`。照合先のアカウントは `SEND_LINE_MESSAGE` / `UNLINK_LINE_RICH_MENU` が**ワークフロー**の `creatorLineChannelId`、`LINK_LINE_RICH_MENU` だけは**リッチメニューが属する**アカウント（ワークフローのアカウントは照合に使われない）。タグ付与起点でメール由来のコンタクトが対象になる場合、ワークフローと別アカウントのリッチメニューを `LINK_LINE_RICH_MENU` に指定した場合などに起きる
-- ※6 `SCHEDULED_PROCESSING` の `targetType: all`: 母集団は「該当 LINE 公式アカウントの LINE コンタクト」＋「そのコンタクトと紐付いていない MOSH ゲスト」の 2 群で、実行は対象者 1 人ごとにどちらか一方の識別子だけを持つ。したがって LINE 系ステップはゲスト側で、MOSH ID を要求する `CONDITION` はコンタクト側で、それぞれ紐付けが無ければ失敗する。**母集団の片側を確実に落としたくないなら `all` を選ばず、`contactLine` か `guest` に寄せてステップを揃える**（確認日 2026-09-12）
+- ※6 `SCHEDULED_PROCESSING` の `targetType: all`: 母集団は「該当 LINE 公式アカウントの LINE コンタクト」＋「そのコンタクトと紐付いていない MOSH ゲスト」の 2 群で、実行は対象者 1 人ごとにどちらか一方の識別子だけを持つ。したがって LINE 系ステップはゲスト側で、MOSH ID を要求する `CONDITION` はコンタクト側で、それぞれ紐付けが無ければ失敗する。**母集団の片側を確実に落としたくないなら `all` を選ばず、`contactLine` か `guest` に寄せてステップを揃える**
 
 この表が意味解析の中核（△・※4・※5 はいずれも対象者の紐付け・メール保有・友だち状態で成否が分かれる）。次節「埋め込み変数」の対応表は、使えるかどうかが trigger × action の組み合わせだけで決まり対象者に依存しないため**構文側**に属する（保存・公開で弾かれない点は同じ）。[best-practices.md](best-practices.md) の「トリガー × アクションの相性」はこの表を前提に、△ の実務上の扱いと、LINE 公式アカウントの一致など**識別子以外の相性**（こちらは対象者非依存＝構文側）を扱う。
 

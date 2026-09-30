@@ -61,7 +61,7 @@
 - **書体**: 見出し 'Noto Serif JP' / 本文 'Noto Sans JP' / **角丸** 12px / **CTA の強さ** restrained
 - **骨格**: ヒーロー（背景画像＋紺の半透明スクリム） → 画像＋テキスト（白地） → 特徴/ステップ/特典（淡い面） → 数字・実績（ダーク帯） → 声（白地） → 料金 or 無料相談の内容（淡い面） → FAQ（白地） → CTA帯（ダークグラデ帯） → フッター（ダーク）
 - **部品**: ヒーロー=dark_center_bgimage（`section` の `attributes.background` に写真＋`hsla(226, 88%, 12%, 0.62)` のスクリムパネルで文字を包む。写真が無ければスクリムだけ残しダークグラデに戻す） / 見出し=serif_center / 特徴=cards3 / 数字=dark_bar / 声=cards3 / 料金=card_center / FAQ=left_rule / CTA=dark_grad / アイブロウを付ける章=[1, 3]
-- **JSON**: `examples/catalog/navy_gold.json`（10章。2026-09-09 ヒーローを背景画像＋スクリム化・ユーザー確認済み）
+- **JSON**: `examples/catalog/navy_gold.json`（10章。ヒーローを背景画像＋スクリム化・ユーザー確認済み）
 
 ### 茶×金（ナチュラル・上質）  `brown_gold`
 

@@ -222,10 +222,10 @@ MOSHのAPIは `ACTIVE` 化時に埋め込み変数の可否を検証しない（
 （TEXTタイプでも `{ messageType: "TEXT", text, isTrackingEnabled, urlActions }` を1件ずつ並べる）。
 
 - `TEXT` → `{ messageType: "TEXT", text: string(1-5000), isTrackingEnabled: boolean, urlActions: [...] | null }`
-- `CAROUSEL` → `{ messageType: "CAROUSEL", altText, carousels[] }`（1〜4件。各要素の `postbackActions` はキー省略不可 — 使わない場合は `null` を明示）
-- `IMAGE_CAROUSEL` → `{ messageType: "IMAGE_CAROUSEL", altText, imageCarousels[] }`（1〜4件）
-- `VIDEO` → `{ messageType: "VIDEO", muxAssetId, previewMoshImageId }`
-- `RICH_MESSAGE` → `{ messageType: "RICH_MESSAGE", altText, imageUrl, imageWidth, imageHeight, splitPattern, cells[] }`
+- `CAROUSEL` → `{ messageType: "CAROUSEL", altText, carousels[] }`（1〜4件。各要素の `postbackActions` はキー省略不可 — 使わない場合は `null` を明示。各要素の `imageUrl` は手元の画像ファイルを MCP からアップロードして取得できる。手順は content-schema.md「`CAROUSEL`/`IMAGE_CAROUSEL`/`RICH_MESSAGE` の画像は MCP からアップロードできる」）
+- `IMAGE_CAROUSEL` → `{ messageType: "IMAGE_CAROUSEL", altText, imageCarousels[] }`（1〜4件。各要素の `image` も同様に MCP アップロードで取得可）
+- `VIDEO` → `{ messageType: "VIDEO", muxAssetId, previewMoshImageId }`（`muxAssetId` はユーザーから渡された mp4 を MCP からアップロードして取得できる。手順は content-schema.md「VIDEO の `muxAssetId` の取得方法」）
+- `RICH_MESSAGE` → `{ messageType: "RICH_MESSAGE", altText, imageUrl, imageWidth, imageHeight, splitPattern, cells[] }`（`imageUrl` も同様に MCP アップロードで取得可）
 
 詳細（`urlActions`/`postbackActions`の形・`RICH_MESSAGE`の`cells`件数対応表等）は content-schema.md の
 「SEND_LINE_MESSAGE」節を参照。

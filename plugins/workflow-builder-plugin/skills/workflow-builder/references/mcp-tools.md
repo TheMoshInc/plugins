@@ -139,6 +139,28 @@ bodyParams: { name: string(1-255), creatorLineChannelId: number, conversionFrequ
 - 返り値: `{ id }`（作成された流入経路の ID）
 - `slug` / `inflowUrl` はサーバー側で自動発番（リクエストでは指定しない）
 
+## LINE 動画メッセージ用アセット（`VIDEO` メッセージの `muxAssetId`）
+
+**`postCreatorLineMessageMuxAsset`** — 動画アップロード先 URL を発行
+
+```
+（パラメータなし）
+```
+
+- 返り値: `{ id, uploadUrl }`。`id` がそのまま `VIDEO` メッセージの `muxAssetId` になる
+- `uploadUrl` へ実体（mp4、**200MBまで**）を Bash から PUT する（この PUT は MCP が代行しない）
+- 手順の全体像は [content-schema.md](./content-schema.md) の「VIDEO の `muxAssetId` の取得方法」参照
+
+**`getCreatorLineMessageMuxAsset`** — 動画アセットの変換ステータスを取得
+
+```
+pathParams: { id }
+```
+
+- `id` は `postCreatorLineMessageMuxAsset` が返した `muxAssetId`
+- `staticRenditions` に `name: "highest.mp4"` かつ `status: "ready"` の要素が現れるまで**10秒間隔**でポーリングする（`playbackId` が空文字の間は未完了）
+- `status` が `ERRORED` になったら `postCreatorLineMessageMuxAsset` からやり直す
+
 ## 更新
 
 **`patchCreatorScenario`** — ワークフローを更新

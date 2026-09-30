@@ -78,3 +78,53 @@ bodyParams: { title?, content?, metaTitle?, metaDescription?, isSearchEngineEnab
 pathParams: { id }
 bodyParams: { status: "DRAFT" | "PUBLISHED" | "ARCHIVED" }
 ```
+
+## 画像・動画のアップロード（MCP対応済み）
+
+**`image` / `video` 要素は、ユーザーから手元のファイルを渡された場合、以下のツールで MCP から直接アップロードできる。** 外部URLをそのまま `attributes.src` に設定してよいかどうかは要素ごとに異なる（`content-schema.md` の「`image` にリンクを設定する」「`video` の仕様」参照）。
+
+**`postCreatorLandingPagesImages`** — LPに画像を作成しアップロード先URLを発行
+
+```
+pathParams: { id }
+bodyParams: { name: string, mimeType: "image/jpeg" | "image/png" | "image/webp" | "image/gif" }
+```
+
+レスポンス `{ id, moshImageId, fileKey, uploadUrl }` の `uploadUrl`（署名付きURL・**有効期限15分**）へ、Bash から `curl -X PUT --data-binary @<file> -H "Content-Type: <mimeType>" "<uploadUrl>"` で画像本体を PUT する（MCP はこの PUT を代行しない）。
+
+**`getCreatorLandingPagesImages`** — LPの画像一覧を取得
+
+```
+pathParams: { id }
+```
+
+アップロード後、`images[].status` が `"ready"` になるまでポーリングする。`ready` になった要素の `url` を `image` 要素の `attributes.src` に使う。
+
+**`deleteCreatorLandingPagesImages`** — LPの画像を削除
+
+```
+pathParams: { id, imageId }
+```
+
+**`postCreatorLandingPagesVideos`** — LPに動画を登録しアップロード先URLを発行
+
+```
+pathParams: { id }
+bodyParams: { name: string, mimeType: "video/mp4" | "video/quicktime", durationSec: number }
+```
+
+レスポンス `{ id, moshVideoId, fileKey, uploadUrl }` の `uploadUrl`（署名付きURL・**有効期限15分・100MBまで**）へ動画本体を PUT する。
+
+**`getCreatorLandingPagesVideos`** — LPの動画一覧を取得
+
+```
+pathParams: { id }
+```
+
+アップロード後、`videos[].status` が `"ready"` になるまでポーリングする（変換処理があるため画像より時間がかかる）。`ready` になったら `moshVideoId` と `url` の両方を `video` 要素の `attributes.moshVideoId` / `attributes.src` にそのまま設定する（**両方セットで初めて有効**。片方だけだと編集画面クラッシュ。`content-schema.md` 「`video` の仕様」参照）。
+
+**`deleteCreatorLandingPagesVideo`** — LPの動画を削除
+
+```
+pathParams: { id, videoId }
+```
