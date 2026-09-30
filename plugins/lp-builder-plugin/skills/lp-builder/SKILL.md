@@ -65,7 +65,7 @@ taiyaki MCP ツール (`*LandingPage*` 系。本書のツール名は素の名�
 ### 5. コンテンツ構築
 
 1. **プリセットを選ぶ**: `references/presets.md` に従い、ヒアリングの #4 ゴールと #7 トーンから4〜5択＋おすすめ印で提示し、1つ決める（Step 3 の構成案と同時に提示してよい）
-2. **プリセットの JSON を写す**: 選んだプリセットの `examples/catalog/<preset>.json` **だけ**を Read し、章単位でコピーして文言・画像・href を差し替える。`styles` は変えない（例外はブランド色指定時の `brand`/`accent` 置換のみ。`presets.md`「選び方」）。章の増減は `best-practices.md` の「ゴール別の構成目安」に従い ID を振り直す
+2. **プリセットの JSON を写す**: 選んだプリセットの `examples/catalog/<preset>.json` **だけ**を、章（1行＝1章）ごとに `offset`/`limit`（2章ずつ）で Read し、章単位でコピーして文言・画像・href を差し替える（全体を1回で Read すると打ち切られる。text/heading は tiptap なので文言は `text` ノードの `text` だけ差し替える。詳細は `examples/catalog/README.md`）。`styles` は変えない（例外はブランド色指定時の `brand`/`accent` 置換のみ。`presets.md`「選び方」）。章の増減は `best-practices.md` の「ゴール別の構成目安」に従い ID を振り直す
 3. 構造ルールは `references/content-schema.md`、設計指針は `references/best-practices.md`。プリセットに無い部品を新しく作るときだけ、この2つを読んで組む
 
 - **新規構築時**: 承認済み構成案の ID・見出し・メッセージをそのまま JSON に落とす。構成案に無いセクションを勝手に足さない
@@ -159,5 +159,6 @@ PartType / attributes の詳細は `references/content-schema.md`、ID 命名は
 | `references/best-practices.md` | 構成計画（ゴール別のセクション数目安・推奨構成と `sectionType` 対応・推奨 ID）、テキストの具体性、余白の原則、表現テクニック、モバイルファースト、CTA 規約、画像の運用、セルフレビューチェックリスト |
 | `references/presets.md` | 6プリセット（配色＋骨格＋部品）の定義と選び方。Step 5 の最初に読む |
 | `references/mcp-tools.md` | 各 MCP ツールのパラメータ仕様。表示期限（`expirationType`）・一覧取得のフィルタ・title/content 以外の patch 項目を扱うときに読む |
+| `references/photo-patterns.md` | 写真・画像の見せ方40型（ヒーロー／本文の中／並べる／信頼／場所・手順・料金／写真がないとき。LP機能で作れるか ○△× 付き）。構成案の「レイアウト型」に写真の型を添えるとき、素材が足りない枠の代替を選ぶときに読む |
 | `examples/catalog/<preset>.json` | プリセット6本の LP 全体 JSON。選んだ1本だけ Read し、章単位で写す。索引は `examples/catalog/README.md` |
 | `examples/full-landing-page.json` | 構造の最小例（メイン / 特徴 / CTA / フッター）。プリセットを使わず白紙から組むときの参照 |

@@ -2,7 +2,7 @@
 
 `references/presets.md` の各プリセットに対応する、そのまま写せる LP 全体の JSON。
 
-使い方: プリセットを1つ選び、**そのファイルだけ** Read する。章（`sec-NN-*`）単位でコピーし、文言・画像・href を差し替える。**styles は変えない**（ブランド色指定時の `brand`/`accent` 置換のみ例外）。章を減らす場合は `best-practices.md` の「ゴール別の構成目安」に従い、ID の順番を振り直す。
+使い方: プリセットを1つ選び、**そのファイルだけ** Read する。**1行＝1章**（1行目は `page`、最終行は閉じ括弧）なので、`offset`/`limit`（2章ずつ）で読む（全体を1回で Read すると 25k トークンで打ち切られる）。章（`sec-NN-*`）単位でコピーし、文言・画像・href を差し替える。**styles は変えない**（ブランド色指定時の `brand`/`accent` 置換のみ例外）。章を減らす場合は `best-practices.md` の「ゴール別の構成目安」に従い、ID の順番を振り直す。
 
 | ファイル | プリセット | ゴール | 章数 |
 |---|---|---|---|
@@ -11,7 +11,9 @@
 | black_vermilion.json | 黒×朱（強い・和） | D 無料相談 | 9 |
 | yellow_blue.json | 黄×青（フレッシュ・テック） | D 無料相談 | 9 |
 | orange_green.json | 橙×緑（ポップ・親しみ） | A LINE友だち登録 | 10 |
-| purple_magenta.json | 紫×マゼンタ（オプトイン・特典配布） | A LINE友だち登録 | 7 |
+| purple_magenta.json | 紫×マゼンタ（オプトイン・特典配布） | A 無料特典の配布 | 6 |
+
+**text/heading の文言を差し替えるとき（重要）**: `content` は tiptap（`content.json.content[].content[]`）。**`text` ノードの `text` だけ**を書き換え、`marks`（`fontSize`・`mobileFontSize`・`fontFamily`・`color`・bold）と `hardBreak` は触らない。`content` を文字列で上書きすると `mobileFontSize` が消え、SP でも PC のサイズのままになる（エラーにならない）。行を増減するときは、既存と同じ `marks` を付けた `hardBreak` を足し引きする。プレーン文字列のまま残っている要素（PC と SP が同サイズの小さな文字）は、そのまま文字列で書き換えてよい。
 
 **写すときの必須差し替え**
 - **ID**: catalog の ID はサンプルの章順。構成案表で承認した ID（`sec-{2桁順}-{役割}`）に置き換える。章を抜いたら番号を振り直す

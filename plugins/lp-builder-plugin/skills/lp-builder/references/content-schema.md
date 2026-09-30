@@ -152,6 +152,61 @@
 
 背景画像の帯（リボン状の飾り画像等）の上に文字を重ねたい場合、`image` type の `section` にして子要素にテキストを入れることで、専用の装飾画像を持つ元ページのパーツ（ポイント番号バッジ等）を捏造せず実際の画像で再現できる。ただし `background-size`/`background-position`（cover/contain等）を明示的に指定するプロパティはスキーマに無いため、画像の縦横比と `section` の `width`/`padding` から実際の表示が変わる可能性がある点は留意する。
 
+### 背景画像の上に文字を重ねる（構造レシピ）
+
+`image` 要素の上には文字を重ねられない。**`section` の背景画像を外枠にして、その子に見出し・本文・ボタンを置く**。背景は常に `cover`・中央で敷かれる（taiyaki `element-background.ts` で確認）。トリミング位置は選べないので、**構図は写真側で決めてから上げる**。可読性の値（スクリムの濃さ・背景にしてよい条件）は `best-practices.md`「背景画像で装飾密度を作る」が正。ここは**組み方**だけ。
+
+**許可プロパティの範囲で組む**（「スタイルの許可プロパティ」が正）。`height` / `minHeight` / `maxWidth` / `flexDirection` / `alignItems` / `margin` は使わない（`justifyContent` は `"center"` のみ確認済み）。**高さと縦位置は `padding` で、横位置は `width`（%）と透明スペーサー列で作る**。`section` は `margin:0 auto` で描画されるので、`width` が100%未満なら自動で中央に寄る。
+
+```json
+{ "id": "sec-01-hero", "type": "section", "content": "",
+  "styles": { "padding": "0", "background": "#061e64" },
+  "mobileStyles": { "padding": "0" },
+  "attributes": { "sectionType": "main", "background": { "type": "image", "color": "#061e64", "image": "https://mosh.jp/images/<id>" } },
+  "children": [
+    { "id": "sec-01-hero-scrim", "type": "section", "content": "",
+      "styles": { "padding": "160px 60px", "background": "hsla(226, 88%, 12%, 0.62)" },
+      "mobileStyles": { "padding": "96px 20px" },
+      "attributes": { "background": { "type": "color", "color": "hsla(226, 88%, 12%, 0.62)" } },
+      "children": [ /* heading / text / button */ ] } ] }
+```
+
+- 外枠の `background`（色）は写真が出るまでの地色。内側の section は**背景を必ず明示**する（既定は白。上記「入れ子セクションの背景は必ず明示」）
+- 面の高さは内側の `padding` で決まる。写真は外枠の全面に敷かれる。`overflow:hidden` は外せないので、はみ出した部品は切られる
+
+| 見せ方 | 作り方 |
+|---|---|
+| 全面を暗く／明るくして文字を載せる | 内側 section の `styles.background` に `hsla` の面（α は `best-practices.md` の表） |
+| 下だけ暗くして見出しを下に置く | 外枠の `padding` の上だけを大きく（例 `"280px 0 0 0"`）＝上の区画は写真だけが見える。内側 section の `attributes.background` を `gradationColor`（`angle:0`＝下→上）にする。初期値の例: 下端 α0.70（stop 0）→ α0.60（stop 55）→ α0（stop 100）で、**文字は下側55%だけに置く**。実描画で読めなければ全面スクリムに戻す |
+| 白いカードを浮かせる | 内側 section を `hsla(0, 0%, 100%, 0.93)`＋`borderRadius`＋`width:"86%"`（SP は `mobileStyles.width:"92%"`）。中央寄せは自動。カード内の文字は濃色（`best-practices.md` の片側パネル α0.88〜0.95 の範囲） |
+| 文字を左／右に寄せる | `display:"flex"` の行に、透明スペーサー列（`width` %）と文字の列を並べる。SP は行に `mobileStyles.display:"block"`、列に `mobileStyles.width:"100%"` |
+| 角丸の写真にする | 外枠に `borderRadius`（`overflow:hidden` の強制で写真が角丸に切られる）。高さは内側の `padding` |
+| 横に2枚並べて各々に文字（入口カード） | `display:"flex"` の行の子 section をそれぞれ背景画像にする。SP は行に `mobileStyles.display:"block"`、子に `mobileStyles.width:"100%"`（「PC/SPでレイアウト方向を変える方法」） |
+| 縦位置（上・中央・下） | 内側 section の `padding` の上下配分で決める（`flex` の縦揃えは使わない） |
+
+### `image` の切り抜き（`attributes.imageClip`）
+
+`image` は編集画面の「切り抜き」（実装済み・フラグ無し）と同じ形式で、**枠の縦横比と、枠の中の画像の位置・拡大・回転**を指定できる。同じ役割で並べる写真の縦横比を揃えるのに使う。MCP での保存・読み戻しと、SP・PC の描画、編集画面の「切り抜き」ボタンでの再編集は、確認済み。
+
+```json
+"attributes": {
+  "src": "https://mosh.jp/images/<id>", "alt": "…",
+  "imageClip": {
+    "frame": { "type": "16:9" },
+    "transform": { "x": 0.5, "y": 0.28125, "scale": 1, "rotation": 0 }
+  }
+}
+```
+
+- `frame.type` は `"1:1"` / `"4:3"` / `"16:9"`、または `{"type":"custom","aspectRatio":<幅÷高さ>}`
+- `transform` の単位: `x`＝枠の幅に対する割合（0.5＝中央）、`scale`＝**枠の幅に対する画像の幅の倍率**（最長辺基準ではない。高さは自動）、`rotation`＝度
+- **枠を隙間なく埋める（中央を切り抜く）値**: 元画像の縦横比を `a`（幅÷高さ）、枠の縦横比を `r`（幅÷高さ）として `scale = max(1, a/r)`、`x = 0.5`、`y = 0.5/r`。`scale:1` のままだと、枠より横長の写真は上下に隙間が出る
+  - 検証済み: 横長の写真（a=1.6）を 1:1・16:9・3:4 の枠に入れたケース。縦長の写真を横長の枠に入れる（上下が切れる）ケースは、コードから導いた式で、描画は未確認
+- **`frame` と `transform`（`x` / `y` / `scale` / `rotation` の4つ）は両方必須。** どちらかが欠けると描画で TypeError になる（「絶対に避けること（クラッシュ防止）」）
+- **元画像の縦横比が分からないときは `imageClip` を付けない**（画像側で比率を揃える）。値を推測しない
+- 枠の高さは縦横比で決まる。`styles.height` は指定しない
+- `image` の `borderRadius` は無い（角丸は「画像を角丸にする（`section` で包む）」）。`imageClip` の枠と組み合わせるときも同じ
+
 ### `image` にリンクを設定する（クリック可能な画像）
 
 `image` 要素は `button` と同様に `attributes.href` / `attributes.target` / `attributes.rel` を設定でき、画像自体をクリック可能なリンクにできる（実際に保存・再取得して値が保持されることを確認済み）。画像1枚をボタン代わりに使いたい場合（例: バナー画像そのものがCTAボタンを兼ねるデザイン）は、`button` 要素で代替する必要はなく、`image` に直接 `href` を付ければ見た目と機能を両立できる。
@@ -368,6 +423,32 @@
 - **`textStyle.attrs.fontFamily` を空文字にすると「継承」ではなく既定フォント（`'Noto Sans JP'`）にフォールバックする。** 要素の `styles.fontFamily` が `'Noto Serif JP'` や `'M PLUS Rounded 1c'` の見出しをプレーン文字列から tiptap に変換すると、**書体が黙って変わる**（実機で確認済み）。tiptap に変換するときは、**全ランの `fontFamily` に要素と同じ書体名を明示する**こと。
 - 保存後に`getCreatorLandingPage`で取得すると、プレーン文字列で送った`text`/`heading`もこの形式に自動変換されて返ってくる（正引きの参考にできる）。
 
+### SP だけ文字サイズを変える（`mobileFontSize`）
+
+taiyaki の実装のコード確認＋実描画確認済み: section・button・image は `mobileStyles` 全体をマージするが、**text / heading（`InlineRichTextElement`）が SP で読むのは `mobileStyles` の `padding` と `lineHeight` だけ**。`mobileStyles.fontSize` / `color` などは表示に効かない（プレーン文字列でもフォントサイズは `styles.fontSize` から作られる）。SP だけ文字サイズを変えるときは、`content` を tiptap にして `textStyle` マークの `mobileFontSize` に入れる（`@max-3xl` で適用）。
+
+- プレーン文字列を tiptap にすると要素側の `fontWeight` が効かなくなる。太字は `{"type":"bold"}` マークを併記する
+- 値は「fontSize（固定スケール・px）」の10値のみ
+- `examples/catalog/` の JSON は `mobileFontSize` マークへ移行済み。プレーン文字列の text/heading に `mobileStyles.fontSize` を書かない
+
+## `animation` の仕様（button・image のみ）
+
+要素直下に置く（`styles` の中ではない）。サーバー側の検証は無い（content は素通し）ので、値域は本書が守る。
+
+```json
+"animation": { "type": "scale", "timing": "loop", "velocity": 0.3, "scale": 1.2 }
+```
+
+| キー | 値 |
+|---|---|
+| `type` | `shadow`（影で浮く）/ `shine`（光沢が走る）/ `scale`（拡大） |
+| `timing` | `loop`（常時）/ `hover`（スマホではタップ時に一瞬だけ） |
+| `velocity` | 0〜1。0が最も遅い |
+| `scale` | `type:"scale"` のときだけ。1.2〜2.0（画面のプリセット範囲） |
+
+- 上記以外の値は入れない（不正値の挙動は未検証）
+- 使い方の判断は `best-practices.md`「ボタンの動きとホバー色」
+
 ## `section` + `children` の例
 
 ```json
@@ -525,4 +606,5 @@
 - **`schedule` の `content` は常にプレーン文字列のみ。** `null` やオブジェクト（tiptap 構造を含む）を渡さない。`text` / `heading` と異なり部分装飾の仕組みが無く、素の文字列として扱われるため、他の型で描画できてもクラッシュする。
 - **`heading` の `attributes.level` は `"1"`〜`"4"` の範囲のみ。** 範囲外の値を入れると編集画面が開けなくなるおそれがある（「`attributes` フィールド」参照）。
 - **`image-carousel` の `attributes.images` は必ず URL 文字列の配列。** 配列でない値や、配列でも要素が文字列でない場合（`{ "src": ..., "alt": ... }` 等のオブジェクト配列）はクラッシュする（「`image-carousel` の仕様」参照）。
+- **`image` の `attributes.imageClip` は `frame` と `transform` の両方を持たせる。** どちらかが欠けると `resolveImageStyles` が `frame.type` / `transform.x` を読んで TypeError になる（taiyaki のコード上の判断。付けないなら `imageClip` ごと省略する。`null` は可）（「`image` の切り抜き」参照）。
 - **`video` に外部URLをそのまま `attributes.src` として設定しない。** `moshVideoId`（MOSHの動画アップロードで採番される内部ID）が無いと編集画面が空IDで404を起こし強制的にエラー画面へ遷移する。`moshVideoId`/`src` は `mcp-tools.md` のアップロードフローで取得するか、編集画面からのアップロードを案内する（「`video` の仕様」参照）。
