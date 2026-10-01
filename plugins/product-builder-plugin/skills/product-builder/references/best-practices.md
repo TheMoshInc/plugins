@@ -186,7 +186,7 @@
 
 ### 読んでから全置換する
 
-`getCreatorMembershipSiteProductPlanLicenseSetting` の `folders` を土台にする。`isViewable: true` の ID をすべて残したうえで足す・外すを反映し、`viewableFolderIds` / `isNewFoldersIncluded` / `accessDurationDays` の 3 項目をそろえて送る。1 項目だけ変えたいときも 3 項目すべてを送る。
+`getCreatorMembershipSiteProductPlanLicenseSetting` の `folders` を土台にする。`isViewable: true` の ID をすべて残したうえで足す・外すを反映し、`viewableFolderIds` / `isNewFoldersIncluded` / `accessDurationDays` / `accessStartsAt` / `accessEndsAt` の 5 項目をそろえて送る。1 項目だけ変えたいときも 5 項目すべてを送る（期間を変えないなら、読んだ値をそのまま送る）。
 
 フォルダの提示は `folders[].name` で行う。フォルダ名を別のツールで引く必要はない。
 
@@ -292,7 +292,7 @@
 | 22 | 会員サイトの紐付け・変更・「会員サイトを使わない」への切り替えの前に、申込者向けサイト（旧会員サイト）が非公開になる影響を伝えて承認を取ったか。1 件だけの解除なら、その提供コンテンツがゲストから見えなくなる影響を伝えて承認を取ったか |
 | 23 | 紐付いている会員サイトの変更・解除の前に `isDeletable` を見て、購入者がいるなら呼ばずに伝えたか（初回の紐付けは対象外） |
 | 24 | `membershipSiteId` を `getCreatorMembershipSites` か提供コンテンツ一覧から取り、数値で渡しているか |
-| 25 | ライセンスの更新で、閲覧可能にするフォルダの ID を**全件**送り、3 項目そろえているか。`accessDurationDays` は 1〜1000 か `null` か |
+| 25 | ライセンスの更新で、閲覧可能にするフォルダの ID を**全件**送り、5 項目そろえているか。期間は「3 つとも `null`」「`accessDurationDays` だけ 1〜1000」「日時だけ（オフセット付き。両方なら終了が後）」のどれかになっているか |
 | 26 | 閲覧順の固定が有効な会員サイトで、全フォルダ + `isNewFoldersIncluded: true` になっているか |
 | 27 | 公開中・限定公開のプラン、または `isDeletable: false` のプランからフォルダを外すなら、承認を取ったか |
 | 28 | サンクスページ／メールの更新で `content` を送っているか。バナーは「省略＝維持 / `null`＝削除」の意図どおりか。画像が無いのにリンク先だけ送っていないか |

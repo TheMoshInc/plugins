@@ -1,6 +1,6 @@
 # MCP Tool リファレンス
 
-membership-site-builder で使用する MCP ツール 21 件のパラメータ詳細。
+membership-site-builder で使用する MCP ツール 23 件のパラメータ詳細。
 
 > ツール名は OpenAPI の `operationId` で記載する。MCP クライアントが実際に提示するツール名にはサーバー識別子の接頭辞（例: `mcp__<server>__getCreatorMembershipSites`）が付くが、その形はユーザー環境により異なるため本ドキュメントでは付けない。
 
@@ -227,7 +227,7 @@ bodyParams: { folderId?, title?, body?, description?, chapters?, thumbnailAssetI
 - `contentType` は変更できない。種類を変えるなら作り直す
 - `folderId` を送ると別のフォルダへ移せる。同じ会員サイト内のフォルダを指定する
 - `scheduledPublishAt` と `visibleAfterPurchaseDays`、`scheduledUnpublishAt` と `unpublishAfterPurchaseDays` の排他は、送らなかった項目に既存の値を当てはめてから判定される
-- `thumbnailAssetId`: MCP から画像を上げられないため、新しいサムネイルは付けられない（外すなら `null`）
+- `thumbnailAssetId`: `postCreatorMembershipSiteImageAssets` で登録した画像の `assetId`。外すなら `null`。動画・音声の `assetId`、存在しない ID、他のクリエイターのアセットは弾かれる
 
 ### `deleteCreatorMembershipSiteContent` — コンテンツを削除
 
@@ -270,7 +270,7 @@ bodyParams: { assetType, fileSizeBytes, isGenerateSubtitles, isGenerateAiSummary
 - `isGenerateSubtitles`: 字幕を自動生成するか（音声は指定に関わらず文字起こしを作る。会員側に字幕表示は無い）
 - `isGenerateAiSummary`: AI 要約・目次（チャプター）を自動生成するか。`true` なら字幕の指定に関わらず文字起こしを作る
 
-レスポンスは `uploadUrl` / `assetId` / `uploadId`。**ファイル本体の PUT はこのツールでは行わない。** `uploadUrl` の有効期限は発行から 1 時間。使い方の注意は [media-upload.md](media-upload.md) の「守ること」。
+レスポンスは `uploadUrl` / `assetId` / `uploadId`。**ファイル本体の PUT はこのツールでは行わない。** `uploadUrl` の有効期限は発行から 1 時間。使い方の注意は [media-upload.md](media-upload.md) の「動画・音声で守ること」。
 
 ### `getCreatorMembershipSiteAsset` — 処理状態を取得
 
@@ -288,3 +288,32 @@ pathParams: { id, assetId }
 | `ERRORED` | 失敗（期限切れを含む） | 使えない。発行からやり直す |
 
 `isGenerateAiSummary: true` で発行したアセットは、READY 後にこのツールを呼んだ時点で AI 要約・目次の生成が始まる。
+
+## サムネイル画像
+
+手順全体と失敗時の扱いは [media-upload.md](media-upload.md) の「サムネイル画像」。
+
+### `postMeMediaUploadUrls` — 画像のアップロード先を発行
+
+```
+bodyParams: { name, type }
+```
+
+- `name`: 拡張子つきのファイル名
+- `type`: サムネイルでは `imageJpeg` / `imagePng` / `imageWebp` のどれか。ほかに `applicationPdf` / `textCsv` / `applicationXlsx` も選べるが、それで発行した ID はサムネイルの登録で弾かれる
+
+レスポンスは `moshMediaId` / `uploadUrl`。**ファイル本体の PUT はこのツールでは行わない。** `uploadUrl` の有効期限は発行から 15 分で、過ぎたら発行し直す。PUT に `Content-Type` ヘッダーは要らない。画像の変換が終わったかを確かめるツールは無く、次の `postCreatorMembershipSiteImageAssets` の応答で分かる。
+
+### `postCreatorMembershipSiteImageAssets` — サムネイル画像を登録
+
+```
+pathParams: { id }
+bodyParams: { moshMediaId }
+```
+
+`postMeMediaUploadUrls` で発行し PUT を済ませた `moshMediaId` を、会員サイトのアセットとして登録する。レスポンスは `{ assetId }` で、これを `postCreatorMembershipSiteContents` / `patchCreatorMembershipSiteContent` の `thumbnailAssetId` に渡す。
+
+- 画像の変換が終わるまでは「画像の処理が完了していません」と返る。時間をおいて同じ `moshMediaId` で呼び直す（PUT はやり直さない）。数分続くなら変換に失敗しているので発行からやり直す
+- 同じ `moshMediaId` で呼び直しても、新しく作らず同じ `assetId` を返す
+- 弾かれるのは次の場合: ログイン中のクリエイターが `postMeMediaUploadUrls` で発行した ID でない（ファイル共有の画像アップロード等、別のツールで作った画像も含む）、画像として見つからない（`applicationPdf` 等で発行した ID を含む）、形式が JPEG・PNG・WebP 以外、100MB 超
+- 登録したアセットは会員サイトに結びつかず、同じクリエイターの別サイトのコンテンツにも指定できてしまう。登録したサイトのコンテンツにだけ使う

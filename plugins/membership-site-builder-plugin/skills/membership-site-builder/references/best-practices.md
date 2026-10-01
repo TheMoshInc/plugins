@@ -11,7 +11,7 @@
 | `contentId` | `getCreatorMembershipSiteFolders` の `contents[].title` から特定する | 同名のコンテンツが複数あるときは、フォルダ名と公開状態を添えて選んでもらう |
 | `tagIds` | `getCreatorMembershipSiteTags` でタグ名から特定する | 無いものだけ `postCreatorMembershipSiteTags` で作る |
 | `assetIds` | [media-upload.md](media-upload.md) の手順で発行する | 既存アセットは一覧できない。既存コンテンツを更新するときは `getCreatorMembershipSiteContent` の値をそのまま使う |
-| `thumbnailAssetId` | 取得経路が無い | 新規作成では `null`。既存の値はそのまま使う |
+| `thumbnailAssetId` | [media-upload.md](media-upload.md) の「サムネイル画像」の手順で登録する | 既存の画像は一覧できない。付けないなら `null`。既存コンテンツを更新するときは送らなければ元の値が残る |
 
 ## サイトを一から作るとき
 
@@ -79,3 +79,4 @@
 | 12b | 依頼されていないサイト・フォルダ・他のコンテンツを公開していないか（SKILL.md「6. 公開」） |
 | 13 | サイト設定を更新するとき、`themeColor` が選べる 8 色のどれかになっているか |
 | 14 | サイトを削除する前に、会員数を取って提示し、それが消えるゲストの下限であることを伝えたか |
+| 15 | `thumbnailAssetId` に入れた値が、このサイトで `postCreatorMembershipSiteImageAssets` から返った画像の `assetId` か（動画・音声の `assetId` や別サイトで登録したものでないか） |

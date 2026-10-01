@@ -286,7 +286,7 @@
 
 ### `getCreatorMembershipSiteProductPlanLicenseSetting` — プランのライセンス設定を取得
 
-レスポンス: `{ folders: [{ id, name, isViewable }], isNewFoldersIncluded, accessDurationDays }`。`folders` は会員サイトの**全フォルダ**にフォルダ名と閲覧可否が付いた一覧。**フォルダ名を別ツールで引く必要はない。**
+レスポンス: `{ folders: [{ id, name, isViewable }], isNewFoldersIncluded, accessDurationDays, accessStartsAt, accessEndsAt }`。`folders` は会員サイトの**全フォルダ**にフォルダ名と閲覧可否が付いた一覧。**フォルダ名を別ツールで引く必要はない。**
 
 会員サイトが紐付いていないプラン・自分の会員サイトでない `membershipSiteId` は「見つからない」旨のエラー。
 
@@ -296,7 +296,9 @@
 |---|---|---|
 | `viewableFolderIds` | ○ | 閲覧可能にするフォルダの ID（数値）の配列。**送った内容に置き換わる**。重複不可 |
 | `isNewFoldersIncluded` | ○ | 今後追加されるフォルダも自動で閲覧可能にするか |
-| `accessDurationDays` | ○ | 閲覧期限（日数）。**1〜1000**。無期限は `null`（省略不可） |
+| `accessDurationDays` | ○ | 閲覧期限（日数）。**1〜1000**。使わないときは `null`（省略不可） |
+| `accessStartsAt` | ○ | 閲覧開始日時。`null` は開始の制限なし（省略不可）。タイムゾーンオフセット付きで指定する（例: `2026-10-01T10:00:00+09:00`） |
+| `accessEndsAt` | ○ | 閲覧終了日時。`null` は終了の制限なし（省略不可）。形式は `accessStartsAt` と同じ |
 
 拒否される操作:
 
@@ -304,6 +306,9 @@
 |---|---|
 | 閲覧順の固定が有効な会員サイトで、一部のフォルダだけ閲覧可にする・`isNewFoldersIncluded: false` にする | 拒否される。全フォルダ + `true` にするか、先に閲覧順の固定を外す |
 | `viewableFolderIds` に重複がある・その会員サイトに無いフォルダ ID を含む | 拒否される |
+| `accessDurationDays` と `accessStartsAt` / `accessEndsAt` を同時に指定する | 拒否される（「『購入から○日間』と『指定日』は同時に設定できません。」） |
+| `accessStartsAt` と `accessEndsAt` を両方指定し、終了が開始より後でない（同時刻を含む） | 拒否される（「終了日時は開始日時より後に設定してください。」） |
+| 日時にタイムゾーンオフセットが無い | 拒否される |
 
 公開中・限定公開のプラン、または `isDeletable: false`（購入者がいる可能性のある）プランで、いま閲覧可能なフォルダを外すと、**そのフォルダを購入済みのゲストも見られなくなる**。送る前に承認を取る。
 

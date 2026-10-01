@@ -83,7 +83,7 @@ curl -sS -X PUT -T ~/Movies/lesson01.mp4 "<uploadUrl>" -o /dev/null -w '%{http_c
 
 ユーザーへ:
 
-> 「第1章」に動画レッスン「第1回 はじめに」を非公開で追加しました。字幕と AI 要約・目次は自動で作られます。サムネイル画像は MCP では付けられないため、必要なら管理画面で設定してください。
+> 「第1章」に動画レッスン「第1回 はじめに」を非公開で追加しました。字幕と AI 要約・目次は自動で作られます。サムネイル画像は付けていないため、一覧と再生画面には動画から作られた画像が出ます。
 > 公開しますか？公開時に購入者へメールで通知しますか？
 
 承認後: `patchCreatorMembershipSiteContent { isPublished: true, isNotifyOnPublish: <回答> }`

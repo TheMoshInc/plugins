@@ -1,5 +1,7 @@
 {
   "viewableFolderIds": [1, 2],
   "isNewFoldersIncluded": true,
-  "accessDurationDays": 90
+  "accessDurationDays": 90,
+  "accessStartsAt": null,
+  "accessEndsAt": null
 }

@@ -202,10 +202,13 @@ MCP ツール（以下ツール名は OpenAPI の operationId で記す。実際
 会員サイトが紐付いたプランで、購入したゲストが閲覧できるフォルダと期間を決める。`membershipSiteId` は手順 7 の一覧で得た**数値**を使う。リクエストの形は [examples/update-license-setting.json](examples/update-license-setting.json) を参照する（`viewableFolderIds` はダミー値。取得した `folders` の ID に置き換える）。
 
 1. `getCreatorMembershipSiteProductPlanLicenseSetting` で現在値を読む。`folders` に会員サイトの全フォルダが**フォルダ名と閲覧可否付き**で返るので、フォルダはこの名前で提示する
-2. 変更内容を組み立てる。`putCreatorMembershipSiteProductPlanLicenseSetting` は `viewableFolderIds` / `isNewFoldersIncluded` / `accessDurationDays` の**3 項目すべてが必須で、送った内容に置き換わる**。1 つのフォルダを足すときも、閲覧可能にするフォルダの ID を全件送る
+2. 変更内容を組み立てる。`putCreatorMembershipSiteProductPlanLicenseSetting` は `viewableFolderIds` / `isNewFoldersIncluded` / `accessDurationDays` / `accessStartsAt` / `accessEndsAt` の**5 項目すべてが必須で、送った内容に置き換わる**。1 つのフォルダを足すときも、閲覧可能にするフォルダの ID を全件送る。期間を変えないときも、読んだ期間の 3 項目をそのまま送る
 3. 会員サイトで**閲覧順の固定**（`getCreatorMembershipSite` の `isFixedViewingOrder`）が有効なら、全フォルダを閲覧可能にし `isNewFoldersIncluded: true` にしないと拒否される。フォルダを分けたい依頼なら、先に閲覧順の固定を外す必要があることを伝える（サイト設定の変更は `membership-site-builder` スキル）。閲覧順の固定を外すとゲストの閲覧完了状態が消えて元に戻せないことも併せて伝える
 4. **公開中・限定公開のプラン**（`publishingStatus` が `PUBLIC` / `LIMITED`）、または **`isDeletable: false`（購入者がいる可能性のある）プラン**で、いま閲覧可能なフォルダを外すときは、**そのフォルダを購入済みのゲストも見られなくなる**ことを伝えて承認を取る
-5. 閲覧期限 `accessDurationDays` は 1〜1000 日。無期限は `null`（省略はできない）
+5. 閲覧できる期間は「無期限」「購入から N 日間」「指定日（開始日時〜終了日時）」の 3 通りから 1 つ選ぶ。`accessDurationDays` と日時（`accessStartsAt` / `accessEndsAt`）は同時に指定できず、拒否される（組み合わせは [references/content-schema.md](references/content-schema.md) の「ライセンス設定の項目」）。使わない側は `null` を送る（省略はできない）
+   - 購入から N 日間: `accessDurationDays` に 1〜1000、日時は 2 つとも `null`
+   - 指定日: `accessDurationDays` を `null` にし、`accessStartsAt` / `accessEndsAt` を `2026-10-01T10:00:00+09:00` のようにタイムゾーンオフセット付きで送る。片方だけでもよい。両方入れるなら終了を開始より後にする
+   - サブスクリプションのプランで終了日時を入れると、課金が続いていても終了日時以降は閲覧できなくなる。送る前にそれを伝えて承認を取る
 6. 送信後に同じ取得ツールで読み戻し、閲覧できるフォルダ名・今後追加分の扱い・閲覧期限を提示する
 
 ### 9. 購入後設定（サンクスページ → 自動リダイレクト → 感想レポート）
@@ -356,7 +359,7 @@ MCP ツール（以下ツール名は OpenAPI の operationId で記す。実際
 - **自動リダイレクトの現在値は読めない。** 有無・URL・秒数はユーザーに確認し、上書きになることを伝えてから送る。待機秒数は 0〜15
 - **自動リダイレクトの削除は「解除します（あとから再設定できます）」と伝えて承認を取ってから呼ぶ。** 未設定でも成功するので、有無を確かめるためだけに呼ばない
 - **感想レポートは一度も設定していないプランでは「有効」として返る。** 「未設定」とは言わない
-- **ライセンスの `accessDurationDays` は 1〜1000、無期限は `null`。** `membershipSiteId` は数値で渡す
+- **ライセンスの期間は「無期限」「購入から N 日間（`accessDurationDays` は 1〜1000）」「指定日（`accessStartsAt` / `accessEndsAt`）」のどれか 1 つ。** 日数と日時は同時に指定できない。日時はタイムゾーンオフセット付きで送る。`membershipSiteId` は数値で渡す
 - **閲覧順の固定が有効な会員サイトでは、全フォルダ + 今後追加分を含める設定しか保存できない。** フォルダを分けたい依頼には、先に閲覧順の固定を外す必要があることと、外すと閲覧完了状態が消えて元に戻せないことを伝える
 - **公開中・限定公開のプラン、または購入者がいる可能性のある（`isDeletable: false`）プランで閲覧できるフォルダを外す前に承認を取る。** 購入済みのゲストがそのフォルダを見られなくなる
 - **プランの設定を書き込んだら、対応する取得ツールで読み戻して提示する。** 保存の成功と意図どおりの内容は別。自動リダイレクトだけは取得ツールが無いので、送った値を提示する
@@ -401,7 +404,9 @@ MCP ツール（以下ツール名は OpenAPI の operationId で記す。実際
 | ライセンスで足したいフォルダの ID だけを `viewableFolderIds` に送る | 送った内容に置き換わる。閲覧可能にするフォルダを全件送る |
 | 閲覧順の固定が有効なサイトで一部のフォルダだけ閲覧可にして送る | 拒否される。全フォルダ + `isNewFoldersIncluded: true` にするか、先に閲覧順の固定を外してもらう |
 | 公開中・限定公開のプランや購入者がいる可能性のあるプランからフォルダを外すのに承認を取らない | 購入済みのゲストも見られなくなる。伝えてから承認を取る |
-| 閲覧期限を無期限にするのに `accessDurationDays` を省く | 省略できない。`null` を送る |
+| 閲覧期限を無期限にするのに `accessDurationDays` を省く | 省略できない。`accessDurationDays` / `accessStartsAt` / `accessEndsAt` の 3 つとも `null` を送る |
+| 旧来の 3 項目（フォルダ・今後追加分・日数）だけを送る | `accessStartsAt` / `accessEndsAt` も必須。読んだ値をそのまま送る（未設定なら `null`） |
+| 日数と開始・終了日時を両方入れる | 同時に指定できず拒否される。どちらか一方だけにし、もう片方は `null` にする |
 | バナー画像だけ変えたいので `content` を省いて送る | `content` は毎回必須。本文を変えないなら現在値をそのまま送る |
 | バナー画像を消すために `bannerMediaId` を省略する | 省略は「維持」。消すなら `null` を送る（リンク先も `null` にする） |
 | バナー画像が無いのにリンク先 URL だけ設定する | 拒否される。先にバナー画像を設定するか、リンク先を `null` にする |
