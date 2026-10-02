@@ -64,6 +64,8 @@
 | `car-` | image-carousel |
 | `aw-` | autoWebinar |
 
+補助的な要素（カードの入れ物・行・番号の枠など）も、type に対応する接頭辞だけを使う。付け方と例は `section-plan.md`「セクション ID の規約」。
+
 ## PartType 一覧
 
 | type | 用途 |
@@ -347,6 +349,30 @@
 ```
 
 - `attributes.images` — **URL文字列の配列**（例: `["https://example.com/a.jpg", "https://example.com/b.jpg"]`）。`{ "src": "...", "alt": "..." }` のようなオブジェクトの配列にしてはいけない。レンダラーは各要素を画像URLの文字列としてそのまま扱うため、配列でも要素がオブジェクトだとクラッシュする（`image` type の `src`/`alt` 属性と混同しないこと）。
+
+## `schedule` の仕様
+
+**日程は要素に持たせない。** `schedule` は、LP の設定に紐づく `serviceId`（予約枠を持つイベントタイプの連携サービス）の開催日程を自動で一覧表示し、選んだ日程の予約ページへ進むボタンまでを1つで担う要素。`content` は**ボタンの文言（プレーン文字列）だけ**、`styles` / `attributes` は空オブジェクト `{}`。連携先は LP 単位（トップレベルの `serviceId`）で決まる。
+
+```json
+{
+  "id": "sec-03-schedule",
+  "type": "section",
+  "content": "",
+  "styles": { "padding": "40px 24px" },
+  "attributes": { "sectionType": "schedule" },
+  "children": [
+    { "id": "hd-03-schedule", "type": "heading", "content": "参加日程を選択", "styles": { "fontSize": "30px", "textAlign": "center" }, "attributes": { "level": "2" } },
+    { "id": "tx-03-schedule-1", "type": "text", "content": "開催日からお好きな日程を選んでください。", "styles": { "fontSize": "18px", "textAlign": "center", "padding": "40px 0 0 0" } },
+    { "id": "sch-03-schedule", "type": "schedule", "content": "申し込みへ進む", "styles": {}, "attributes": {} }
+  ]
+}
+```
+
+- **日程が主役の LP（セミナー・イベント・予約受付）には `schedule` 要素を必ず置く。** `serviceId` が未指定でも要素は作る。未連携のときは編集画面に「開催日時はMOSHで作成したプラン・サービスの日程と連携することで設定できます」と表示されるだけで、クラッシュしない（この文言は `schedule` 固有。`autoWebinar` の案内文とは別物なので、ユーザーへの説明で取り違えて引用しない）。
+- **日程をテキスト・カード・表で手書きしない。日付・時刻を創作しない。** 手書きの日程は実際の予約枠と連動せず、仮の日付が公開ページに残る事故になる（`autoWebinar` と同じく「要素は作り、連携だけを別途確認する」）。開催日時・会場・定員など本文で伝える情報は、ユーザーから得た事実だけを `text` に書く（無ければ書かない）。
+- **`serviceId` は推測・捏造しない。** 実在の `serviceId` が明示されていない場合は LP の `serviceId` を設定せず、ユーザーには「どのサービス（予約枠のある商品）の日程を表示しますか？」のように平易に確認する（`serviceId` などの内部用語は出さない）。
+- ボタン文言を変えたいときは `content` を書き換える（例: `"今すぐ申し込む"`）。**太字・色などの部分装飾はできない**（プレーン文字列のみ。下記「絶対に避けること」参照）。
 
 ## `autoWebinar` の仕様
 
