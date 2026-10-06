@@ -59,6 +59,11 @@
       "name": "customer-manager-plugin",
       "source": "./plugins/customer-manager-plugin",
       "description": "Adds customer-manager and customer-broadcast skills for searching MOSH customers (service purchasers), viewing their details and reservations, managing customer tags, and sending them broadcast messages"
+    },
+    {
+      "name": "creator-context-plugin",
+      "source": "./plugins/creator-context-plugin",
+      "description": "Adds a creator-context skill for collecting a MOSH creator's current state (products, plans, landing pages, workflows, sales, customers, contacts, membership sites, SNS) into a snapshot"
     }
   ]
 }

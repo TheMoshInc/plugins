@@ -17,6 +17,7 @@ MOSH が配布する [Claude Code](https://code.claude.com/) プラグインマ�
 | `membership-site-builder-plugin` | 会員サイトのフォルダ・コンテンツ・タグを作成・編集・公開し、動画・音声をアップロードするための membership-site-builder skill |
 | `contact-list-manager-plugin` | コンタクト（LINE友だち / メール購読者）を検索・確認・削除・CSVインポートするための contact-list-manager skill |
 | `customer-manager-plugin` | サービス購入者（顧客＝ゲスト）の検索・件数確認、顧客詳細・申込履歴の確認、顧客タグの作成・付与・解除を行う customer-manager skill と、顧客宛の一斉配信を作成・編集・削除する customer-broadcast skill |
+| `creator-context-plugin` | クリエイターの現状（商品・プラン・LP・ワークフロー・売上・顧客・コンタクト・会員サイト・SNS）を1回で集めて、個人情報を含まないスナップショットとして保存する creator-context skill |
 
 ## インストール
 
@@ -35,6 +36,7 @@ Claude Code 内で以下を実行:
 /plugin install membership-site-builder-plugin@mosh-plugins
 /plugin install contact-list-manager-plugin@mosh-plugins
 /plugin install customer-manager-plugin@mosh-plugins
+/plugin install creator-context-plugin@mosh-plugins
 ```
 
 ## 更新
@@ -52,6 +54,7 @@ Claude Code 内で以下を実行:
 /plugin update membership-site-builder-plugin@mosh-plugins  # プラグイン本体を更新
 /plugin update contact-list-manager-plugin@mosh-plugins     # プラグイン本体を更新
 /plugin update customer-manager-plugin@mosh-plugins         # プラグイン本体を更新
+/plugin update creator-context-plugin@mosh-plugins          # プラグイン本体を更新
 
 ```
 
@@ -71,6 +74,7 @@ Claude Code 内で以下を実行:
 /plugin uninstall membership-site-builder-plugin@mosh-plugins
 /plugin uninstall contact-list-manager-plugin@mosh-plugins
 /plugin uninstall customer-manager-plugin@mosh-plugins
+/plugin uninstall creator-context-plugin@mosh-plugins
 /plugin marketplace remove mosh-plugins
 ```
 

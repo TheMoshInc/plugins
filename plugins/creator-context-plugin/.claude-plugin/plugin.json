@@ -1,0 +1,5 @@
+{
+  "name": "creator-context-plugin",
+  "description": "Adds a creator-context skill for collecting a MOSH creator's current state (products, plans, landing pages, workflows, sales, customers, contacts, membership sites, SNS) into a snapshot",
+  "version": "0.1.0"
+}
