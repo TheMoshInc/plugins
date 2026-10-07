@@ -1,0 +1,5 @@
+{
+  "name": "creator-hearing-plugin",
+  "description": "Adds a creator-hearing skill that confirms a MOSH creator's intent (offer, target customer, call to action, purpose-specific items) in a single round trip with a pre-filled hearing sheet, and saves the result as a hearing file",
+  "version": "0.1.0"
+}

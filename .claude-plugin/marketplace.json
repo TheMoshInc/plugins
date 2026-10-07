@@ -61,6 +61,11 @@
       "description": "Adds customer-manager and customer-broadcast skills for searching MOSH customers (service purchasers), viewing their details and reservations, managing customer tags, and sending them broadcast messages"
     },
     {
+      "name": "creator-hearing-plugin",
+      "source": "./plugins/creator-hearing-plugin",
+      "description": "Adds a creator-hearing skill that confirms a MOSH creator's intent (offer, target customer, call to action, purpose-specific items) in a single round trip with a pre-filled hearing sheet, and saves the result as a hearing file"
+    },
+    {
       "name": "creator-context-plugin",
       "source": "./plugins/creator-context-plugin",
       "description": "Adds a creator-context skill for collecting a MOSH creator's current state (products, plans, landing pages, workflows, sales, customers, contacts, membership sites, SNS) into a snapshot"
