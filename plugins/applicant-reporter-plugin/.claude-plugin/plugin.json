@@ -1,0 +1,5 @@
+{
+  "name": "applicant-reporter-plugin",
+  "description": "Adds an applicant-reporter skill for checking MOSH product applicants and subscribers",
+  "version": "0.1.0"
+}

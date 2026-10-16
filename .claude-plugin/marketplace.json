@@ -26,6 +26,11 @@
       "description": "Adds a sales-reporter skill for checking and analyzing MOSH sales"
     },
     {
+      "name": "applicant-reporter-plugin",
+      "source": "./plugins/applicant-reporter-plugin",
+      "description": "Adds an applicant-reporter skill for checking MOSH product applicants and subscribers"
+    },
+    {
       "name": "file-share-plugin",
       "source": "./plugins/file-share-plugin",
       "description": "Adds a file-share skill for managing MOSH shared files"

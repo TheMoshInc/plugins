@@ -1,0 +1,81 @@
+{
+  "applicants": [
+    {
+      "id": "user-content-001",
+      "guest": {
+        "id": "100001",
+        "name": "サンプル 太郎",
+        "email": "sample-taro@example.com",
+        "iconPhotoId": null
+      },
+      "planId": "301",
+      "planName": "ベーシックプラン",
+      "createdDateTime": "2026-09-01T10:15:00+09:00",
+      "viewingRestrictionDateTime": null,
+      "paymentType": "one-time",
+      "status": "approved",
+      "order": {
+        "paymentMethod": "card",
+        "contentId": "service-301",
+        "contentTitle": "ベーシックプラン",
+        "status": "approved",
+        "bankTransferExpirationDateTime": null,
+        "canceledDateTime": null
+      },
+      "installmentsOrder": null
+    },
+    {
+      "id": "user-content-002",
+      "guest": {
+        "id": "100002",
+        "name": "サンプル 花子",
+        "email": "sample-hanako@example.com",
+        "iconPhotoId": null
+      },
+      "planId": "302",
+      "planName": "分割払いプラン",
+      "createdDateTime": "2026-08-20T19:40:00+09:00",
+      "viewingRestrictionDateTime": null,
+      "paymentType": "mosh-installments",
+      "status": "installmentActive",
+      "order": {
+        "paymentMethod": "card",
+        "contentId": "service-302",
+        "contentTitle": "分割払いプラン",
+        "status": "approved",
+        "bankTransferExpirationDateTime": null,
+        "canceledDateTime": null
+      },
+      "installmentsOrder": {
+        "iteration": 3,
+        "count": 1,
+        "status": "active"
+      }
+    },
+    {
+      "id": "user-content-003",
+      "guest": {
+        "id": "100003",
+        "name": null,
+        "email": "sample-jiro@example.com",
+        "iconPhotoId": null
+      },
+      "planId": "301",
+      "planName": "ベーシックプラン",
+      "createdDateTime": "2026-09-10T08:00:00+09:00",
+      "viewingRestrictionDateTime": null,
+      "paymentType": "one-time",
+      "status": "pending",
+      "order": {
+        "paymentMethod": "bank-transfer",
+        "contentId": "service-301",
+        "contentTitle": "ベーシックプラン",
+        "status": "pending",
+        "bankTransferExpirationDateTime": "2026-09-17T23:59:59+09:00",
+        "canceledDateTime": null
+      },
+      "installmentsOrder": null
+    }
+  ],
+  "totalCount": 3
+}

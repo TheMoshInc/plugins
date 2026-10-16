@@ -10,6 +10,7 @@ MOSH が配布する [Claude Code](https://code.claude.com/) プラグインマ�
 | `workflow-builder-plugin` | ワークフロー（ステップ配信）を構築する workflow-builder skill と、既存ワークフローを点検する workflow-review skill |
 | `contact-broadcast-plugin` | コンタクト向け一斉配信（メール / LINE）を作成・運用するための contact-broadcast skill |
 | `sales-reporter-plugin` | 売上を確認・分析するための sales-reporter skill |
+| `applicant-reporter-plugin` | 商品の申込者・サブスク購読者を確認するための applicant-reporter skill |
 | `file-share-plugin` | ファイル共有（動画・画像・PDF）を操作するための file-share skill |
 | `product-navigator-plugin` | 商品・商品プランを参照するための product-navigator skill |
 | `line-rich-menu-plugin` | LINE リッチメニューを確認・編集・デフォルト設定・削除するための line-rich-menu skill |
@@ -39,6 +40,7 @@ Claude Code 内で以下を実行:
 /plugin install customer-manager-plugin@mosh-plugins
 /plugin install creator-hearing-plugin@mosh-plugins
 /plugin install creator-context-plugin@mosh-plugins
+/plugin install applicant-reporter-plugin@mosh-plugins
 ```
 
 ## 更新
@@ -58,6 +60,7 @@ Claude Code 内で以下を実行:
 /plugin update customer-manager-plugin@mosh-plugins         # プラグイン本体を更新
 /plugin update creator-hearing-plugin@mosh-plugins          # プラグイン本体を更新
 /plugin update creator-context-plugin@mosh-plugins          # プラグイン本体を更新
+/plugin update applicant-reporter-plugin@mosh-plugins       # プラグイン本体を更新
 
 ```
 
@@ -79,6 +82,7 @@ Claude Code 内で以下を実行:
 /plugin uninstall customer-manager-plugin@mosh-plugins
 /plugin uninstall creator-hearing-plugin@mosh-plugins
 /plugin uninstall creator-context-plugin@mosh-plugins
+/plugin uninstall applicant-reporter-plugin@mosh-plugins
 /plugin marketplace remove mosh-plugins
 ```
 

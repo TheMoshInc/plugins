@@ -82,7 +82,7 @@ MCP ツール（`getCreatorPaymentSalesOrdersSummary` / `getCreatorPaymentSalesO
 
 ### 5. ゲストは ID のみ
 
-ゲストの名前・メールアドレスは返らない。「誰が買ったか」を名前で知りたい場合は MOSH 管理画面の申込者一覧へ誘導する。
+ゲストの名前・メールアドレスは返らない。「誰が買ったか」を名前で知りたい場合は `applicant-reporter`（申込者・購読者一覧）を使う。
 
 ### 6. エラーをそのまま出さない
 
