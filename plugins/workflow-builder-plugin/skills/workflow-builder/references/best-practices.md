@@ -2,7 +2,7 @@
 
 ## ID 参照の確認手順
 
-ワークフローに埋め込む各種 ID のうち、`serviceId` / `autoWebinarId` は MCP に検索・一覧取得ツールが無い。それ以外（`inflowActionId` / `creatorLineChannelId` / `contactTagId` / `lineRichMenuId`）は対応する一覧取得ツールで取得・実在確認できる。`benefitId` は特典提供終了により新規設定しない（既存ワークフローの維持時のみ）。
+ワークフローに埋め込む各種 ID のうち、`serviceId` / `autoWebinarId` / `lineKeywordResponseId` は MCP に検索・一覧取得ツールが無い。それ以外（`inflowActionId` / `creatorLineChannelId` / `contactTagId` / `lineRichMenuId`）は対応する一覧取得ツールで取得・実在確認できる。`benefitId` は特典提供終了により新規設定しない（既存ワークフローの維持時のみ）。
 
 | ID | MCP で取得できるか | 取得経路 |
 |---|---|---|
@@ -12,6 +12,7 @@
 | `lineRichMenuId` | ✅ | `getCreatorLineRichMenus`（`creatorLineChannelId` で絞り込み可） |
 | `autoWebinarId` | ❌ | ユーザーから受け取る（管理画面のオートウェビナー） |
 | `serviceId` | ❌ | ユーザーから受け取る（管理画面のプラン・サービス管理） |
+| `lineKeywordResponseId` | ❌ | ユーザーから受け取る（管理画面の LINE キーワード応答。MCP には一覧・詳細を取るツールが無い）。保存時に実在・自分の所有かは検証されるが、**意図したキーワード応答か**は MCP から確かめられないので、キーワード・設定名・属する LINE 公式アカウントをユーザーに口頭で確認する |
 
 `serviceId` / `autoWebinarId` が必要な trigger/condition（`SERVICE_APPLIED` / `SERVICE_SCHEDULE_REMINDER` / `CONDITION(SERVICE_APPLICATION_STATUS)` / `CONDITION(BANK_TRANSFER_STATUS)` / `CONDITION(AUTO_WEBINAR_PARTICIPATION)` / `CONDITION(AUTO_WEBINAR_WATCH_TIME)`）では、要件ヒアリングの段階で「**該当リソースの ID を教えてください**」を必ず聞き、MCP からは検索・実在確認ができないことを踏まえてユーザー申告のまま扱う（下書き保存時は実在検証されないため、公開前レビューで改めて口頭確認する）。それ以外の ID は対応する一覧取得ツールで実在するものを選んでもらう（一覧を提示する際は名前で選んでもらい、生の ID を会話の主役にしない）。`MARKETING_LEAD_BENEFIT_RECEIVED` は特典提供終了により**新規設定しない**。
 
@@ -32,6 +33,7 @@
   - 同時に稼働できるワークフロー数の上限に達している場合
   - 「指定された特典が見つかりません。特典が削除されていないか確認してください。」（トリガーの特典が削除済み等）
   - 「LINE関連の開始条件またはステップを使用するには、ワークフローにLINE公式アカウントを設定してください。」（LINE公式アカウント未設定）
+  - 「LINEキーワード応答のcreatorLineChannelIdとワークフローのcreatorLineChannelIdが一致していません。」（キーワード応答とワークフローの LINE 公式アカウント不一致）
 - 対処: エラーの原因（参照リソース不足・稼働数上限）を解消してから再度 `ACTIVE` 化する。ユーザーには平易な日本語で原因と対処を伝える
 
 ### 下書き（`INACTIVE`）中は検証が緩い
@@ -55,13 +57,16 @@
 
 **識別子（コンタクト ID / MOSH ID）の適合は [content-schema.md](content-schema.md) の「コンテキスト適合表」が正本**。ここではその表を前提に、表の △ を実務でどう扱うかと、識別子以外の相性だけを書く。
 
-- **`LINE_CHANNEL_CONTACT_REGISTERED` / `CONTACT_TAG_ADDED` トリガーで `SEND_EMAIL` を選ぶ前に、配信先がメールアドレスを持つか確認する**（適合表の ○※4）。`SEND_EMAIL` の宛先は実行時にコンタクトのメールアドレスから解決される。メールアドレスが紐付いていないコンタクト（LINE 友達追加だけで登録されたコンタクト等）は配信失敗（実行履歴に「送信先コンタクトなし」）となり、**そのコンタクトの後続ステップも打ち切られる**（保存・公開はエラーにならない）。LINE 友達追加起点は原則 `SEND_LINE_MESSAGE` を選ぶ。タグ付与起点でメールを使う場合は、対象コンタクトがメールアドレスを保有している前提（特典のメール取得経由等）かをユーザーに確認する
+- **`LINE_CHANNEL_CONTACT_REGISTERED` / `LINE_KEYWORD_RESPONSE_MATCHED` / `CONTACT_TAG_ADDED` トリガーで `SEND_EMAIL` を選ぶ前に、配信先がメールアドレスを持つか確認する**（適合表の ○※4）。`SEND_EMAIL` の宛先は実行時にコンタクトのメールアドレスから解決される。メールアドレスが紐付いていないコンタクト（LINE 友達追加だけで登録されたコンタクト等）は配信失敗（実行履歴に「送信先コンタクトなし」）となり、**そのコンタクトの後続ステップも打ち切られる**（保存・公開はエラーにならない）。LINE 友達追加・LINEキーワード応答起点は原則 `SEND_LINE_MESSAGE` を選ぶ。タグ付与起点でメールを使う場合は、対象コンタクトがメールアドレスを保有している前提（特典のメール取得経由等）かをユーザーに確認する
 - **適合表の △ は両方向にある**。どちらも保存・公開は通り、実行時に対象を解決できず失敗する（後続ステップも打ち切り）。紐付けの成立条件は適合表の ※3
-  - **コンタクト起点 → MOSH 前提の CONDITION**（LINE友だち追加・タグ付与・流入経路CV・既存の特典取得 × `SERVICE_APPLICATION_STATUS` / `AUTO_WEBINAR_*` / `BANK_TRANSFER_STATUS`）: 使えるが、コンタクトに MOSH アカウントが紐付いていないと CONDITION 自体が失敗する
+  - **コンタクト起点 → MOSH 前提の CONDITION**（LINE友だち追加・タグ付与・流入経路CV・LINEキーワード応答・既存の特典取得 × `SERVICE_APPLICATION_STATUS` / `AUTO_WEBINAR_*` / `BANK_TRANSFER_STATUS`）: 使えるが、コンタクトに MOSH アカウントが紐付いていないと CONDITION 自体が失敗する
   - **MOSH ゲスト起点 → コンタクトを要求するステップ**（`SERVICE_APPLIED` / `SERVICE_SCHEDULE_REMINDER` / `INSTALLMENT_PAYMENT_FAILED` / `SUBSCRIPTION_PAYMENT_FAILED` × `SEND_LINE_MESSAGE` / `ADD_CONTACT_TAG` / `REMOVE_CONTACT_TAG` / `LINK_LINE_RICH_MENU` / `UNLINK_LINE_RICH_MENU` / `CONDITION(CONTACT_TAG)`）: 申込者・決済失敗者の MOSH ID からコンタクトを引くため、**そのゲストがコンタクトとして紐付いていなければ LINE 配信・タグ操作は 1 件も実行されない**。「申込のお礼を LINE で送りたい」「決済失敗者にタグを付けたい」という自然な要望で最も起きやすい。ユーザーには「申込者が事前に LINE 配信やメールの計測付きリンクをタップし、ログインしたことがある方に限られます。そうでない方には届きません」と伝え、確実に届けたいなら `SEND_EMAIL`（MOSH アカウントのメールに届く）を選ぶか、先に紐付けが発生する導線（トラッキング有効なメッセージの URL タップ → MOSH ログイン）を設計する
 - 予約リマインド（`SERVICE_SCHEDULE_REMINDER`）の最初のメッセージは WAIT_TIME を挟まずトリガー直後に置く。リマインド対象日時を跨ぐ大きな WAIT_TIME を設定しない（開催後に届くリマインドになる）
 - 開催前に複数タイミングでリマインドしたい場合は、**1本のワークフローに WAIT_TIME で繋がず、タイミングごとに別ワークフローへ分ける**。理由と組み方は次節「予約リマインドは複数のトリガーに分ける」が正本
 - `INFLOW_ACTION_CONVERTED` トリガーの流入経路は LINE 公式アカウントに属する。**ワークフロー最上位の `creatorLineChannelId` を、流入経路が属するアカウントと一致させる**（`getCreatorScenariosInflowActions` のレスポンスの `creatorLineChannelId` で確認する。不一致だとトリガーと配信のアカウントがずれ、公開時に API が弾く。[content-schema.md](content-schema.md) の「検査の二層構造」の確認済みの事実）
+- `LINE_KEYWORD_RESPONSE_MATCHED` トリガーのキーワード応答も LINE 公式アカウントに属する。**ワークフロー最上位の `creatorLineChannelId` を、キーワード応答が属するアカウントと一致させる**（下書き保存は通るが公開時に API が弾く）。加えて次の 2 点をヒアリングで確認する（発火仕様の正本は [content-schema.md](content-schema.md) の trigger 表）:
+  - **二重返信**: キーワード応答自体の応答メッセージが ON だと、その返信とワークフローの先頭メッセージが**両方**届く。返信はどちらか一方に寄せる: ワークフローで返信するならキーワード応答側の応答メッセージを OFF にしてもらう。キーワード応答で返信するなら、ワークフローは `SEND_LINE_MESSAGE` を含めずタグ付与等の裏方処理だけにする（後続で LINE 送信を入れるなら、応答メッセージと内容が重ならないかを確認する）
+  - **反応頻度**: キーワード応答が「毎回」だと同じ友だちが送るたびにワークフローが最初から走る（特典配布なら同じ案内が繰り返し届く）。1回きりにしたいならキーワード応答を「初回のみ」に設定してもらう
 - `LINK_LINE_RICH_MENU` の `lineRichMenuId` も同様に、**ワークフロー最上位の `creatorLineChannelId` と同じチャンネルのリッチメニューを選ぶ**（`getCreatorLineRichMenus` のレスポンスの `creatorLineChannelId` で確認する）。API はクリエイター所有なら別チャンネルのメニューでも保存・公開を通してしまうが、実行時は**リッチメニュー側**のアカウントの友だちかどうかで対象コンタクトを探すため（[content-schema.md](content-schema.md) の適合表 ※5）、ワークフロー側のアカウントの友だちしかいない対象は失敗する。一致を強制するのは編集画面のみなので、MCP 経由で組むときは自分で確認する
 - `SCHEDULED_PROCESSING`（スケジュール設定）は**対象母集団を `targetType` で選ぶ**ため、ステップ側もその母集団に揃える。`contactLine` なら LINE 配信・タグ操作、`guest` なら `SEND_EMAIL` と MOSH 前提の `CONDITION` が素直に動く。`all` は 1 本のワークフローの中でコンタクト側とゲスト側が混在し、**どのステップも母集団の片側で必ず △（実行時に対象を解決できず失敗）になる**ので、「全員に同じことをする」という要望でも、確実に届けたいなら `contactLine` / `guest` に寄せて 2 本に分けることを提案する（適合表の ※6）
 - `CONTACT_TAG_ADDED` トリガーのワークフロー内で、その起動タグ自体を `REMOVE_CONTACT_TAG` → `ADD_CONTACT_TAG` の順で操作しない（対象コンタクトに対して自分自身を再トリガーし、無限に往復しうる）。起動タグと同じタグを終端で付け直す設計は避け、進捗管理には別タグを使う

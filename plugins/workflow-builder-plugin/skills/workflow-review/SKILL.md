@@ -49,7 +49,7 @@ description: MOSH のワークフロー（ステップ配信・シナリオ）�
 
 1. `getCreatorScenario` で構造を取得する
 2. **構造を日本語のフローに書き起こす**（分岐は「◯◯に当てはまる人 → …／当てはまらない人 → …」と両側とも書く。`stages: []` の側は「そこで終わり」）。ここでユーザーの意図とのズレが大半見つかる。提示するときは矢印つきのフロー図にする（提示規約 §5）
-3. [references/mistake-patterns.md](references/mistake-patterns.md) の検査カタログ **S-1〜S-11** を適用する。順序は**まず構文**（対象者を選ばず JSON とテナント設定だけで決まるもの＝S-2 / S-3 / S-8 / S-10 / S-11、および S-4 の参照先の消失・流入経路のチャンネル不一致、S-7 の公開状態・循環・自己ループ）**→ 次に意味**（対象者の紐付け・メール保有・友だち状態で結果が変わるもの＝S-1 / S-5 / S-6、および S-4 のリッチメニューのチャンネル不一致、S-7 の供給元無し。S-5 では [builder の content-schema.md](../workflow-builder/references/content-schema.md) の「コンテキスト適合表」を引く）**→ 最後にテナント横断の裏取り**（S-9。S-5 で適合表の △ を見つけたときは S-9a、`CONDITION(SERVICE_APPLICATION_STATUS)` / `CONDITION(CONTACT_TAG)` があり Step 1-2 の意図に即時性・タイミング不問が含まれるときは S-9b。いずれも S-7 の全件巡回に相乗りし、意味側の `要確認` を和らげるか `要修正` に確定させる）。形が壊れていれば意味の指摘は保留して builder に引き継ぐ。参照 ID を名前に直す一覧系ツールの使い分けも同ファイルに記載
+3. [references/mistake-patterns.md](references/mistake-patterns.md) の検査カタログ **S-1〜S-12** を適用する。順序は**まず構文**（対象者を選ばず JSON とテナント設定だけで決まるもの＝S-2 / S-3 / S-8 / S-10 / S-11 / S-12、および S-4 の参照先の消失・流入経路とキーワード応答のチャンネル不一致、S-7 の公開状態・循環・自己ループ）**→ 次に意味**（対象者の紐付け・メール保有・友だち状態で結果が変わるもの＝S-1 / S-5 / S-6、および S-4 のリッチメニューのチャンネル不一致、S-7 の供給元無し。S-5 では [builder の content-schema.md](../workflow-builder/references/content-schema.md) の「コンテキスト適合表」を引く）**→ 最後にテナント横断の裏取り**（S-9。S-5 で適合表の △ を見つけたときは S-9a、`CONDITION(SERVICE_APPLICATION_STATUS)` / `CONDITION(CONTACT_TAG)` があり Step 1-2 の意図に即時性・タイミング不問が含まれるときは S-9b。いずれも S-7 の全件巡回に相乗りし、意味側の `要確認` を和らげるか `要修正` に確定させる）。形が壊れていれば意味の指摘は保留して builder に引き継ぐ。参照 ID を名前に直す一覧系ツールの使い分けも同ファイルに記載
 
 ### 3. レイヤー1: 実績の重ね合わせ（公開済みで実績があるときのみ）
 
@@ -95,7 +95,7 @@ description: MOSH のワークフロー（ステップ配信・シナリオ）�
 このスキルの出力を読むのは MCP / JSON の専門知識を持たない人である前提で書く。
 
 1. **JSON / ステータスコード / 内部表現を出力に出さない**。`handle`・`404`・`INACTIVE` などはユーザー向け文面に書かず、「◯通目のLINE配信」「今は公開されていません（下書き、または停止中）」と平易な日本語に翻訳する（「一度も稼働していません」は実績取得が 404 のときだけ。[references/data-model.md](references/data-model.md)「取得していないことを言い切らない」）。ユーザーが「生データを見せて」と明示的に求めたときだけ出す
-2. **参照 ID を生のまま出さない**（「ID: 71」「ID 9008」のような**数値も、括弧書き・補足・確認質問の中でも出さない**。名前が引けないときは「名前が取得できないタグ」と書く）。**内部フィールド名（`isTrackingEnabled` 等）や「MCP側」「API」のような内部用語も出さない**（「トラッキング同意の設定」「MOSH側」と言い換える）。`contactTagId` はタグ名、`creatorLineChannelId` は LINE公式アカウント名、`inflowActionId` は流入経路名、`autoWebinarId` はオートウェビナー名に、一覧系ツールで変換して提示する（`null` は「未設定」）。`getCreatorScenariosExecutions` の trigger には表示名が同梱されているので引き直し不要（[references/data-model.md](references/data-model.md)）
+2. **参照 ID を生のまま出さない**（「ID: 71」「ID 9008」のような**数値も、括弧書き・補足・確認質問の中でも出さない**。名前が引けないときは「名前が取得できないタグ」と書く）。**内部フィールド名（`isTrackingEnabled` 等）や「MCP側」「API」のような内部用語も出さない**（「トラッキング同意の設定」「MOSH側」と言い換える）。`contactTagId` はタグ名、`creatorLineChannelId` は LINE公式アカウント名、`inflowActionId` は流入経路名、`autoWebinarId` はオートウェビナー名に、一覧系ツールで変換して提示する（`null` は「未設定」）。LINEキーワード応答は変換ツールが無く、名前を出せないことがある（[references/mistake-patterns.md](references/mistake-patterns.md) の「前提: 参照 ID を名前に直す」）。`getCreatorScenariosExecutions` の trigger には表示名が同梱されているので引き直し不要（[references/data-model.md](references/data-model.md)）
 3. **原因を断定しない。取得していないことも言い切らない**（「一度も公開していない」「実行記録はない」「タグを誰も付与していない」等。根拠と書き分けは [references/data-model.md](references/data-model.md)「取得していないことを言い切らない」）。言えるのは「構造がこうなっている」「この現象が起きている」まで。原因は「〜の可能性があります」「〜だとするとつじつまが合います」と仮説として書き、確認方法（ユーザーに聞くこと・見るべき画面）を添える
 4. **ステージは番号と中身で呼ぶ**。「ステージ3」ではなく「3ステップ目（1日待機のあとのLINE配信）」
 5. **「このワークフローの動き」は矢印つきのフロー図で示す**。番号を縦につなぎ、待機は「▼ N日後」、分岐は `├─` / `└─` の枝分かれで両側の行き先を書く（`stages: []` は「何もせず終了」と明記）。図とは別にメッセージ本文は引用（`>`）で全文を示し、最後に「要は」で始まる1〜2行の平易な要約を添える（詳細な図の形は [workflow-builder の SKILL.md](../workflow-builder/SKILL.md) §5 を参照。書式は共通にする）
@@ -127,14 +127,15 @@ MCP 側に以下が無いため、本スキルには原理的に埋められな�
 
 1. **`getCreatorScenariosExecutions` の拡張**: 現状はステージごとに `totalCount` / `completedCount` / `failedCount` しか返らない。①`errorCode` / `errorDetailCode` 別の件数（＝「なぜ失敗したか」の原因診断。メール未登録／LINEブロック／配信上限の切り分けが今は不可能）②`scheduledCount` / `canceledCount`（待機中の人数が見えず、WAIT_TIME を跨ぐ落差を実数で説明できない）③各ステージエントリへの構造側 `handle` の同梱（実績と構造・分岐の対応づけが今は確定できない）——の3点が欲しい
 2. **「商品」として作られていない旧来のサービス（イベント・プライベートタイプ・予約）を ID で検索・取得する MCP ツールが無い**: `serviceId` は「商品」化されていれば `getCreatorProducts`→`getCreatorProductPlans` の `moshServiceId` で解決できる（2026-09-02 確認）が、**商品化されていないサービスはこの方法では見つからない**。売上明細（`getCreatorPaymentSalesOrders` の `moshServiceIds` 絞り込み）で該当注文を探す代替も、購入実績が無ければ同様に空振りする（2026-09-03、実在するがどちらの経路でも解決できない `serviceId` の実例で確認）。`productId`/`productPlanId` を必要とせず `serviceId` 単体で商品名・プラン名（またはイベント等の名称）を引ける手段が無い
-3. **紐付けの入口の有無を一覧だけで判別できない**（S-9a）: ①一斉配信の一覧アイテム（`contactEmailMessagesItem` / `contactLineMessagesItem`）に `isTrackingEnabled` と本文が無く、詳細を 1 件ずつ開く必要がある（「トラッキング有効かつ URL を含む配信済みメッセージ」を一覧側で絞れるフィルタが欲しい）②リッチメニューの一覧・詳細からゲートウェイリンク化の有無が読めない（要検証）
+3. **LINEキーワード応答の一覧・詳細ツールが MCP に無い**（S-4 / S-12）: 名前・所属 LINE 公式アカウント・稼働状態・反応頻度（初回のみ／毎回）・自動返信の ON/OFF のどれも MCP から読めず、すべてユーザーへの質問になる（[workflow-builder の references/mcp-tools.md](../workflow-builder/references/mcp-tools.md)）
+4. **紐付けの入口の有無を一覧だけで判別できない**（S-9a）: ①一斉配信の一覧アイテム（`contactEmailMessagesItem` / `contactLineMessagesItem`）に `isTrackingEnabled` と本文が無く、詳細を 1 件ずつ開く必要がある（「トラッキング有効かつ URL を含む配信済みメッセージ」を一覧側で絞れるフィルタが欲しい）②リッチメニューの一覧・詳細からゲートウェイリンク化の有無が読めない（要検証）
 
 ## References
 
 | ファイル | 内容 | いつ読むか |
 |---|---|---|
 | [references/data-model.md](references/data-model.md) | 構造（`getCreatorScenario`）の読み方＝分岐セマンティクス・親子関係、実行実績レスポンスの読み方、最新スナップショット制約、失敗の原因コード辞書 | レイヤー0着手前に必ず |
-| [references/mistake-patterns.md](references/mistake-patterns.md) | **レイヤー0の検査カタログ S-1〜S-11**（構造だけで分かる誤設定パターン。判定条件・疑う原因・確認の聞き方。S-9 はテナント内の他ワークフロー・一斉配信を横断する裏取り、S-10 は予約リマインドの単一トリガー WAIT_TIME チェーン、S-11 は埋め込み変数の使用条件違反） | Step 2 で必ず |
+| [references/mistake-patterns.md](references/mistake-patterns.md) | **レイヤー0の検査カタログ S-1〜S-12**（構造だけで分かる誤設定パターン。判定条件・疑う原因・確認の聞き方。S-9 はテナント内の他ワークフロー・一斉配信を横断する裏取り、S-10 は予約リマインドの単一トリガー WAIT_TIME チェーン、S-11 は埋め込み変数の使用条件違反、S-12 は LINEキーワード応答起点の固有リスク） | Step 2 で必ず |
 | [references/embedded-variables.md](references/embedded-variables.md) | 埋め込み変数（`{{...}}`）の対応表と使用可否（builder の content-schema.md からの複製。S-11 の判定材料） | S-11 適用時 |
 | [references/review-checks.md](references/review-checks.md) | レイヤー1の検査カタログ L1-1〜L1-5、**実績の一般的な傾向（定性的な目安）**、判定の付け方、レポート構成 | Step 4（判定・レポート）で必ず。実績があれば Step 3 でも |
 | [examples/structure-review-report.md](examples/structure-review-report.md) | 構造レビューのみ（下書き・実績ゼロ）のレポート完成形 | Step 4 で実績が無いとき |

@@ -39,7 +39,7 @@ queryParams: { creatorLineChannelId?, limit? }
 ```
 
 - レスポンス `channels[]`: `{ id, officialLineAccountId, displayName, isConnected, createdAt }`
-- `creatorLineChannelId`（`SEND_LINE_MESSAGE` / `LINE_CHANNEL_CONTACT_REGISTERED` / `LINK_LINE_RICH_MENU` で使用）の実在確認・`displayName` 変換に使う
+- `creatorLineChannelId`（`SEND_LINE_MESSAGE` / `LINE_CHANNEL_CONTACT_REGISTERED` / `LINE_KEYWORD_RESPONSE_MATCHED` / `LINK_LINE_RICH_MENU` で使用）の実在確認・`displayName` 変換に使う
 
 **`getCreatorContactTags`** — コンタクトタグ一覧を取得
 
@@ -61,6 +61,8 @@ queryParams: { creatorLineChannelId? }
 - `creatorLineChannelId` で絞り込み可（未指定時は全件）
 - レスポンス `lineRichMenus[]`: `{ id, name, creatorLineChannelId, isDefault, linkedCount, backgroundMoshImageId, updatedAt }`
 - `lineRichMenuId`（`LINK_LINE_RICH_MENU` で使用）の実在確認に使う。付与先はワークフローの `creatorLineChannelId` と同じチャンネルのものを選ぶ（API はクリエイター所有なら別チャンネルでも保存・公開を通すが、実行時に対象コンタクトが見つからず失敗しうる。一致を強制するのは編集画面のみ）
+
+**LINEキーワード応答（`lineKeywordResponseId`）は MCP に取得ツールが無い** — 一覧・詳細を取るツールは公開されていない。ID はユーザー申告で受け取る（確認手順は [best-practices.md](./best-practices.md) の「ID 参照の確認手順」）。ツール名を推測して呼ばない
 
 ## 詳細取得
 
@@ -86,6 +88,7 @@ pathParams: { id }
 pathParams: { id }
 ```
 
+- `LINE_KEYWORD_RESPONSE_MATCHED` の場合、`trigger.lineKeywordResponseMatchedTrigger` に `{ lineKeywordResponseId, name }`（キーワード応答の設定名）が入る（実機では未確認）。公開後に、申告された ID が意図したキーワード応答だったかを名前で確かめるのに使える
 - レスポンスは `trigger`（トリガー種別と設定）と `steps`（各ステージの `totalCount` / `completedCount` / `failedCount`）を含む集計サマリー
 - 条件分岐の子ステップは `steps` 配列内に再帰的にネストされる
 - ステージ別の個別実行履歴（顧客情報を含むドリルダウン）は取得できない。件数集計のみ必要な場合に使う

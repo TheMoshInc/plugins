@@ -42,10 +42,10 @@ ARCHIVED  : アーカイブ済（事実上の廃止）
 
 | 層 | 見るもの | 弾かれるタイミング |
 |---|---|---|
-| **構文解析**（字句解析を含む） | ワークフロー単体の JSON 構造、または同一テナント内の設定状態だけから、**対象者が誰であっても一律に**判定できるもの。①フィールド型・enum 値・「対応する 1 サブフィールドだけ実オブジェクト、残りは `null`」の規律・ID の型・`messages[]` の形（本ファイル「trigger の構造」〜「ID の型一覧」）②木の整形性＝WAIT_TIME 終端禁止・両 branch 空禁止・CONDITION はそれを含む stages 配列（トップレベル／branch 内とも）の最後の要素であること＝合流構成の禁止（[best-practices.md](best-practices.md) の「ノード接続ルール」）③参照整合性＝参照先の実在、流入経路・リッチメニューが属する LINE 公式アカウントとワークフローの一致、`urlActions[].url` と本文 URL の一致、`urlActions` と `isTrackingEnabled` の組み合わせ、`messages` 空配列（本ファイル「TEXT の `urlActions`」「INACTIVE 状態の PATCH 検証」＋ best-practices「トリガー × アクションの相性」「メッセージ内容の参照整合性」）④埋め込み変数の使用可否（「埋め込み変数」対応表。使えるかどうかは trigger × action の組み合わせだけで決まる）⑤同一ワークフロー内の順序矛盾（タグ付与前にそのタグで判定している構成は、判定時点でタグが必ず未付与なので構造上100%falseになる） | ①と③の一部（PATCH 時の参照 ID 実在検証・公開時の流入経路チャンネル一致）、および②の CONDITION 後続ステージ禁止（合流構成）は API が 400 で弾く。それ以外は API は弾かず、実行時に**対象者を選ばず一律に**失敗する（`urlActions` + `isTrackingEnabled: false`）か、エラーにならず一律に意図と異なる動作になる（両 branch 空・順序矛盾・URL 不一致・埋め込み変数の空文字）。弾かれなくても対象者非依存なので構文側 |
+| **構文解析**（字句解析を含む） | ワークフロー単体の JSON 構造、または同一テナント内の設定状態だけから、**対象者が誰であっても一律に**判定できるもの。①フィールド型・enum 値・「対応する 1 サブフィールドだけ実オブジェクト、残りは `null`」の規律・ID の型・`messages[]` の形（本ファイル「trigger の構造」〜「ID の型一覧」）②木の整形性＝WAIT_TIME 終端禁止・両 branch 空禁止・CONDITION はそれを含む stages 配列（トップレベル／branch 内とも）の最後の要素であること＝合流構成の禁止（[best-practices.md](best-practices.md) の「ノード接続ルール」）③参照整合性＝参照先の実在、流入経路・LINEキーワード応答・リッチメニューが属する LINE 公式アカウントとワークフローの一致、`urlActions[].url` と本文 URL の一致、`urlActions` と `isTrackingEnabled` の組み合わせ、`messages` 空配列（本ファイル「TEXT の `urlActions`」「INACTIVE 状態の PATCH 検証」＋ best-practices「トリガー × アクションの相性」「メッセージ内容の参照整合性」）④埋め込み変数の使用可否（「埋め込み変数」対応表。使えるかどうかは trigger × action の組み合わせだけで決まる）⑤同一ワークフロー内の順序矛盾（タグ付与前にそのタグで判定している構成は、判定時点でタグが必ず未付与なので構造上100%falseになる） | ①と③の一部（PATCH 時の参照 ID 実在検証・公開時の流入経路・LINEキーワード応答のチャンネル一致）、および②の CONDITION 後続ステージ禁止（合流構成）は API が 400 で弾く。それ以外は API は弾かず、実行時に**対象者を選ばず一律に**失敗する（`urlActions` + `isTrackingEnabled: false`）か、エラーにならず一律に意図と異なる動作になる（両 branch 空・順序矛盾・URL 不一致・埋め込み変数の空文字）。弾かれなくても対象者非依存なので構文側 |
 | **意味解析** | 個々の対象者の属性・その時点の状態で**結果が変わる**もの。①トリガーが供給する識別子と action / condition が要求する識別子の適合＝コンタクト↔MOSH ID の紐付け有無（後述「コンテキスト適合表」の △）②`SEND_EMAIL` の宛先＝メールアドレス保有（同表 ※4）③LINE 系ステップの対象＝該当 LINE 公式アカウントの友だち状態・ブロック（同表 ※5）④**テナント横断の充足性**＝①の紐付けが成立する入口（トラッキング有効 URL の配信）がテナント内の他ワークフロー・一斉配信に存在するか、`CONDITION` の一時点判定では拾えない「直後・いつでも」の意図を担う専用トリガーのワークフローが存在するか（「CONDITION は一時点の判定」節） | **保存・公開では弾かれない**。対象者ごとに成否が分かれ、失敗した対象者は `FAILED`（後続ステップも打ち切り）になる。構造だけでは「失敗しうる」までしか言えず、対象者の状態（紐付け・メール保有・友だち状態）をユーザーに確認して初めて判定できる。④はワークフロー単体では判定できず、テナント内の他のワークフロー・一斉配信を横断して裏取りする（具体的な調べ方は [best-practices.md](best-practices.md) の「単一ワークフローで閉じない要件」参照） |
 
-> **確認済みの事実**: API スキーマは `triggerType` と `actionType` を独立した enum として持ち、trigger 種別によって置ける action 種別を**構造的には制限していない**（両者を突き合わせる相互制約のバリデーションは無い）。公開時の相互チェックも「LINE 関連の trigger / action があるならワークフローに `creatorLineChannelId` が必須」「流入経路が属する LINE 公式アカウントとワークフローの `creatorLineChannelId` が一致」の 2 点だけ。したがってトリガー × ステップの組み合わせはどれもスキーマを通り、動くかどうかは対象者の紐付け状態に依存する＝**意味解析**の領域。「コンテキスト適合表」で判定する。
+> **確認済みの事実**: API スキーマは `triggerType` と `actionType` を独立した enum として持ち、trigger 種別によって置ける action 種別を**構造的には制限していない**（両者を突き合わせる相互制約のバリデーションは無い）。公開時の相互チェックも「LINE 関連の trigger / action があるならワークフローに `creatorLineChannelId` が必須」「流入経路が属する LINE 公式アカウントとワークフローの `creatorLineChannelId` が一致」「LINEキーワード応答が属する LINE 公式アカウントとワークフローの `creatorLineChannelId` が一致」の 3 点だけ。したがってトリガー × ステップの組み合わせはどれもスキーマを通り、動くかどうかは対象者の紐付け状態に依存する＝**意味解析**の領域。「コンテキスト適合表」で判定する。
 
 ## trigger の構造
 
@@ -61,11 +61,12 @@ ARCHIVED  : アーカイブ済（事実上の廃止）
 | `INFLOW_ACTION_CONVERTED` | `inflowActionConverted` | `{ inflowActionId: number }`（流入経路は LINE 公式アカウントに属する。ボディ最上位の `creatorLineChannelId` を流入経路が属するアカウントと一致させること） |
 | `INSTALLMENT_PAYMENT_FAILED` | なし（サブフィールド不要） | 詳細フィールドは不要。同一分割回の決済リトライ失敗では再発火しない |
 | `SUBSCRIPTION_PAYMENT_FAILED` | なし（サブフィールド不要） | 詳細フィールドは不要。初回失敗のみ発火し、同一請求期間内の決済リトライ失敗では再発火しない |
+| `LINE_KEYWORD_RESPONSE_MATCHED` | `lineKeywordResponseMatched` | `{ lineKeywordResponseId: number }`。LINEキーワード応答（LINE 公式アカウントに属する。ボディ最上位の `creatorLineChannelId` を一致させないと公開時に 400）。発火条件: 友だちが送った**テキストメッセージ（ユーザー発信のテキストのみ。再送は無視）の全文が、同じ `creatorLineChannelId` のキーワードと完全一致**（大文字小文字は区別。全角/半角などの正規化の有無は未確認）し、かつキーワード応答が**稼働中（`active`）**のとき。キーワード応答の反応頻度が「初回のみ」（`once`）なら同じ友だちには初回一致の1回だけ、「毎回」（`everyTime`）なら**一致のたびに**ワークフローが起動する（ワークフロー側に重複抑止は無い）。キーワード応答の応答メッセージの ON/OFF に関係なく起動する。対象者は送信したコンタクト（コンタクト ID のみ） |
 | `SCHEDULED_PROCESSING` | `scheduledProcessing` | `{ targetType: "contactLine"\|"guest"\|"all", scheduleRules: ScheduleRule[] }`。**出来事ではなく日時で発火する唯一のトリガー**で、発火時点の母集団（`targetType` で決まる）を丸ごと対象にする。`targetType` が `contactLine` / `all` の場合はワークフロー最上位の `creatorLineChannelId` が必須。詳細は後述「SCHEDULED_PROCESSING: `scheduledProcessing`」 |
 
-### trigger テンプレート（必ず7フィールド全部指定）
+### trigger テンプレート（必ず8フィールド全部指定）
 
-`ScenarioTrigger` 型のサブフィールドは `triggerType` + 6つ。`lineChannelContactRegisteredTrigger` は型定義に存在しないため指定禁止。
+`ScenarioTrigger` 型のサブフィールドは `triggerType` + 7つ。`lineChannelContactRegisteredTrigger` は型定義に存在しないため指定禁止。
 
 ```json
 {
@@ -75,11 +76,14 @@ ARCHIVED  : アーカイブ済（事実上の廃止）
   "serviceScheduleReminder": null,
   "contactTagAdded": { "contactTagId": 1 },
   "inflowActionConverted": null,
-  "scheduledProcessing": null
+  "scheduledProcessing": null,
+  "lineKeywordResponseMatched": null
 }
 ```
 
-⚠️ **`scheduledProcessing` はキーの省略が不可**（他のサブフィールドと同じく `required`）。使わないトリガーでも `null` を明示しないと `patchCreatorScenario` が 400 で弾く。
+⚠️ **`scheduledProcessing` / `lineKeywordResponseMatched` はキーの省略が不可**（他のサブフィールドと同じく `required`）。使わないトリガーでも `null` を明示しないと `patchCreatorScenario` が 400 で弾く。
+
+`LINE_KEYWORD_RESPONSE_MATCHED` は `lineKeywordResponseMatched: { "lineKeywordResponseId": <line_keyword_response_id> }` だけを実オブジェクトにし、残り6つを `null` にする（形は上の `CONTACT_TAG_ADDED` と同じ要領）。
 
 `LINE_CHANNEL_CONTACT_REGISTERED` の場合はサブフィールドが全て `null`。LINE公式アカウントはボディ最上位の `creatorLineChannelId` で指定する:
 
@@ -91,7 +95,8 @@ ARCHIVED  : アーカイブ済（事実上の廃止）
   "serviceScheduleReminder": null,
   "contactTagAdded": null,
   "inflowActionConverted": null,
-  "scheduledProcessing": null
+  "scheduledProcessing": null,
+  "lineKeywordResponseMatched": null
 }
 ```
 
@@ -122,7 +127,8 @@ ARCHIVED  : アーカイブ済（事実上の廃止）
         "endCondition": null
       }
     ]
-  }
+  },
+  "lineKeywordResponseMatched": null
 }
 ```
 
@@ -307,7 +313,7 @@ ImageCarouselItem の形（`postbackActions` の仕様は CarouselItem と同じ
 4. 成功したら、手順1で得た `moshMediaId` をそのまま `previewMoshImageId` に設定する
 5. 手順3で作成される「画像素材」はワークフロー用途では不要な副産物なので、`previewMoshImageId` を控えたら `deleteCreatorMaterialImage` でその素材を削除してよい（削除されるのは素材の紐付けのみで、`previewMoshImageId` として使っている Core Media 側の画像本体は消えない）
 
-確実な取得経路が用意できない場合（ユーザーが画像を渡せない等）は、捏造せず VIDEO メッセージの追加を保留してユーザーに相談する。同じアップロードフローはより詳しく `file-share` スキルの [references/upload-guide.md](../../file-share/references/upload-guide.md) にも書かれている（インストール済みなら合わせて参照してよいが、本節だけで手順は完結する）。
+確実な取得経路が用意できない場合（ユーザーが画像を渡せない等）は、捏造せず VIDEO メッセージの追加を保留してユーザーに相談する。同じアップロードフローはより詳しく `file-share` スキルの `references/upload-guide.md` にも書かれている（インストール済みなら合わせて参照してよいが、本節だけで手順は完結する）。
 
 **`messages[]` の各要素はスキーマ上 `previewMoshImageId` が必須（`min(1)` の文字列）で、これは PATCH（下書き保存）時にも構造検証される。** `benefitId`/`serviceId` のように「保存は通り、稼働時にだけ検証される」参照IDとは扱いが異なり、`VIDEO` メッセージオブジェクトを `messages[]` に入れる時点で両方揃っていないと 400 になる。「`muxAssetId` だけ入れて `previewMoshImageId` は後で埋める」という半端な `VIDEO` メッセージは保存できない。`messages` 配列自体は0件のままでも下書き保存できるため、動画メッセージを保留する場合は配列からその要素を外しておく。
 
@@ -421,6 +427,7 @@ PATCH で分岐内アクションを組むときは、型エラーが出にく�
 | `benefitId` | **string**（数値文字列） | `"<benefit_id>"` |
 | `contactTagId` | integer | `<contact_tag_id>` |
 | `inflowActionId` | integer | `<inflow_action_id>` |
+| `lineKeywordResponseId` | integer | `<line_keyword_response_id>` |
 | `creatorLineChannelId` | integer | `<creator_line_channel_id>` |
 | `autoWebinarId` | integer | `<auto_webinar_id>` |
 | `muxAssetId` | integer | `<mux_asset_id>` |
@@ -433,7 +440,7 @@ PATCH で分岐内アクションを組むときは、型エラーが出にく�
 
 各トリガーが**1人の対象者に**供給する識別子は 2 種類のどちらか一方だけ（1 人の実行コンテキストに両方が積まれることは無い）:
 
-- **コンタクト ID**: コンタクトリスト上の人物。LINE 友だち追加・タグ付与・流入経路 CV・特典取得はこれ
+- **コンタクト ID**: コンタクトリスト上の人物。LINE 友だち追加・タグ付与・流入経路 CV・LINEキーワード応答・特典取得はこれ
 - **MOSH ID**: MOSH アカウント（ゲスト）。プラン・サービス申込・開催リマインダー・決済失敗系はこれ
 
 例外は `SCHEDULED_PROCESSING` で、**どちらを供給するかが `targetType` で変わる**（`contactLine`=コンタクト ID / `guest`=MOSH ID）。`all` は母集団が 2 群の混在になり、**同じワークフローの中で対象者ごとに供給される識別子が違う**ため、下表では「一方は ○、もう一方は △」ではなく**両方 △**として扱う（どちらのステップも母集団の片側で失敗しうる）。
@@ -443,6 +450,7 @@ PATCH で分岐内アクションを組むときは、型エラーが出にく�
 | `LINE_CHANNEL_CONTACT_REGISTERED` | コンタクト ID のみ | ○※4 | ○ | ○ | ○ | ○ | △ | △ | △ |
 | `CONTACT_TAG_ADDED` | コンタクト ID のみ | ○※4 | ○ | ○ | ○ | ○ | △ | △ | △ |
 | `INFLOW_ACTION_CONVERTED` | コンタクト ID のみ | ○※4 | ○ | ○ | ○ | ○ | △ | △ | △ |
+| `LINE_KEYWORD_RESPONSE_MATCHED` | コンタクト ID のみ | ○※4 | ○ | ○ | ○ | ○ | △ | △ | △ |
 | `MARKETING_LEAD_BENEFIT_RECEIVED`（既存維持のみ） | コンタクト ID のみ | ○※4 | ○ | ○ | ○ | ○ | △ | △ | △ |
 | `SERVICE_APPLIED` | MOSH ID のみ | ○ | △ | △ | △ | △ | ○ | ○ | ○ |
 | `SERVICE_SCHEDULE_REMINDER` | MOSH ID のみ | ○ | △ | △ | △ | △ | ○ | ○ | ○ |
@@ -460,7 +468,7 @@ PATCH で分岐内アクションを組むときは、型エラーが出にく�
 
 脚注:
 
-- ※1 供給識別子: タグ付与・流入経路 CV・LINE 友だち追加・特典取得のトリガーは実行コンテキストに**コンタクト ID だけ**を積み、プラン・サービス申込・開催リマインダー・分割決済失敗・サブスク決済失敗のトリガーは**MOSH ID だけ**を積む（コンタクト ID は空）
+- ※1 供給識別子: タグ付与・流入経路 CV・LINE 友だち追加・LINEキーワード応答・特典取得のトリガーは実行コンテキストに**コンタクト ID だけ**を積み、プラン・サービス申込・開催リマインダー・分割決済失敗・サブスク決済失敗のトリガーは**MOSH ID だけ**を積む（コンタクト ID は空）
 - ※2 △ の失敗の出方: コンタクトを要求する action / condition は、「供給されたコンタクト ID」と「供給された MOSH ID に紐付くコンタクト」を集めた結果が空だと `TARGET_USER_NOT_FOUND / CONTACT_NOT_FOUND`。MOSH ID を要求する condition は、「供給された MOSH ID」も「供給されたコンタクトに紐付く MOSH ID」も無いと `TARGET_USER_NOT_FOUND / GUEST_NOT_FOUND`。この原因コードは実行履歴（`getCreatorScenariosExecutions`）には集計値としてしか出ず、対象者単位のドリルダウンは現状 MCP から取得できない
 - ※3 紐付け（コンタクト↔MOSH ID）が成立する経路: ①トラッキング有効（`isTrackingEnabled: true`）なメッセージ本文の URL、またはリッチメニューのゲートウェイリンクを**コンタクトがタップ**し、②その遷移先で **MOSH にログイン状態で到達**する（未ログインなら Cookie に保持され、次回ログイン時に紐付く）。1 コンタクトに紐付く MOSH ID は 1 つで、別の MOSH ID と既に紐付いていれば上書きされない。紐付けは事後には遡らないので、**紐付け前に実行された △ のステップは失敗したまま**。①の「トラッキング有効な URL」を配信できる場所は**ワークフローに限らない**: コンタクト向けメッセージ配信（一斉配信）も同じ紐付け経路（トラッキング用の短縮 URL）を使う。トグルの有無はメッセージ種別で異なり、**TEXT（LINE）と メール本文は `isTrackingEnabled: true` のときだけ**、**CAROUSEL / IMAGE_CAROUSEL / RICH_MESSAGE のタップ遷移先 URL はトグル無しで常にトラッキング**される（ワークフロー・一斉配信とも）。したがってテナント内に紐付けの入口があるかは、他のワークフローと一斉配信の両方を横断して探す（具体的な調べ方は [best-practices.md](best-practices.md) の「単一ワークフローで閉じない要件」参照）
 - ※4 `SEND_EMAIL` の宛先解決: MOSH ID があれば MOSH アカウントのメールアドレス、無ければコンタクトの**有効かつ購読中**のメールアドレス。コンタクト起点でメールアドレスを持たないコンタクト（LINE 友だち追加だけで作られたコンタクト等）は `CONTACT_NOT_FOUND` で失敗する。識別子は適合していても**メールアドレス保有**という別条件があるので ○※4 とした
@@ -479,7 +487,7 @@ PATCH で分岐内アクションを組むときは、型エラーが出にく�
 |---|---|---|
 | `line_name` | コンタクトのLINEプロフィール表示名 | `actionType: SEND_LINE_MESSAGE` の時のみ（`SEND_EMAIL`では常に空文字） |
 | `guest_name` | ゲスト（Moshユーザー）の名前 | `actionType: SEND_EMAIL` かつ `triggerType` が `SERVICE_APPLIED` / `SERVICE_SCHEDULE_REMINDER` / `INSTALLMENT_PAYMENT_FAILED` / `SUBSCRIPTION_PAYMENT_FAILED` の時のみ。`SCHEDULED_PROCESSING` は `targetType: guest`（および `all` のゲスト側の対象者）でのみ値が入り、`contactLine` 側の対象者では空文字になる＝`all` では**同じ配信の中で入る人と空の人が混ざる**ため使わない。それ以外は空文字 |
-| `service_name` | トリガーに紐づくプラン・サービス名 | `triggerType` が `SERVICE_APPLIED` / `SERVICE_SCHEDULE_REMINDER` / `INSTALLMENT_PAYMENT_FAILED` / `SUBSCRIPTION_PAYMENT_FAILED` の時（決済失敗系も実行コンテキストに対象プラン・サービスの参照が積まれるため値が入る）。それ以外のトリガー（既存の `MARKETING_LEAD_BENEFIT_RECEIVED` / `LINE_CHANNEL_CONTACT_REGISTERED` / `CONTACT_TAG_ADDED` / `INFLOW_ACTION_CONVERTED` / `SCHEDULED_PROCESSING`）では常に空文字 |
+| `service_name` | トリガーに紐づくプラン・サービス名 | `triggerType` が `SERVICE_APPLIED` / `SERVICE_SCHEDULE_REMINDER` / `INSTALLMENT_PAYMENT_FAILED` / `SUBSCRIPTION_PAYMENT_FAILED` の時（決済失敗系も実行コンテキストに対象プラン・サービスの参照が積まれるため値が入る）。それ以外のトリガー（既存の `MARKETING_LEAD_BENEFIT_RECEIVED` / `LINE_CHANNEL_CONTACT_REGISTERED` / `CONTACT_TAG_ADDED` / `INFLOW_ACTION_CONVERTED` / `LINE_KEYWORD_RESPONSE_MATCHED` / `SCHEDULED_PROCESSING`）では常に空文字 |
 | `reservation_time_range` | 予約日時の範囲（`YYYY年M月D日 HH:mm〜HH:mm`, JST） | `SERVICE_SCHEDULE_REMINDER`は常に対応。`SERVICE_APPLIED`はプラン・サービスの`serviceType`が「予約(event)」または「個別(private)」の場合のみ（コンテンツ/サブスク/オンライン単体のプラン・サービスでは空文字） |
 | `zoom_url` | ZoomのjoinURL | `reservation_time_range`と同条件に加えて、プラン・サービスの`locationType`がオンライン/ハイブリッドかつクリエイターがZoom連携済みの場合のみ。条件を満たさない場合は静かに空文字になる（保存・送信はブロックされない） |
 
@@ -495,5 +503,5 @@ PATCH で分岐内アクションを組むときは、型エラーが出にく�
 `INACTIVE` のワークフローに対する `patchCreatorScenario` では、参照 ID の実在検証の有無がフィールドで異なる:
 
 - **`benefitId` / `serviceId` の2つだけは実在検証されない** — 存在しない ID を入れても 200 OK で保存される（実在が検証されるのは公開＝`ACTIVE` 化時。`benefitId` は既存の特典取得ワークフローの維持時のみ）
-- それ以外の参照 ID（`contactTagId` / `inflowActionId` / `creatorLineChannelId` / `autoWebinarId` / `muxAssetId` / `lineRichMenuId`）は **PATCH 時にも実在検証され、不正なら 400 で弾かれる**（保存できた時点で実在は保証される）
+- それ以外の参照 ID（`contactTagId` / `inflowActionId` / `lineKeywordResponseId` / `creatorLineChannelId` / `autoWebinarId` / `muxAssetId` / `lineRichMenuId`）は **PATCH 時にも実在検証され、不正なら 400 で弾かれる**（保存できた時点で実在は保証される）
 - 「保存できた」を「動く」と思い込まないこと。`serviceId`（および既存ワークフローの `benefitId`）は実在の管理画面リソースに対応しているかをユーザーに口頭で確認する

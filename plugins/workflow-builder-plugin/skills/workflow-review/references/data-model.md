@@ -6,6 +6,7 @@
 
 - **構造**: `getCreatorScenario` の実レスポンス（テストアカウント上のワークフローで確認。確認日 2026-08-28）と、[`workflow-builder` の references/content-schema.md](../../workflow-builder/references/content-schema.md)
 - **実行実績**: `getCreatorScenariosExecutions` の OpenAPI レスポンススキーマと実際の挙動。確認日 2026-08-28
+- **trigger のキー名（`SCHEDULED_PROCESSING` / `LINE_KEYWORD_RESPONSE_MATCHED`）**: OpenAPI スキーマで確認。確認日 2026-10-15（実機レスポンスは未確認）
 
 ## 構造（`getCreatorScenario`）の読み方
 
@@ -37,6 +38,7 @@
 - **`stages: []`（空配列）は「その側は何もせず終わり」**。もう片方の branch に合流するのでも、後続に進むのでもない
 - 分岐は再帰する（branch の中にさらに CONDITION を置ける）
 - `conditionType` ごとのサブフィールド、`actionType` ごとのサブフィールド、ID の型といった**構造スキーマの網羅表は builder の content-schema.md が正本**。本ファイルでは再掲しない
+- **trigger のサブフィールド名は、構造（`getCreatorScenario`）と実績（`getCreatorScenariosExecutions`）で違う**。構造側は builder の content-schema.md「triggerType と対応サブフィールド」の形（例: キーワード応答は `lineKeywordResponseMatched: { lineKeywordResponseId }`）、実績側は下の「`getCreatorScenariosExecutions` レスポンスの読み方」の表の形（同 `lineKeywordResponseMatchedTrigger: { lineKeywordResponseId, name }`）。片方のキー名でもう片方を探して「trigger が無い」と誤読しない
 
 ### 親子・前後関係の読み方（S-2 の順序判定に使う）
 
@@ -97,6 +99,8 @@
 | `CONTACT_TAG_ADDED` | `contactTagAddedTrigger` | `name`（タグ名） |
 | `INFLOW_ACTION_CONVERTED` | `inflowActionConvertedTrigger` | `name`（流入経路名） |
 | `MARKETING_LEAD_BENEFIT_RECEIVED` | `marketingLeadBenefitReceivedTrigger` | `title` |
+| `LINE_KEYWORD_RESPONSE_MATCHED` | `lineKeywordResponseMatchedTrigger` | `name`（キーワード応答の設定名。**公開時点の名前**を保存したもの＝公開後に管理画面で名前を変えていれば食い違う。実機未確認）。キーワード応答は MCP に一覧・詳細ツールが無いので、**名前を得られるのは実績側だけ**（公開履歴が無い＝404 なら名前は得られない） |
+| `SCHEDULED_PROCESSING` | `scheduledProcessingTrigger` | 表示名なし。`targetType` と `scheduleRules`（発火スケジュール） |
 | `INSTALLMENT_PAYMENT_FAILED` / `SUBSCRIPTION_PAYMENT_FAILED` | なし | — |
 
 | 項目 | 意味 | 落とし穴 |
@@ -124,7 +128,7 @@
 
 | errorCode / errorDetailCode | 主に出るアクション | 意味 | 疑うべき設定ミス |
 |---|---|---|---|
-| `TARGET_USER_NOT_FOUND` / `CONTACT_NOT_FOUND` | SEND_EMAIL, SEND_LINE_MESSAGE, ADD_CONTACT_TAG, REMOVE_CONTACT_TAG, LINK_LINE_RICH_MENU, UNLINK_LINE_RICH_MENU, CONDITION(CONTACT_TAG) | 実行時点で対象コンタクトが解決できない。SEND_EMAIL では**メールアドレスを持たないコンタクトが対象**のケース、LINE配信・タグ操作では**MOSH ID からコンタクトを引けない**ケースが支配的 | 2方向ある。①LINE友だち追加・タグ付与など**メールアドレスを持たない起点**で `SEND_EMAIL` を使っている（S-5）。②`SERVICE_APPLIED` / `SERVICE_SCHEDULE_REMINDER` / 決済失敗系の**MOSH ゲスト起点**で `SEND_LINE_MESSAGE` / タグ操作 / リッチメニュー操作 / `CONDITION(CONTACT_TAG)` を使っていて、対象ゲストにコンタクト↔MOSH ID の紐付けが無い（S-5 の逆方向。紐付けの成立条件は [builder の content-schema.md](../../workflow-builder/references/content-schema.md) の「コンテキスト適合表」※3）。また LINE 系はコンタクトが解決できても、ワークフローの LINE 公式アカウントの友だちでなければ同じコードになる。**いずれもこのコンタクトの後続ステップも打ち切られる** |
+| `TARGET_USER_NOT_FOUND` / `CONTACT_NOT_FOUND` | SEND_EMAIL, SEND_LINE_MESSAGE, ADD_CONTACT_TAG, REMOVE_CONTACT_TAG, LINK_LINE_RICH_MENU, UNLINK_LINE_RICH_MENU, CONDITION(CONTACT_TAG) | 実行時点で対象コンタクトが解決できない。SEND_EMAIL では**メールアドレスを持たないコンタクトが対象**のケース、LINE配信・タグ操作では**MOSH ID からコンタクトを引けない**ケースが支配的 | 2方向ある。①LINE友だち追加・LINEキーワード応答・タグ付与など**メールアドレスを持たない起点**で `SEND_EMAIL` を使っている（S-5）。②`SERVICE_APPLIED` / `SERVICE_SCHEDULE_REMINDER` / 決済失敗系の**MOSH ゲスト起点**で `SEND_LINE_MESSAGE` / タグ操作 / リッチメニュー操作 / `CONDITION(CONTACT_TAG)` を使っていて、対象ゲストにコンタクト↔MOSH ID の紐付けが無い（S-5 の逆方向。紐付けの成立条件は [builder の content-schema.md](../../workflow-builder/references/content-schema.md) の「コンテキスト適合表」※3）。また LINE 系はコンタクトが解決できても、ワークフローの LINE 公式アカウントの友だちでなければ同じコードになる。**いずれもこのコンタクトの後続ステップも打ち切られる** |
 | `TARGET_USER_NOT_FOUND` / `GUEST_NOT_FOUND` | CONDITION(SERVICE_APPLICATION_STATUS / AUTO_WEBINAR_* / BANK_TRANSFER_STATUS), SEND_EMAIL | 対象の MOSH アカウントが解決できない。CONDITION ではコンタクトに MOSH アカウントが紐付いていない、SEND_EMAIL では MOSH アカウントのメールアドレスが取得できない | コンタクト起点のワークフローで、MOSH アカウント前提の条件（`SERVICE_APPLICATION_STATUS` / `BANK_TRANSFER_STATUS` / オートウェビナー系）を使っている（S-5 の同型。適合表では △） |
 | `REJECTED` / `LINE_BLOCKED` | SEND_LINE_MESSAGE | 相手が LINE 公式アカウントをブロック済み | 設定ミスではない。一定割合は正常。率が突出して高い場合は配信頻度・内容の問題 |
 | `QUOTA_LIMIT_ERROR` / `LINE_QUOTA_LIMIT` | SEND_LINE_MESSAGE | LINE 公式アカウントの月間配信通数上限に到達 | 設定ミスではなく運用課題。LINE 側プランの見直しを案内する |
