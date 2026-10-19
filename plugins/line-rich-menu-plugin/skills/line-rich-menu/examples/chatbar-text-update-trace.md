@@ -15,7 +15,7 @@
 ```json
 {
   "lineRichMenus": [
-    { "id": 1234, "name": "通常メニュー 2026年9月", "creatorLineChannelId": 55, "isDefault": true, "linkedCount": 0, "backgroundMoshImageId": "01JXXX...", "updatedAt": "2026-08-20T02:10:00.000Z" },
+    { "id": 1234, "name": "通常メニュー 2026年10月", "creatorLineChannelId": 55, "isDefault": true, "linkedCount": 0, "backgroundMoshImageId": "01JXXX...", "updatedAt": "2026-08-20T02:10:00.000Z" },
     { "id": 1180, "name": "購入者向けメニュー", "creatorLineChannelId": 55, "isDefault": false, "linkedCount": 312, "backgroundMoshImageId": "01JYYY...", "updatedAt": "2026-07-02T09:44:00.000Z" }
   ],
   "totalCount": 2
@@ -25,7 +25,7 @@
 2件あり、どちらか特定できない。**推測せず聞く。**
 
 > 「リッチメニューが2つあります。どちらのメニューバーの文言を変えますか？
-> ・通常メニュー 2026年9月（いま初期表示に設定されているもの）
+> ・通常メニュー 2026年10月（いま初期表示に設定されているもの）
 > ・購入者向けメニュー」
 
 **ユーザー**: 「上のやつ」
@@ -42,12 +42,12 @@
 {
   "id": 1234,
   "creatorLineChannelId": 55,
-  "name": "通常メニュー 2026年9月",
+  "name": "通常メニュー 2026年10月",
   "layout": "LEFT_RIGHT_SPLIT",
   "backgroundMoshImageId": "01JXXXXXXXXXXXXXXXXXXXXXXX",
   "areas": [
-    { "label": "A", "action": { "url": "https://mosh.jp/classes/12345", "postbackActions": null } },
-    { "label": "B", "action": { "url": null, "postbackActions": [ { "postbackActionType": "addContactTag", "contactTagId": 87 } ] } }
+    { "label": "A", "action": { "url": "https://mosh.jp/classes/12345", "postbackActions": null, "richMenuSwitch": null } },
+    { "label": "B", "action": { "url": null, "postbackActions": [ { "postbackActionType": "addContactTag", "contactTagId": 87 } ], "richMenuSwitch": null } }
   ],
   "chatBarText": "メニュー",
   "chatBarOpenByDefault": true,
@@ -63,7 +63,7 @@
 
 **4. 変更内容を提示して承認を取る**（内部の項目名・JSON は出さない）
 
-> 「通常メニュー 2026年9月 のメニューバーの文言を変更します。
+> 「通常メニュー 2026年10月 のメニューバーの文言を変更します。
 >
 > ・メニューバーの文言: 「メニュー」→「メニューを開く」
 > ・レイアウト、背景画像、左右2つのボタンの動き、開いた状態で表示する設定は**そのまま**です
@@ -82,12 +82,12 @@
 {
   "pathParams": { "id": 1234 },
   "bodyParams": {
-    "name": "通常メニュー 2026年9月",
+    "name": "通常メニュー 2026年10月",
     "layout": "LEFT_RIGHT_SPLIT",
     "backgroundMoshImageId": "01JXXXXXXXXXXXXXXXXXXXXXXX",
     "areas": [
-      { "label": "A", "action": { "url": "https://mosh.jp/classes/12345", "postbackActions": null } },
-      { "label": "B", "action": { "url": null, "postbackActions": [ { "postbackActionType": "addContactTag", "contactTagId": 87 } ] } }
+      { "label": "A", "action": { "url": "https://mosh.jp/classes/12345", "postbackActions": null, "richMenuSwitch": null } },
+      { "label": "B", "action": { "url": null, "postbackActions": [ { "postbackActionType": "addContactTag", "contactTagId": 87 } ], "richMenuSwitch": null } }
     ],
     "chatBarText": "メニューを開く",
     "chatBarOpenByDefault": true
@@ -97,7 +97,8 @@
 
 **よくある壊し方**（いずれもこの例で避けているもの）:
 
-- `areas` を省く / 空配列にする → 必須項目欠落またはレイアウトとの件数不一致で入力エラー（400）
+- `areas` を省く / 空配列にする → 必須項目欠落またはレイアウトとの件数不一致で入力エラー
+- `action` から `richMenuSwitch` などのキーを省く → 入力エラー（3キーとも、使わなくても `null` で載せる）
 - `layout` を送らない → エラー
 - `areas` を「2件だから」と `label` 順を入れ替える → 位置とラベルがズレたまま公開される（エラーにならない）
 - 取得を省いて記憶で `backgroundMoshImageId` を書く → 別の画像に置き換わる

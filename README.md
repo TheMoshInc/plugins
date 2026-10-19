@@ -13,7 +13,7 @@ MOSH が配布する [Claude Code](https://code.claude.com/) プラグインマ�
 | `applicant-reporter-plugin` | 商品の申込者・サブスク購読者を確認するための applicant-reporter skill |
 | `file-share-plugin` | ファイル共有（動画・画像・PDF）を操作するための file-share skill |
 | `product-navigator-plugin` | 商品・商品プランを参照するための product-navigator skill |
-| `line-rich-menu-plugin` | LINE リッチメニューを確認・編集・デフォルト設定・削除するための line-rich-menu skill |
+| `line-rich-menu-plugin` | LINE リッチメニューを作成・確認・編集・デフォルト設定・削除するための line-rich-menu skill |
 | `product-builder-plugin` | 商品・商品プランを作成・更新・複製・公開・削除し、クーポンを発行・管理するための product-builder skill |
 | `membership-site-builder-plugin` | 会員サイトのフォルダ・コンテンツ・タグを作成・編集・公開し、動画・音声をアップロードするための membership-site-builder skill |
 | `contact-list-manager-plugin` | コンタクト（LINE友だち / メール購読者）を検索・確認・削除・CSVインポートするための contact-list-manager skill |

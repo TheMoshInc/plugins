@@ -1,0 +1,88 @@
+{
+  "pathParams": {
+    "id": 1234
+  },
+  "bodyParams": {
+    "name": "通常メニュー 2026年10月",
+    "layout": "SIX_SPLIT",
+    "backgroundMoshImageId": "01JXXXXXXXXXXXXXXXXXXXXXXX",
+    "areas": [
+      {
+        "label": "A",
+        "action": {
+          "url": "https://mosh.jp/classes/12345",
+          "postbackActions": null,
+          "richMenuSwitch": null
+        }
+      },
+      {
+        "label": "B",
+        "action": {
+          "url": "https://mosh.jp/classes/12345/reservations",
+          "postbackActions": null,
+          "richMenuSwitch": null
+        }
+      },
+      {
+        "label": "C",
+        "action": {
+          "url": null,
+          "postbackActions": [
+            {
+              "postbackActionType": "sendMessage",
+              "messages": [
+                {
+                  "messageType": "text",
+                  "message": "お問い合わせありがとうございます。営業時間内に順次ご返信します。"
+                }
+              ]
+            }
+          ],
+          "richMenuSwitch": null
+        }
+      },
+      {
+        "label": "D",
+        "action": {
+          "url": null,
+          "postbackActions": [
+            {
+              "postbackActionType": "addContactTag",
+              "contactTagId": 87
+            }
+          ],
+          "richMenuSwitch": null
+        }
+      },
+      {
+        "label": "E",
+        "action": {
+          "url": "https://mosh.jp/classes/12345/tickets",
+          "postbackActions": [
+            {
+              "postbackActionType": "addContactTag",
+              "contactTagId": 88
+            },
+            {
+              "postbackActionType": "removeContactTag",
+              "contactTagId": 87
+            }
+          ],
+          "richMenuSwitch": null
+        }
+      },
+      {
+        "label": "F",
+        "action": {
+          "url": null,
+          "postbackActions": null,
+          "richMenuSwitch": {
+            "richMenuId": 1180
+          }
+        }
+      }
+    ],
+    "chatBarText": "メニュー",
+    "chatBarOpenByDefault": true
+  }
+}
