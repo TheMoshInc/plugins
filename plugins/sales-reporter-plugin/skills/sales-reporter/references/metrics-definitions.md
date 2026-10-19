@@ -1,6 +1,6 @@
 # 売上数値の定義
 
-このツールが返す数値の意味。ユーザーに数値を提示するとき、および「管理画面と数が違う」と指摘されたときの説明根拠として使う。
+売上系ツール（サマリー・明細・`postCreatorPaymentSalesAggregate`）が返す数値の意味。ユーザーに数値を提示するとき、および「管理画面と数が違う」と指摘されたときの説明根拠として使う。
 
 ## 申込ベースとは
 
@@ -38,6 +38,27 @@
 |---|---|---|
 | サマリー (`summary.totalCount` / `rows[].count` / `plans[].count`) | 契約単位 | **1 件** |
 | 明細 (`pageInfo.totalCount`) | 注文単位 | 支払回ごとに 1 行（未決済の将来回は含まない） |
+| 絞り込み集計 (`grandTotalCount` / `rows[].count` / `services[].count`) | 契約単位 | **1 件** |
+
+## 申込者数の定義（`postCreatorPaymentSalesAggregate` のみ）
+
+`applicantsCount` は**ユニーク購入者数**。同じゲストが期間内に何度申し込んでも 1 人と数える。件数（契約数）とは一致しない。
+
+| フィールド | 範囲 |
+|---|---|
+| `applicantsCount`（トップレベル） | 指定期間全体のユニーク人数 |
+| `rows[].applicantsCount` | その期間（日・月）内のユニーク人数 |
+| `rows[].services[].applicantsCount` | その期間・そのプラン内のユニーク人数 |
+
+**申込者数は足し算できない。** 同じ人が複数の月・複数のプランに出てくるため、次はいずれも全体の申込者数にならない。
+
+- `rows[].applicantsCount` の合計（月ごとの人数を足したもの）
+- `services[].applicantsCount` の合計
+- 365 日を超える期間を分けて取得したときの、各回の `applicantsCount` の合計
+
+金額・件数は分けて取った値を合算してよい。365 日を超える期間の申込者数を求められたときの対応は [playbooks.md](playbooks.md) の 6。
+
+なお `getCreatorProductsApplications` / `getCreatorProductsApplicationsSummary`（新規申込人数）・`getCreatorProductSalesStatus`（今月の申込者数）が返す「申込人数」「申込者数」は、数え方も対象範囲も上記と違う別の数値。混ぜて比べない。
 
 ## サマリーと明細が一致しない理由
 
@@ -53,6 +74,27 @@
 | 支払い期限切れの注文 | 申込月の計上は残る（銀行振込・サブスクを除く） | 行として出る（`paymentStatus` が `rejected`） |
 
 **合計金額を出すときは必ずサマリーを使い、明細を足し合わせない。**
+
+## 絞り込み集計（`postCreatorPaymentSalesAggregate`）の金額・件数
+
+| フィールド | 意味 |
+|---|---|
+| `grandTotalAmount` | 期間全体の売上金額（円）。上記「申込ベースとは」と同じ計上（申込月に契約満額・税込・手数料控除前） |
+| `salesAmount` | `grandTotalAmount` と同じ合計 |
+| `grandTotalCount` | 期間全体の件数（契約数。分割払いは 1 契約を 1 件） |
+| `rows[].totalAmount` / `rows[].count` | 期間（日・月）ごとの金額・契約数 |
+
+計上対象は決済手段で変わり、上の「申込ベースとは」の表と同じ扱いになる（OpenAPI の `grandTotalAmount` 記述）。
+
+- カード決済の単発・分割払い: **キャンセル・支払い期限切れの契約も含む**
+- サブスクリプション: **入金済みの請求のみ**
+- 銀行振込: **一度でも入金されたもののみ**（振込後にキャンセルされたものは含む。振込前のキャンセル・振込待ちは含まない）
+
+**サマリーとは別の集計 API から返る値。** 計上の考え方は同じ申込ベースだが、同じ期間・同じ絞り込みでもサマリーと一致することは保証されていない（裏取り範囲外）。1 つの回答の中で、サマリーの金額と `postCreatorPaymentSalesAggregate` の金額を混ぜて足し引きしない。食い違いを指摘されたら、別の集計であることを伝え、推測で原因を断定しない。
+
+内訳 `rows[].services[]` は `serviceId` / `serviceName` / `count` / `applicantsCount` / `totalAmount` だけで、商品名・プラン名・商品 ID は返らない。
+
+裏取り元: taiyaki `origin/main`（e31f30fed0, 2026-10-16）の `openapi/paths/creator/payment/sales-aggregate.yml` / `openapi/schemas/creator-sales-aggregate.yml`、実装 `packages/backend/src/handlers/creator-payment-sales/creator-payment-sales.handlers.ts`。
 
 ## 期間の扱い
 
@@ -107,7 +149,7 @@ MOSH で**入金**とは、決済プロバイダからクリエイターの銀�
 
 | フィールド | 意味 |
 |---|---|
-| `paymentType` | `oneTime`（一括） / `moshInstallment`（分割入金型） / `cardInstallment`（一括入金型） |
+| `paymentType` | `oneTime`（一括） / `moshInstallment`（MOSH の分割払い・分割入金型） / `cardInstallment`（カード会社の分割払い・一括入金型）。同じ値で `postCreatorPaymentSalesAggregate` の絞り込みができる |
 | `totalPaymentCount` | 契約の総支払い回数（一括なら 1） |
 | `currentPaymentNumber` | その注文が何回目の支払いか（1 始まり） |
 
@@ -118,8 +160,11 @@ MOSH で**入金**とは、決済プロバイダからクリエイターの銀�
 - 返金額・返金の有無
 - 手数料控除後の金額（クリエイターの手取り）
 - 分割払いの残債・未回収額
-- ゲストの名前・メールアドレス（`guestId` のみ返る）
-- 購入者のユニーク人数（件数は延べ）
+- ゲストの名前・メールアドレス（明細は `guestId` のみ。`postCreatorPaymentSalesAggregate` も合計値だけで、誰が一致したかは返らない）
+- 顧客ごとの売上ランキング・LTV の一覧（特定のゲストの合計だけは `guestKeyword` で取れるが、部分一致の合算になる）
+- 365 日を超える期間の申込者数（分けて取得した申込者数は合算できない）
 - 入金の状況（クリエイター口座への着金。売上とは別概念で、管理画面の入金一覧の領域）
 - **決済済みかどうかの判定**（`paymentStatus` も `paidAt` も決済の確認結果ではない）
 - 実際の支払額（過入金・金額不足の判別）
+
+購入者のユニーク人数（申込者数）は、365 日以内なら `postCreatorPaymentSalesAggregate` の `applicantsCount` で取得できる（サマリー・明細の件数は延べ）。定義は「申込者数の定義」を参照。
