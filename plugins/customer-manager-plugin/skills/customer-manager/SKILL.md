@@ -1,6 +1,6 @@
 ---
 name: customer-manager
-description: MOSH のサービス購入者＝ゲスト（顧客）を MCP 経由で検索・件数確認し、顧客1人の詳細（プロフィール・付いているタグ・申込/予約履歴）を確認し、顧客タグの作成・付与・解除を行うスキル。「顧客一覧を見せて」「◯◯さんっていう顧客を探して」「このサービスを買った人は誰？」「ゲストは何人いる？」「サブスク継続中の顧客は何人いる？」「メール受信OKの顧客だけ絞って」「VIPタグの顧客を出して」「この顧客の電話番号と付いてるタグを見せて」「◯◯さんの申込履歴を教えて」「顧客にVIPタグを付けて」「新しい顧客タグを作って付けて」「この人からタグを外して」「顧客タグの一覧を見せて」など、`postCustomersSearch` / `getCreatorCustomer` / `getCreatorCustomerReservations` / `getCreatorCustomerTags` / `postCreatorCustomerTags` / `postCreatorCustomerTagCustomers` / `deleteCreatorCustomerTagCustomer` を使うリクエストで必ず起動し、顧客タグとコンタクトタグの取り違え防止・書き込み前の承認ゲート・個人情報の提示ルールを適用する。顧客カルテ（メモ・画像）の閲覧編集、プロフィール編集、顧客の削除、顧客タグ自体の名前変更・削除は MCP からできない。LINE友だち・メール購読者の「コンタクトリスト」とそのタグは別概念のため対象外（contact-list-manager / workflow-builder の担当）。
+description: MOSH のサービス購入者＝ゲスト（顧客）を MCP 経由で検索・件数確認し、顧客1人の詳細（プロフィール・付いているタグ・申込/予約履歴）を確認し、顧客タグの作成・付与・解除を行うスキル。「顧客一覧を見せて」「◯◯さんっていう顧客を探して」「このサービスを買った人は誰？」「ゲストは何人いる？」「サブスク継続中の顧客は何人いる？」「メール受信OKの顧客だけ絞って」「VIPタグの顧客を出して」「この顧客の電話番号と付いてるタグを見せて」「◯◯さんの申込履歴を教えて」「顧客にVIPタグを付けて」「新しい顧客タグを作って付けて」「この人からタグを外して」「顧客タグの一覧を見せて」など、`postCustomersSearch` / `getCreatorCustomer` / `getCreatorCustomerReservations` / `getCreatorCustomerTags` / `postCreatorCustomerTags` / `postCreatorCustomerTagCustomers` / `deleteCreatorCustomerTagCustomer` を使うリクエストで必ず起動し、顧客タグとコンタクトタグの取り違え防止・書き込み前の承認ゲート・個人情報の提示ルールを適用する。顧客カルテ（メモ・画像）の閲覧編集、プロフィール編集、顧客の削除、顧客タグ自体の名前変更・削除は MCP からできない。LINE友だち・メール購読者の「コンタクトリスト」とそのタグ（コンタクトタグの作成・名前変更・付け外し）は別概念のため対象外（contact-list-manager の担当。条件を満たしたら自動でタグを付けるワークフロー・ステップ配信は workflow-builder の担当）。
 ---
 
 # MOSH 顧客管理（サービス購入者の検索・詳細確認・顧客タグ）
@@ -30,10 +30,10 @@ description: MOSH のサービス購入者＝ゲスト（顧客）を MCP 経由
 
 ## When NOT to use
 
-- **コンタクト（LINE友だち・メール購読者）の検索・削除・CSVインポート** → `contact-list-manager` スキル。顧客とは別概念（[references/customer-vs-contact.md](references/customer-vs-contact.md)）
+- **コンタクト（LINE友だち・メール購読者）の検索・削除・CSVインポート、コンタクトタグの作成・名前変更・付け外し** → `contact-list-manager` スキル。顧客とは別概念（[references/customer-vs-contact.md](references/customer-vs-contact.md)）
 - **メルマガ・LINE の一斉配信を作る／送る** → `contact-broadcast` スキル
 - **顧客管理からの一斉配信を送る／編集する／取り消す** → `customer-broadcast` スキル
-- **コンタクトへのタグ付与・ステップ配信の構築** → `workflow-builder` スキル（そこで扱うのは**コンタクトタグ**）
+- **条件を満たしたら自動でタグを付け外しするワークフロー・ステップ配信の構築** → `workflow-builder` スキル（そこで扱うのも**コンタクトタグ**）
 - **顧客カルテ（メモ・画像）の閲覧・編集、プロフィール編集、顧客の削除、顧客タグ自体の名前変更・削除** → MCP に手段が無い（必須ルールD）。管理画面「顧客一覧」を案内する
 - **売上・注文明細の金額集計** → `sales-reporter` スキル
 - **商品・プランの内容やプラン価格の確認** → `product-navigator` スキル
@@ -83,7 +83,7 @@ description: MOSH のサービス購入者＝ゲスト（顧客）を MCP 経由
 
 ### A. 顧客タグとコンタクトタグを混同しない【最重要】
 
-`getCreatorContactTags` が返す**コンタクトタグ**の id は、`tagIds` / `excludeTagIds`・付与・解除の**どれにも渡してはならない**。コンタクトタグ側の書き込みツール（`postCreatorContactTags` 等）で顧客へのタグ付けを代用しない。
+`getCreatorContactTags` が返す**コンタクトタグ**の id は、`tagIds` / `excludeTagIds`・付与・解除の**どれにも渡してはならない**。コンタクトタグ側の書き込みツール（`postCreatorContactTags` / `postCreatorContactTagContacts` 等）で顧客へのタグ付けを代用しない。
 
 - **見分け方**: **整数の id が手元にあればコンタクトタグ由来を疑う**（文字列化すると見た目で区別できない理由は [references/customer-vs-contact.md](references/customer-vs-contact.md)）
 - 同名のタグが両方に存在し得るため、名前の一致は同一である根拠にならない

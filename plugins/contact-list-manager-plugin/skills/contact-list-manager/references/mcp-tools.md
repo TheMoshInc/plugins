@@ -1,8 +1,8 @@
 # MCPツール仕様（正本）
 
-本スキルが使う7ツールと、条件に使う ID を解決する4ツールのパラメータ・制約・エラーの正本。検索リクエスト/レスポンスの構造だけは [search-schema.md](search-schema.md) が正本。CSVインポートの手順とCSV形式は [csv-import.md](csv-import.md) が正本。
+本スキルが使うツール（詳細取得・削除・検索・CSVインポート・コンタクトタグ操作）と、条件に使う ID を解決する4ツールのパラメータ・制約・エラーの正本。検索リクエスト/レスポンスの構造だけは [search-schema.md](search-schema.md) が正本。CSVインポートの手順とCSV形式は [csv-import.md](csv-import.md) が正本。
 
-> 本ファイルのパラメータ・制約・エラーは、MOSH の API スキーマ定義で確認したもの（2026-09 時点）。
+> 本ファイルのパラメータ・制約・エラーは、MOSH の API スキーマ定義で確認したもの（コンタクトタグ操作は 2026-10 時点、それ以外は 2026-09 時点）。
 > 値を書き換えるときは、記憶や推測ではなく MOSH の API スキーマ定義で裏取りする。
 
 ## 詳細取得
@@ -78,11 +78,81 @@
 - 手順・CSV形式・取り込み時の挙動は [csv-import.md](csv-import.md)
 - **進捗・結果を取得するツールは MCP に公開されていない**（`getCreatorContactsEmailCsvImportJobsLatest` は存在するが `mcp` タグが無い）
 
+## コンタクトタグ操作
+
+### 共通ルール
+
+- **タグ id は `getCreatorContactTags` の id だけ。** `getCreatorCustomerTags` が返す顧客タグは別体系で、id を混用してはならない（数値が偶然一致すると、404 にならず同じ数値の別のコンタクトタグが書き換わる）。存在しない id・他クリエイターのタグは 404
+- **タグはコンタクト（`contactId`）単位で付く。** LINE とメールの両方を持つコンタクトでは、両方の一覧・配信条件に反映される
+- **副作用**: 新しく付いたコンタクトについては、タグ付与をトリガーにしたワークフローが起動する（配信まで進むと取り消せない）。既に付いていた人は変化せず、起動もしない。**解除ではワークフローは起動しない**。解除を取り消して付け直すと新規付与扱いになり、ワークフローが起動する
+- 付け外しの返り値は `{ "message": "OK" }` のみで、**件数は返らない**
+
+### タグの作成・名前変更
+
+| ツール | 入力 | 挙動 |
+|---|---|---|
+| `postCreatorContactTags` | `{ "name": "<1〜64文字>" }` | 新規作成は 201、**同名のタグが既にあれば作らずに既存の `id` を 200 で返す（冪等）**。作った id はそのまま付与に使える |
+| `patchCreatorContactTag` | パス `id` + `{ "name": "<1〜64文字>" }` | 変わるのは名前だけ。付与・ワークフロー・配信条件は id で参照しているため、**全利用箇所に新しい名前が反映される**。同じ名前のままなら何もせず 200。**別のタグと同じ名前にすると 422**（応答の `message` をそのままユーザーに伝える）。タグ自体の削除はできない |
+
+`getCreatorContactTags` の使い方: `keyword`（タグ名の部分一致・大文字小文字を区別しない・64文字まで）で名前から絞れる。部分一致なので、返ってきた中から**名前が完全に一致するタグ**を選ぶ（完全一致が無く候補が複数あるなら、ユーザーに選んでもらう）。`limit` は最大100、続きは `offset`。`isContactCountsIncluded` は付与人数が必要なときだけ `true`（集計が重い。名前から id を引くだけなら付けない）。指定された名前のタグが無ければ、既存タグを提示して選び直してもらうか、`postCreatorContactTags` で作る。
+
+### 名指しで付ける・外す
+
+| ツール | 入力 |
+|---|---|
+| `postCreatorContactTagContacts`（付与） / `deleteCreatorContactTagContacts`（解除） | パス `id`（タグID） + `{ "contactIds": [9012, 9013] }`（1件以上） |
+
+- **`contactIds` は検索結果の `contacts[].contactId`**（`contacts[].id` ではない。詳細取得・削除とは逆）。メール検索・LINE 検索どちらの結果の `contactId` でもよい
+- `contactIds` に他クリエイター・存在しないコンタクトが**1件でも含まれると 404 で全件が反映されない**（部分反映なし）
+- 付与: 既に付いている人はそのまま（何度実行しても同じ）。解除: 付いていない人はスキップされエラーにならない。コンタクト自体も他のタグも消えない
+- 大人数・条件で決まる対象は、次の検索条件一括を使う（ツール定義の指定）
+
+### 検索条件で一括して付ける・外す（ByCondition）
+
+| 対象 | 付与 / 解除 | リクエストボディ |
+|---|---|---|
+| メール | `postCreatorContactTagContactsEmailByCondition` / `deleteCreatorContactTagContactsEmailByCondition` | `{ "keyword": "", "filters": { ... } }` |
+| LINE | `postCreatorContactTagContactsLineByCondition` / `deleteCreatorContactTagContactsLineByCondition` | `{ "keyword": "", "lineChannelId": null, "filters": { ... } }` |
+
+パスの `id` はタグID。
+
+- **全キー必須**。`keyword` は絞らないなら空文字。`filters` の中身は同じ系統の検索と同じ構造・同じ意味（[search-schema.md](search-schema.md)。中のキーも全キー必須）。`limit` / `offset` / `sort` は無い
+- **同じ `keyword` / `filters` で検索すると、検索結果と同じ集合が対象になる**（実行時点の集合）
+- **`filters: null` は削除済みを除く全コンタクトが対象になる。** ユーザーが「全員」と明言し、その件数で承認した場合以外は使わない
+- **LINE の `lineChannelId` はキー自体が必須**。全 LINE公式アカウント横断なら、検索では `lineChannelId` を省略し、このツールでは `null` を渡す。特定アカウントなら両方に同じ id を渡す
+
+**実行前の件数確認（必須）**: 同じ条件で検索（`limit: 1`）し、`filteredCount` とタグ名を提示して承認を得る。**0件なら「該当なし」と伝えて実行しない。** `filteredCount` はメールアドレス単位／LINE友だち単位で、タグはコンタクト単位で付くため、実際に変わるコンタクト数はこれ以下になることがある（「最大 N 件」と伝えるのは可）。
+
+付与のとき（新しく付く件数＝ワークフローの起動対象を数える）:
+
+1. 元の条件で検索し、`filteredCount`（条件に合う件数。付与済みを含む）を得る
+2. `filters.tag.id` に `{ "value": <付与するタグid>, "operator": "ne" }` を加えて検索し、その `filteredCount` を**新しく付く件数**として提示する。`filters` が `null` のときは、`tag` 以外を `null` にした `filters` を作って加える
+   - 同じタグ id が既に `ne` で入っている → 加えない（手順1の件数がそのまま新規件数）
+   - 同じタグ id が `eq` で入っている → 全員付与済み。**新規件数・ワークフロー起動対象は0件**と提示する（手順1の件数を新規件数として出さない）
+   - `filters.tag.id` が既に5件 → 加えられない。手順1の件数を上限の目安として提示する
+   - 同じタグ id の重複指定（`eq` と `ne` の同時指定を含む）は 400
+3. **付与の実行は元の条件で行う**（`ne` を加えた条件ではない）
+
+解除のとき（付いている件数を数える）:
+
+1. **件数確認の検索と解除ツールの両方で**、`filters.tag.id` に `{ "value": <外すタグid>, "operator": "eq" }` を必ず含める。これで `filteredCount` がそのタグの付いている件数になる。`filters` が `null` のときは、`tag` 以外を `null` にした `filters` を作って加える
+   - 既に `eq` で入っている → そのまま使う
+   - `ne` で入っている → 対象は0件。「該当なし」と伝えて実行しない
+   - `filters.tag.id` が既に5件で `eq` を加えられない → 元の条件で検索し（100件ごとに `offset` を進める）、`contacts[].tags` に外すタグを含むコンタクトの `contactId` を集めて `deleteCreatorContactTagContacts` で解除する
+
+### タグ操作のエラー
+
+| コード | 意味 | 対処 |
+|---|---|---|
+| 400 | 入力不正（名前が1〜64文字の範囲外、タグ条件の同じ id の重複・6件以上、`filters` のキー欠落 など） | 構造を確認して組み直す |
+| 404 | タグが無い（顧客タグの id を渡した・存在しない・他クリエイター）。名指しでは `contactIds` に不正な値が1件でもある | 全件未反映。タグを `getCreatorContactTags` で、`contactId` を検索で取り直す |
+| 422 | 名前変更で、同じ名前の別タグが既にある | 応答の `message` をそのまま伝え、別の名前を確認する |
+
 ## 条件に使う ID を解決するツール
 
 | 解決したいもの | ツール | 備考 |
 |---|---|---|
-| コンタクトタグID | `getCreatorContactTags` | タグ名から `id` を引く。該当が無ければ既存タグを提示して選び直してもらう |
+| コンタクトタグID | `getCreatorContactTags` | タグ名から `id` を引く（使い方は上の「タグの作成・名前変更」）。該当が無ければ既存タグを提示して選び直してもらう |
 | 流入経路ID | `getCreatorScenariosInflowActions` | `creatorLineChannelId` を渡すとそのアカウント分、未指定で全件 |
 | リッチメニューID | `getCreatorLineRichMenus` | 最終更新日時の降順 |
 | LINE公式アカウントID | `getCreatorLineChannels` | 作成日時の降順（最新が先頭） |
@@ -96,5 +166,8 @@
 | CSVインポートの最新ジョブ状況 | `getCreatorContactsEmailCsvImportJobsLatest` | `mcp` タグ無し |
 | 条件一括でのコンタクト更新・削除 | `patchCreatorContactsEmailByCondition` / `patchCreatorContactsLineByCondition` | `mcp` タグ無し |
 | LINE友だちリストの同期・一括取り込み | `postCreatorContactsLineFriendImportJobs` / `getCreatorContactsLineFriendImportJobsLatest` | `mcp` タグ無し |
+| タグ自体の削除 | `deleteCreatorContactTag` | `mcp` タグ無し（復元不可で、使用中のワークフロー・未送信の配信が参照していると拒否される仕様） |
+| タグを使っているワークフロー・配信の確認 | `getCreatorContactTagsUsages` | `mcp` タグ無し |
+| 1人のコンタクトから1タグを外す（旧形式） | `deleteCreatorContactTagContact` | `mcp` タグ無し。`deleteCreatorContactTagContacts` に `contactId` 1件を渡せば同じことができる |
 
-いずれも MOSH 管理画面での操作を案内する。コンタクトを1件ずつ新規作成するエンドポイント、および個別コンタクトにタグを付け外しするエンドポイントは、このドメインに存在しない。
+いずれも（最後の行を除き）MOSH 管理画面での操作を案内する。コンタクトを1件ずつ新規作成するエンドポイントは、このドメインに存在しない。

@@ -58,7 +58,7 @@
     {
       "name": "contact-list-manager-plugin",
       "source": "./plugins/contact-list-manager-plugin",
-      "description": "Adds a contact-list-manager skill for searching, inspecting, deleting and CSV-importing MOSH contacts (LINE friends and email subscribers)"
+      "description": "Adds a contact-list-manager skill for searching, inspecting, deleting and CSV-importing MOSH contacts (LINE friends and email subscribers), and for creating, renaming, adding and removing contact tags"
     },
     {
       "name": "customer-manager-plugin",

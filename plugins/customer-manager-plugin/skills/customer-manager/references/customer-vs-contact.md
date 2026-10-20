@@ -2,7 +2,7 @@
 
 「顧客」と「コンタクト」は MOSH の別機能・別データ・**別のタグID体系**。依頼をどちらとして扱うかを最初に確定するために読む。
 
-> 本ファイルの区分・タグID体系・管理画面の対応は、MOSH の管理画面と API スキーマ定義で確認したもの（2026-09 時点）。
+> 本ファイルの区分・タグID体系・管理画面の対応は、MOSH の管理画面と API スキーマ定義で確認したもの（2026-09 時点。コンタクトタグの作成・名前変更・付与・解除の行は 2026-10 時点）。
 > 値を書き換えるときは、記憶や推測ではなく MOSH の API スキーマ定義で裏取りする。
 
 ## 2つの概念
@@ -22,10 +22,10 @@
 
 | | 顧客タグ | コンタクトタグ |
 |---|---|---|
-| 使う場所 | `postCustomersSearch` の `tagIds` / `excludeTagIds`、顧客への付与・解除 | ワークフローのタグ付与・条件ステージ、コンタクト検索の `filters.tag` |
+| 使う場所 | `postCustomersSearch` の `tagIds` / `excludeTagIds`、顧客への付与・解除 | コンタクトへの付与・解除、ワークフローのタグ付与・条件ステージ、コンタクト検索の `filters.tag` |
 | 一覧を取る MCP ツール | `getCreatorCustomerTags` | `getCreatorContactTags` |
-| 作成する MCP ツール | `postCreatorCustomerTags`（顧客1人への付与とセット） | `postCreatorContactTags` |
-| 付与・解除する MCP ツール | `postCreatorCustomerTagCustomers` / `deleteCreatorCustomerTagCustomer` | workflow-builder（ワークフローのタグ付与アクション） |
+| 作成・名前変更する MCP ツール | `postCreatorCustomerTags`（作成のみ。顧客1人への付与とセット。名前変更は MCP に無い） | `postCreatorContactTags` / `patchCreatorContactTag`（contact-list-manager スキル） |
+| 付与・解除する MCP ツール | `postCreatorCustomerTagCustomers` / `deleteCreatorCustomerTagCustomer` | 今いるコンタクトへの手動・一括: `postCreatorContactTagContacts` / `deleteCreatorContactTagContacts`（名指し）、`*ContactTagContacts*ByCondition`（検索条件で一括）＝contact-list-manager スキル。条件を満たしたら自動で付け外し: ワークフローの `ADD_CONTACT_TAG` / `REMOVE_CONTACT_TAG`＝workflow-builder スキル |
 
 どちらの一覧ツールも呼べてしまうが、**コンタクトタグの id を顧客タグとして使ってはならない**（逆も同じ）。ID空間が違うのに、**エラーになるとは限らない**:
 
@@ -51,10 +51,10 @@
 |---|---|
 | 「顧客一覧を見せて」「このサービスの購入者は？」「サブスク継続中の人は何人？」 | 本スキル |
 | 「この顧客の電話番号・タグ・申込履歴を見せて」「顧客にタグを付けて／外して」「顧客タグの一覧」 | 本スキル |
-| 「LINEの友だちは何人？」「メールのコンタクトを探して」「コンタクトを削除して」「CSVで取り込んで」 | contact-list-manager |
+| 「LINEの友だちは何人？」「メールのコンタクトを探して」「コンタクトを削除して」「CSVで取り込んで」「LINE友だちにタグを付けて／外して」「タグAの友だち全員にタグBを付けて」「コンタクトタグを作って／名前を変えて」 | contact-list-manager |
 | 「メルマガを送りたい」「LINEで一斉配信したい」 | contact-broadcast |
 | 「購入者にお知らせを送りたい」「顧客に一斉連絡」 | customer-broadcast |
-| 「コンタクトにタグを付けたい」「ステップ配信を組みたい」 | workflow-builder |
+| 「申し込んだら自動でタグを付けたい」「ステップ配信を組みたい」 | workflow-builder |
 | 「顧客カルテを見たい・書きたい」「顧客を削除したい」「顧客タグの名前を変えたい・タグ自体を消したい」 | MCP に手段が無い。管理画面「顧客一覧」を案内 |
 | 「売上・注文の明細と金額が見たい」 | sales-reporter |
 | 「この商品のサブスク申込者を登録日順に見たい」 | `postCreatorProductSubscribers`（商品単位のサブスク購読者検索。本スキルの守備範囲外） |

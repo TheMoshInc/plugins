@@ -232,4 +232,4 @@
 | 顧客とのチャット履歴 | `getCreatorCustomerChats` | 管理画面 |
 | 絞り込み用サービス一覧の直接取得 | `getCreatorCustomersFiltersServices` | `product-navigator` 経由（上記「serviceIds / subscriptionIds」） |
 
-**他ドメインの MCP ツールで代用しない。** `getCreatorContactTags` / `postCreatorContactTags`（コンタクトタグ）は呼べるが、顧客タグとは**別体系**（[customer-vs-contact.md](customer-vs-contact.md)）。
+**他ドメインの MCP ツールで代用しない。** `getCreatorContactTags` / `postCreatorContactTags` / `postCreatorContactTagContacts` などコンタクトタグ系（contact-list-manager の担当）は呼べるが、顧客タグとは**別体系**（[customer-vs-contact.md](customer-vs-contact.md)）。

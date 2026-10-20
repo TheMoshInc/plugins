@@ -9,7 +9,7 @@
 ## やってはいけない処理
 
 - いきなり `postCreatorCustomerTags` を対象者の人数分呼ぶ（既存タグの付与は一括ツールで足りる。承認も取っていない）
-- `postCreatorContactTags`（コンタクトタグ）で代用する
+- `postCreatorContactTags` / `postCreatorContactTagContacts`（コンタクトタグ）で代用する
 - 対象者を検索せずに「付与しました」と報告する
 - 一覧に「英会話 2026」（半角スペース入り）があるのに、確認せず別タグ「英会話2026」を新規作成する
 
