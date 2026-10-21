@@ -71,6 +71,7 @@
 | `price` | 必須 | 必須 | `{ amount, currency }`。`currency` は `JPY` |
 | `discountPrice` | 必須 | 任意 | 割引前の価格（打ち消し線で表示される元値）。無いなら `null`。指定するなら 1 円以上、かつ**価格より大きい**。**買い切り（`ONE_TIME`）のみ**。サブスクリプションでは `null` |
 | `paymentMethods` | 必須 | 必須 | `{ method, isEnabled }` の配列。買い切りでは 1 つ以上を有効にする |
+| `bankTransferDeadlineDays` | 必須 | 任意 | 銀行振込の振込期限（申込からの日数、1〜99）。**`null` は標準の 15 日**。銀行振込を有効にした買い切りプランでだけ日数を入れ、それ以外は `null`。期限までに入金が確認できない申込は自動でキャンセルされる。更新で省略すると現在値のまま |
 | `billingCycle` | 必須 | 必須（変更不可） | 課金サイクル（下の変換表） |
 | `benefits` | 必須 | 必須 | 特典内容。サブスクリプションで使い、買い切りでは `[]` を送る。**最大 10 件・各 50 文字** |
 | `installmentType` | 必須 | 必須 | 分割払いタイプ（下の変換表） |
@@ -98,6 +99,7 @@
 | `capacity` | `0` | 定員なし |
 | `showRemaining` / `remainingThreshold` | `false` / `0` | 残席を出さない |
 | `paymentMethods` | クレジットカードのみ有効 | 銀行振込は明示的な希望があるときだけ |
+| `bankTransferDeadlineDays` | `null` | 標準の 15 日。銀行振込を有効にし、日数の指定があるときだけ入れる |
 | `installmentType` / `installmentIterations` | `LUMP_SUM` / `[]` | 一括払い |
 | `benefits` | `[]` | 特典なし |
 | `discountPrice` | `null` | 割引表示なし |

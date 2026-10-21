@@ -12,6 +12,7 @@
     { "method": "CARD", "isEnabled": true },
     { "method": "BANK_TRANSFER", "isEnabled": false }
   ],
+  "bankTransferDeadlineDays": null,
   "billingCycle": "ONE_TIME",
   "benefits": [],
   "installmentType": "LUMP_SUM",

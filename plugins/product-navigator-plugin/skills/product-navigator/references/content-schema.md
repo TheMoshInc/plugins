@@ -35,6 +35,7 @@
 | `showRemaining` / `remainingThreshold` | 残席数表示の有無 / 表示閾値 |
 | `price` | `{ amount, currency }`。`JPY` なら「◯◯円」と表記 |
 | `paymentMethods` | 支払い方法と有効/無効（下の変換表）。`isEnabled: false` のものは「利用不可」として扱う |
+| `bankTransferDeadlineDays` | 銀行振込の振込期限（申込からの日数）。`null` は標準の 15 日。銀行振込が無効なプランでは使われないので提示しない |
 | `billingCycle` | 課金サイクル（下の変換表） |
 | `iterations` | 課金回数（サブスクリプションのみ。`null` は無制限） |
 | `benefits` | 特典内容（サブスクリプションのみ） |

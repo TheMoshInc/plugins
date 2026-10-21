@@ -13,6 +13,7 @@
     { "method": "CARD", "isEnabled": true },
     { "method": "BANK_TRANSFER", "isEnabled": false }
   ],
+  "bankTransferDeadlineDays": null,
   "billingCycle": "MONTHLY",
   "iterations": 12,
   "benefits": ["月2回のオンラインレッスン", "レッスン録画の見放題"],

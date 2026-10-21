@@ -65,6 +65,7 @@
 | `price` | ○ | `{ amount, currency }`。`currency` は `JPY` |
 | `discountPrice` | ○ | 割引前価格。無いなら `null`。1 円以上かつ**価格より大きい**。**買い切り（`ONE_TIME`）のみ**。サブスクリプションでは `null` |
 | `paymentMethods` | ○ | `{ method, isEnabled }` の配列。`method` は `CARD` / `BANK_TRANSFER` |
+| `bankTransferDeadlineDays` | ○ | 銀行振込の振込期限（申込からの日数）。1〜99 または `null`。**`null` は標準の 15 日**。銀行振込が無効なプラン（サブスクリプションは常に無効）では `null` を送る。日数を送ると拒否される |
 | `billingCycle` | ○ | `ONE_TIME` / `MONTHLY` / `YEARLY` |
 | `benefits` | ○ | 文字列の配列。**最大 10 件・各 50 文字**。買い切りでは `[]` |
 | `installmentType` | ○ | `LUMP_SUM` / `INSTALLMENT_LUMP_DEPOSIT` / `INSTALLMENT` |
@@ -86,9 +87,11 @@
 
 `productId` / `productPlanId`（ともにパス。数値文字列）で対象を指定する。
 
-**部分更新には対応していない。** body は `initialPrice` / `iterations` / `discountPrice` / `applicationPeriods` 以外すべて必須で、作成時の項目に `isSuspended`（販売受付だけ止めるフラグ）が加わり、`billingStartType` / `billingStartAbsoluteDate` / `billingStartRelativeOffsetDays` は**項目自体が無い**（課金開始日は作成時のまま変わらない）。
+**部分更新には対応していない。** body は `initialPrice` / `iterations` / `discountPrice` / `applicationPeriods` / `bankTransferDeadlineDays` 以外すべて必須で、作成時の項目に `isSuspended`（販売受付だけ止めるフラグ）が加わり、`billingStartType` / `billingStartAbsoluteDate` / `billingStartRelativeOffsetDays` は**項目自体が無い**（課金開始日は作成時のまま変わらない）。
 
 送る前に `getCreatorProductPlan` で現在値を読み、変えない項目もそのまま含める。
+
+`bankTransferDeadlineDays` は省略すると現在値のまま、`null` を送ると標準の 15 日に戻る。銀行振込を無効にする更新では、残っていた期限も消える。
 
 拒否される変更:
 
@@ -97,6 +100,7 @@
 | `billingCycle` / `iterations` / `initialPrice` を現在値と違う値にする | 拒否される。新しいプランを作る |
 | 公開中または購入者がいるサブスクリプションプランの `name` / `price` を変える | 拒否される。`isNameEditable` / `isPriceEditable` で事前判定できる |
 | `capacity` を現在の購読者数より小さくする | 拒否される |
+| 銀行振込が無効なプラン（更新後の状態で判定）に `bankTransferDeadlineDays` の日数を送る | 拒否される（「振込期限は銀行振込を有効にしたプランでのみ設定できます。」）。現在値と同じ値の送り返しは通る |
 
 ### `patchCreatorProductProductPlansReorder` — プランの表示順を一括更新
 
