@@ -171,7 +171,7 @@ MCP ツール（`*MembershipSite*` 系。以下ツール名は OpenAPI の opera
 
 ### B. 動画・音声は READY を確かめてから公開する
 
-`contentType` が `video`・`audio` のコンテンツは、本体の動画・音声が紐づいていないと公開できない（`isPublished: true` にすると弾かれる）。本体は [references/media-upload.md](references/media-upload.md) の手順で上げ、`getCreatorMembershipSiteAsset` が READY を返してから公開する。**サーバーは処理状態を確かめないため、READY 前に公開すると再生できないコンテンツが会員に見える**（通知が ON ならそのまま通知も届き、取り消せない）。ファイルを送れない環境の扱いは [references/media-upload.md](references/media-upload.md) の「前提」。記事（`article`）はそのまま公開まで作れる。
+`contentType` が `video`・`audio` のコンテンツは、本体の動画・音声が紐づいていないと公開できない（`isPublished: true` にすると弾かれる）。本体は [references/media-upload.md](references/media-upload.md) の手順で上げ、`getCreatorMembershipSiteAsset` が READY を返してから公開する。**サーバーは処理状態を確かめないため、READY 前に公開すると、会員の画面には動画・音声の代わりに準備中の案内が出る**（READY でも再生用の ID がまだ付いていないあいだは同じ）。変換が 30 分を超えると時間がかかっている旨の案内に替わり、会員が開き直すまで再生できる画面に切り替わらない。変換に失敗したとき、アップロードが発行から 60 分以内に終わらないとき、変換が 24 時間を超えたときは、表示できない旨の案内になる。経過時間は変換処理の最終更新から数えるため、30 分と 24 時間の切り替えは遅れることがある。通知が ON なら、この状態のまま通知も届き、取り消せない。ファイルを送れない環境の扱いは [references/media-upload.md](references/media-upload.md) の「前提」。記事（`article`）はそのまま公開まで作れる。
 
 アセットの種類（`assetType`）はコンテンツの `contentType` と揃える（動画コンテンツには動画、音声コンテンツには音声）。違うと弾かれる。
 
