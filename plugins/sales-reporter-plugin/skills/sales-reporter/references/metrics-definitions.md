@@ -94,7 +94,7 @@
 
 内訳 `rows[].services[]` は `serviceId` / `serviceName` / `count` / `applicantsCount` / `totalAmount` だけで、商品名・プラン名・商品 ID は返らない。
 
-裏取り元: taiyaki `origin/main`（e31f30fed0, 2026-10-16）の `openapi/paths/creator/payment/sales-aggregate.yml` / `openapi/schemas/creator-sales-aggregate.yml`、実装 `packages/backend/src/handlers/creator-payment-sales/creator-payment-sales.handlers.ts`。
+裏取り元: MOSH の集計 API の定義と実装。
 
 ## 期間の扱い
 

@@ -156,7 +156,7 @@
 
 ### 背景画像の上に文字を重ねる（構造レシピ）
 
-`image` 要素の上には文字を重ねられない。**`section` の背景画像を外枠にして、その子に見出し・本文・ボタンを置く**。背景は常に `cover`・中央で敷かれる（taiyaki `element-background.ts` で確認）。トリミング位置は選べないので、**構図は写真側で決めてから上げる**。可読性の値（スクリムの濃さ・背景にしてよい条件）は `best-practices.md`「背景画像で装飾密度を作る」が正。ここは**組み方**だけ。
+`image` 要素の上には文字を重ねられない。**`section` の背景画像を外枠にして、その子に見出し・本文・ボタンを置く**。背景は常に `cover`・中央で敷かれる（MOSH の実装で確認）。トリミング位置は選べないので、**構図は写真側で決めてから上げる**。可読性の値（スクリムの濃さ・背景にしてよい条件）は `best-practices.md`「背景画像で装飾密度を作る」が正。ここは**組み方**だけ。
 
 **許可プロパティの範囲で組む**（「スタイルの許可プロパティ」が正）。`height` / `minHeight` / `maxWidth` / `flexDirection` / `alignItems` / `margin` は使わない（`justifyContent` は `"center"` のみ確認済み）。**高さと縦位置は `padding` で、横位置は `width`（%）と透明スペーサー列で作る**。`section` は `margin:0 auto` で描画されるので、`width` が100%未満なら自動で中央に寄る。
 
@@ -451,7 +451,7 @@
 
 ### SP だけ文字サイズを変える（`mobileFontSize`）
 
-taiyaki の実装のコード確認＋実描画確認済み: section・button・image は `mobileStyles` 全体をマージするが、**text / heading（`InlineRichTextElement`）が SP で読むのは `mobileStyles` の `padding` と `lineHeight` だけ**。`mobileStyles.fontSize` / `color` などは表示に効かない（プレーン文字列でもフォントサイズは `styles.fontSize` から作られる）。SP だけ文字サイズを変えるときは、`content` を tiptap にして `textStyle` マークの `mobileFontSize` に入れる（`@max-3xl` で適用）。
+MOSH の実装のコード確認＋実描画確認済み: section・button・image は `mobileStyles` 全体をマージするが、**text / heading（`InlineRichTextElement`）が SP で読むのは `mobileStyles` の `padding` と `lineHeight` だけ**。`mobileStyles.fontSize` / `color` などは表示に効かない（プレーン文字列でもフォントサイズは `styles.fontSize` から作られる）。SP だけ文字サイズを変えるときは、`content` を tiptap にして `textStyle` マークの `mobileFontSize` に入れる（`@max-3xl` で適用）。
 
 - プレーン文字列を tiptap にすると要素側の `fontWeight` が効かなくなる。太字は `{"type":"bold"}` マークを併記する
 - 値は「fontSize（固定スケール・px）」の10値のみ
@@ -544,7 +544,7 @@ taiyaki の実装のコード確認＋実描画確認済み: section・button・
 
 - `text` / `heading`: `color` / `fontFamily` / `fontSize` / `lineHeight` / `textAlign` / `padding`
 - `button`: `background` / `color` / `borderRadius` / `width` / `padding` / `textAlign`
-  - 上記に加えて `fontSize`（固定10段階）/ `fontFamily`（4種）/ `fontStyle`（italic）/ `lineHeight` / `width` も編集画面で変更できる（`button-properties-panel.tsx` で確認済み。旧記述「fontSize は 14px 固定」は誤り）
+  - 上記に加えて `fontSize`（固定10段階）/ `fontFamily`（4種）/ `fontStyle`（italic）/ `lineHeight` / `width` も編集画面で変更できる（MOSH の実装で確認済み。旧記述「fontSize は 14px 固定」は誤り）
   - **ボタンの大きさの決め方（編集画面の項目に対応させる）**: 高さ＝「行の高さ」`styles.lineHeight`（`"1"`〜`"3"` を 0.1 刻み。fontSize × lineHeight ＋ 内側余白 28px が実高さ。16px×1.6 で約54px、18px×1.8 で約60px、20px×2 で約68px）／幅＝「ボタンの幅」`styles.width`（`"auto"` / `"100%"` / `"100px"`〜`"800px"` 100px 刻み、任意 px・% も可）／外側の余白＝「余白」`layout.styles.padding`（ボタンの**周囲**に付く。`mobileLayoutStyles` で SP 別指定）
   - `styles.padding` は**ボタン内側の余白**で編集画面に項目が無い。UI 既定 `"14px 16px"` のまま変更しない（変えると編集画面で再現・修正できない）。大きさは lineHeight / width / fontSize で作る。`display: "inline-block"` / `cursor: "pointer"` も既定のまま引き継ぐ
 - `image`: `width` / `padding`（`styles` 内で使用可能。中央寄せは `styles` ではなく後述の `layout` フィールドで行う）
@@ -632,5 +632,5 @@ taiyaki の実装のコード確認＋実描画確認済み: section・button・
 - **`schedule` の `content` は常にプレーン文字列のみ。** `null` やオブジェクト（tiptap 構造を含む）を渡さない。`text` / `heading` と異なり部分装飾の仕組みが無く、素の文字列として扱われるため、他の型で描画できてもクラッシュする。
 - **`heading` の `attributes.level` は `"1"`〜`"4"` の範囲のみ。** 範囲外の値を入れると編集画面が開けなくなるおそれがある（「`attributes` フィールド」参照）。
 - **`image-carousel` の `attributes.images` は必ず URL 文字列の配列。** 配列でない値や、配列でも要素が文字列でない場合（`{ "src": ..., "alt": ... }` 等のオブジェクト配列）はクラッシュする（「`image-carousel` の仕様」参照）。
-- **`image` の `attributes.imageClip` は `frame` と `transform` の両方を持たせる。** どちらかが欠けると `resolveImageStyles` が `frame.type` / `transform.x` を読んで TypeError になる（taiyaki のコード上の判断。付けないなら `imageClip` ごと省略する。`null` は可）（「`image` の切り抜き」参照）。
+- **`image` の `attributes.imageClip` は `frame` と `transform` の両方を持たせる。** どちらかが欠けると `resolveImageStyles` が `frame.type` / `transform.x` を読んで TypeError になる（MOSH のコード上の判断。付けないなら `imageClip` ごと省略する。`null` は可）（「`image` の切り抜き」参照）。
 - **`video` に外部URLをそのまま `attributes.src` として設定しない。** `moshVideoId`（MOSHの動画アップロードで採番される内部ID）が無いと編集画面が空IDで404を起こし強制的にエラー画面へ遷移する。`moshVideoId`/`src` は `mcp-tools.md` のアップロードフローで取得するか、編集画面からのアップロードを案内する（「`video` の仕様」参照）。

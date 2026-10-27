@@ -1,6 +1,6 @@
 {
   "mcpServers": {
-    "taiyaki": {
+    "mosh": {
       "type": "http",
       "url": "https://mcp.api.mosh.jp/",
       "headers": {
