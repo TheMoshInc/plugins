@@ -20,6 +20,7 @@ MOSH が配布する [Claude Code](https://code.claude.com/) プラグインマ�
 | `customer-manager-plugin` | サービス購入者（顧客＝ゲスト）の検索・件数確認、顧客詳細・申込履歴の確認、顧客タグの作成・付与・解除を行う customer-manager skill と、顧客宛の一斉配信を作成・編集・削除する customer-broadcast skill |
 | `creator-hearing-plugin` | クリエイターの意向（商品・顧客像・行動先・目的ごとの追加項目）を、仮埋めしたシートを1画面で見せる1往復で確定し、ヒアリング結果ファイルとして保存する creator-hearing skill |
 | `creator-context-plugin` | クリエイターの現状（商品・プラン・LP・ワークフロー・売上・顧客・コンタクト・会員サイト・SNS）を1回で集めて、個人情報を含まないスナップショットとして保存する creator-context skill |
+| `profile-link-builder-plugin` | プロフィールリンク（公開プロフィールページ）のプロフィール情報・ヘッダー・テーマ・SNSアイコン・ギャラリー・リンクタブのコンテンツ・サービス／感想レポートの表示設定を確認・編集するための profile-link-builder skill |
 
 ## インストール
 
@@ -41,6 +42,7 @@ Claude Code 内で以下を実行:
 /plugin install creator-hearing-plugin@mosh-plugins
 /plugin install creator-context-plugin@mosh-plugins
 /plugin install applicant-reporter-plugin@mosh-plugins
+/plugin install profile-link-builder-plugin@mosh-plugins
 ```
 
 ## 更新
@@ -61,6 +63,7 @@ Claude Code 内で以下を実行:
 /plugin update creator-hearing-plugin@mosh-plugins          # プラグイン本体を更新
 /plugin update creator-context-plugin@mosh-plugins          # プラグイン本体を更新
 /plugin update applicant-reporter-plugin@mosh-plugins       # プラグイン本体を更新
+/plugin update profile-link-builder-plugin@mosh-plugins     # プラグイン本体を更新
 
 ```
 
@@ -83,6 +86,7 @@ Claude Code 内で以下を実行:
 /plugin uninstall creator-hearing-plugin@mosh-plugins
 /plugin uninstall creator-context-plugin@mosh-plugins
 /plugin uninstall applicant-reporter-plugin@mosh-plugins
+/plugin uninstall profile-link-builder-plugin@mosh-plugins
 /plugin marketplace remove mosh-plugins
 ```
 

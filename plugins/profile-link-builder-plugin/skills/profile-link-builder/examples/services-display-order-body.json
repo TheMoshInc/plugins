@@ -1,0 +1,8 @@
+{
+  "_comment": "putCreatorProfileLinkServicesDisplayOrder のボディ完成形。ユーザーが3件の希望順を明示的に与えた場合の例（『A→1番目、B→2番目、C→3番目にして』）。items に含めた3件だけが更新され、他のサービスの表示順は変わらない。displayOrder は絶対値で0始まり（1番目 = 0、2番目 = 1、3番目 = 2）。",
+  "items": [
+    { "serviceId": "13", "displayOrder": 0 },
+    { "serviceId": "11", "displayOrder": 1 },
+    { "serviceId": "12", "displayOrder": 2 }
+  ]
+}

@@ -74,6 +74,11 @@
       "name": "creator-context-plugin",
       "source": "./plugins/creator-context-plugin",
       "description": "Adds a creator-context skill for collecting a MOSH creator's current state (products, plans, landing pages, workflows, sales, customers, contacts, membership sites, SNS) into a snapshot"
+    },
+    {
+      "name": "profile-link-builder-plugin",
+      "source": "./plugins/profile-link-builder-plugin",
+      "description": "Adds a profile-link-builder skill for viewing and editing a MOSH creator's public profile link page (profile, header, theme, SNS icons, gallery, link-tab contents, and service/review display settings)"
     }
   ]
 }
