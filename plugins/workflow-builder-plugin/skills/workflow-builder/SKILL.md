@@ -30,7 +30,7 @@ MCP ツール (`*Scenario*` および `*InflowAction*` / `*TrackingConsent*`) �
 | `INFLOW_ACTION_CONVERTED`（流入経路 CV） | **流入経路** が1つ以上（`inflowActionId` を`getCreatorScenariosInflowActions`で取得可）。流入経路は LINE 公式アカウントに属するため、**ワークフロー最上位の `creatorLineChannelId` を流入経路が属するアカウントと一致させる**（一覧レスポンスの `creatorLineChannelId` で確認） |
 | `INSTALLMENT_PAYMENT_FAILED`（分割決済失敗） | 不要（トリガー自体が ID を持たない。既存リソースの確認も不要） |
 | `SUBSCRIPTION_PAYMENT_FAILED`（サブスク決済失敗） | 不要（トリガー自体が ID を持たない。既存リソースの確認も不要。初回失敗のみ発火し、同一請求期間内の決済リトライ失敗では再発火しない） |
-| `LINE_KEYWORD_RESPONSE_MATCHED`（LINEキーワード応答） | **LINEキーワード応答** が1つ以上（`lineKeywordResponseId` は **MCP に取得ツール無し＝ユーザー申告**）。キーワード応答は LINE 公式アカウントに属するため、**ワークフロー最上位の `creatorLineChannelId` をキーワード応答が属するアカウントと一致させる**（どのアカウントのものかもユーザーに確認。挙動は content-schema の trigger 表） |
+| `LINE_KEYWORD_RESPONSE_MATCHED`（LINEキーワード応答） | **LINEキーワード応答** が1つ以上（`lineKeywordResponseId` は `getCreatorLineKeywordResponses` で取得・確認可）。キーワード応答は LINE 公式アカウントに属するため、**ワークフロー最上位の `creatorLineChannelId` をキーワード応答が属するアカウントと一致させる**（どのアカウントのものかもユーザーに確認。挙動は content-schema の trigger 表） |
 | `SCHEDULED_PROCESSING`（スケジュール設定） | 対象母集団（`targetType`）次第。`contactLine` / `all` は **LINE公式アカウント** が連携済み（`creatorLineChannelId` を`getCreatorLineChannels`で取得・確認可）、`guest` は不要。発火日時・頻度・終了条件はユーザーに確認する（content-schema の「SCHEDULED_PROCESSING: `scheduledProcessing`」参照） |
 
 action 側にも参照リソースが必要なケースがある:
@@ -42,10 +42,10 @@ action 側にも参照リソースが必要なケースがある:
 | `LINK_LINE_RICH_MENU` | **個別リッチメニュー**（`lineRichMenuId` を`getCreatorLineRichMenus`で取得・確認可。ワークフローに紐づく LINE公式アカウントのメニューを選ぶこと。API はクリエイター所有なら別チャンネルのメニューでも保存・公開を通してしまうが、実行時に対象コンタクトが見つからず失敗しうる — 一致を強制するのは編集画面のみ） |
 | `CONDITION` (`CONTACT_TAG`) | **コンタクトタグ**（`getCreatorContactTags`で確認可。無ければ`postCreatorContactTags`で新規作成できる） |
 | `CONDITION` (`SERVICE_APPLICATION_STATUS`) | **プラン・サービス**（`serviceId` をユーザーから確認。MCP に検索ツール無し） |
-| `CONDITION` (`AUTO_WEBINAR_PARTICIPATION` / `AUTO_WEBINAR_WATCH_TIME`) | **オートウェビナー**（`autoWebinarId` をユーザーから確認。MCP に検索ツール無し） |
+| `CONDITION` (`AUTO_WEBINAR_PARTICIPATION` / `AUTO_WEBINAR_WATCH_TIME`) | **オートウェビナー**（`autoWebinarId` を`getCreatorAutoWebinars`で取得・確認可） |
 | `CONDITION` (`BANK_TRANSFER_STATUS`) | **プラン・サービス**（`serviceId` をユーザーから確認。MCP に検索ツール無し。対象ゲストの当該プラン・サービスへの注文の銀行振込状況で分岐） |
 
-参照したいリソースが無い場合は、ユーザーに**先に管理画面で作成**してもらってからワークフロー構築に着手する（`serviceId` / `autoWebinarId` / `lineKeywordResponseId` は MCP に検索手段が無いため、実在の場合も含め常にユーザーから直接確認する）。**例外はコンタクトタグ**: `postCreatorContactTags` で MCP から新規作成できる（同名タグが既にあれば既存の `id` を返す冪等動作。返ってきた `id` はそのまま `contactTagId` に使える）ため、管理画面に誘導せずその場で作成して進めてよい。`MARKETING_LEAD_BENEFIT_RECEIVED`（特典取得）は特典提供終了により**新規設定しない**。既存ワークフローの読み取り・維持のみ行う。
+参照したいリソースが無い場合は、ユーザーに**先に管理画面で作成**してもらってからワークフロー構築に着手する（`serviceId` は MCP に検索手段が無いため、実在の場合も含め常にユーザーから直接確認する）。**例外はコンタクトタグ**: `postCreatorContactTags` で MCP から新規作成できる（同名タグが既にあれば既存の `id` を返す冪等動作。返ってきた `id` はそのまま `contactTagId` に使える）ため、管理画面に誘導せずその場で作成して進めてよい。`MARKETING_LEAD_BENEFIT_RECEIVED`（特典取得）は特典提供終了により**新規設定しない**。既存ワークフローの読み取り・維持のみ行う。
 
 ## When to use
 
@@ -129,11 +129,12 @@ MOSHのAPIは `ACTIVE` 化時に埋め込み変数の可否を検証しない（
 
 1. `getCreatorScenario` で現在の状態を取得する
 2. **JSON を貼らずに自然言語の箇条書きで要約**してユーザーに提示する（「ユーザーへの提示・コミュニケーション規約」§1 参照）。最低限の項目: ワークフロー名 / 公開状態 / トリガー（と参照リソース ID） / アクション（メール件名・本文の要旨、トラッキング有無等）
-3. `serviceId`（および既存ワークフローの `benefitId`）が実在のものか口頭で確認する（この2つだけは INACTIVE の PATCH で実在検証されない。他の参照 ID は保存できた時点で実在が保証されている）。`lineKeywordResponseId` は実在は保証されるが MCP で中身を見られないため、意図したキーワード応答（キーワード・属する LINE 公式アカウント）かを口頭で確認する
+3. `serviceId`（および既存ワークフローの `benefitId`）が実在のものか口頭で確認する（この2つだけは INACTIVE の PATCH で実在検証されない。他の参照 ID は保存できた時点で実在が保証されている）。`lineKeywordResponseId` は実在が保証されているので、`getCreatorLineKeywordResponse` で名前・キーワード・属する LINE 公式アカウントを取得し、意図したキーワード応答かだけユーザーに確認する
 4. **埋め込み変数チェック**: 各 stage の `action` 内の `sendEmail.message` / `sendLineMessage.messages[].text` から `{{...}}` パターンを全て抽出し、そのステージが従う trigger（先頭 stage の `triggerType`）と `actionType` の組み合わせで [content-schema.md](references/content-schema.md) の対応表に照らして使用可能か確認する。使用不可の変数が1つでもあれば、ユーザーに「この文言は現在のトリガーでは差し込まれず空欄配信になります」と日本語で具体的に指摘し、修正（変数を外す／使える変数に変える／トリガーを変える）してもらう
 5. **机上デバッグ**: [references/best-practices.md](references/best-practices.md) の「机上デバッグチェックリスト」を実行する（トリガー×アクション整合 / ノード接続 / 日程の矛盾 / メッセージ重複・抜け / 埋め込み変数 / メッセージ内容の参照整合性）。順序は**まず構文解析**（content-schema.md の構造規律・ノード接続ルール・参照整合性・「埋め込み変数」対応表＝対象者が誰でも JSON とテナント設定だけで一律に決まるもの）**→ 次に意味解析**（content-schema.md の「コンテキスト適合表」＝対象者の紐付け・メール保有・友だち状態で結果が変わるもの。定義は content-schema.md の「検査の二層構造」）。API スキーマは trigger 種別で action 種別を制限しないため、意味の検査は自分で行うしかない。問題があれば修正し、懸念点と修正内容を1〜3行で報告する。ユーザーから「見直して」「懸念点は」と言われた場合も同じチェックを実行する
-6. 「この内容で公開しますか？」と必ずユーザーに確認する（埋め込み変数・机上デバッグに問題がある間は公開に進まない）
-7. 修正が必要なら Step 3 に戻る
+6. **テスト送信の提案（任意）**: メール・LINE のステップは、公開前に `postCreatorScenarioTestRun` で1通だけ試し送りできる（下書きのままでも可。仕様・制約は [references/mcp-tools.md](references/mcp-tools.md) の「テスト送信」）。ユーザーが見た目を確認したがっているときだけ提案する。LINE は実在の友だちに届き通数を消費するため、同意の取り方・制約は mcp-tools.md の「テスト送信」に従う
+7. 「この内容で公開しますか？」と必ずユーザーに確認する（埋め込み変数・机上デバッグに問題がある間は公開に進まない）
+8. 修正が必要なら Step 3 に戻る
 
 ### 5. 公開（`ACTIVE` 化）
 
@@ -144,6 +145,17 @@ MOSHのAPIは `ACTIVE` 化時に埋め込み変数の可否を検証しない（
 ```
 
 `ACTIVE` 化時には参照リソースの実在や同時稼働数の上限が確認され、満たさない場合は理由を示すエラーが返る（例:「指定された特典が見つかりません。」「LINE公式アカウントを設定してください。」）。内容をユーザーへ平易に伝え、原因を解消してもらってから再度公開する。公開後は `getCreatorScenario` で稼働中（`ACTIVE`）になったことを確認する。
+
+### 6. 公開後の確認（実行結果・届かなかった原因）
+
+「ちゃんと動いてる？」「届かなかった人がいる」と聞かれたら、`getCreatorScenariosExecutions` で各ステップの件数（`totalCount` / `completedCount` / `failedCount`）を見る。`failedCount` が 0 でなければ、該当ステップの `stageSnapshotId` で `getCreatorScenariosStageSnapshotExecutions`（`executionStatus: "FAILED"`）を取り、失敗理由ごとに件数を数えて日本語で伝える（コードの意味は [references/mcp-tools.md](references/mcp-tools.md)）。紐付け未成立（`CONTACT_NOT_FOUND` / `GUEST_NOT_FOUND`）が多いときは、[best-practices.md](references/best-practices.md) のコンテキスト適合表の △ に当たっていないかを疑う。個人情報を含むため、個人を特定する一覧は求められたときだけ出す。
+
+## MCP でできないこと（管理画面の操作を案内する）
+
+管理画面ではできるが MCP ツールが無い操作。ツール名を推測して呼ばず、ユーザーに管理画面での操作を案内する:
+
+- ワークフローの**フォルダ**の作成・名前変更・削除・割り当て・並び替え、ワークフロー自体の並び替え（一覧の絞り込み `folderId` と `folder` の読み取りだけは可能）
+- **流入経路の削除**（作成・一覧・詳細・名前と CV 頻度の更新は可能）
 
 ## ユーザーへの提示・コミュニケーション規約
 

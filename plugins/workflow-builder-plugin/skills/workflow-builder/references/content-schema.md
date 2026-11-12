@@ -56,7 +56,7 @@ ARCHIVED  : アーカイブ済（事実上の廃止）
 | `MARKETING_LEAD_BENEFIT_RECEIVED` | `marketingLeadBenefitReceivedTrigger` | `{ benefitId: string }`。特典提供終了により**新規設定は不可**（既存ワークフローの読み取り・維持のみ） |
 | `LINE_CHANNEL_CONTACT_REGISTERED` | なし（サブフィールド不要） | LINE公式アカウントはリクエストボディ最上位の `creatorLineChannelId` で指定 |
 | `SERVICE_APPLIED` | `serviceAppliedTrigger` | `{ serviceId: string, paymentMethod: "CASH"\|"CARD"\|"BANK_TRANSFER"\|null }` |
-| `SERVICE_SCHEDULE_REMINDER` | `serviceScheduleReminder` | `{ serviceId: string, remindTimeType: "RELATIVE"\|"ABSOLUTE", beforeDays: 0-30, hours: 0-23\|null, minutes: 0-59\|null }`。**1件の予約につき、トリガーが指す時刻に到達した瞬間の1回だけ評価される**。予約された時点でその時刻がすでに過去なら、その予約に対して二度と発火しない（後から追いつかない）。複数タイミングでリマインドしたい場合に `WAIT_TIME` で1本のワークフローへ繋いではいけない理由は [best-practices.md](best-practices.md) の「予約リマインドは複数のトリガーに分ける」参照 |
+| `SERVICE_SCHEDULE_REMINDER` | `serviceScheduleReminder` | `{ serviceId: string, remindTimeType: "RELATIVE"\|"ABSOLUTE", beforeDays: 0-30, hours: 0-23\|null, minutes: 0-59\|null }`。**`remindTimeType` の意味**: `ABSOLUTE` は「`beforeDays` 日前の `hours`:`minutes` 時」（例: 前日18:00 = `beforeDays:1, hours:18, minutes:0`）、`RELATIVE` は「開催の `beforeDays` 日 `hours` 時間 `minutes` 分前」（例: 15分前 = `beforeDays:0, hours:0, minutes:15`、3時間前 = `0, 3, 0`）。`hours` / `minutes` が `null` なら開催時刻と同じ時刻。**1件の予約につき、トリガーが指す時刻に到達した瞬間の1回だけ評価される**。予約された時点でその時刻がすでに過去なら、その予約に対して二度と発火しない（後から追いつかない）。複数タイミングでリマインドしたい場合に `WAIT_TIME` で1本のワークフローへ繋いではいけない理由は [best-practices.md](best-practices.md) の「予約リマインドは複数のトリガーに分ける」参照 |
 | `CONTACT_TAG_ADDED` | `contactTagAdded` | `{ contactTagId: number }` |
 | `INFLOW_ACTION_CONVERTED` | `inflowActionConverted` | `{ inflowActionId: number }`（流入経路は LINE 公式アカウントに属する。ボディ最上位の `creatorLineChannelId` を流入経路が属するアカウントと一致させること） |
 | `INSTALLMENT_PAYMENT_FAILED` | なし（サブフィールド不要） | 詳細フィールドは不要。同一分割回の決済リトライ失敗では再発火しない |
@@ -375,8 +375,8 @@ RichMessageCell の形（`postbackActions` の仕様は CarouselItem と同じ�
 |---|---|---|
 | `SERVICE_APPLICATION_STATUS` | `conditionServiceApplicationStatus` | `{ serviceId: string, serviceApplicationStatus: "APPLIED" }` |
 | `CONTACT_TAG` | `conditionContactTag` | `{ contactTagId: number }` |
-| `AUTO_WEBINAR_PARTICIPATION` | `conditionAutoWebinarParticipation` | `{ autoWebinarId: number }`（オートウェビナーへの参加有無。`autoWebinarId` はユーザーから確認。MCP に検索ツール無し） |
-| `AUTO_WEBINAR_WATCH_TIME` | `conditionAutoWebinarWatchTime` | `{ autoWebinarId: number, metricType: "WATCH_POSITION"\|"TOTAL_PLAY_TIME", thresholdSeconds: number(0-86400) }`（オートウェビナーの視聴時間条件。`WATCH_POSITION`=到達した最大視聴位置、`TOTAL_PLAY_TIME`=視聴した総再生時間。`thresholdSeconds`は「以上」で判定。`autoWebinarId` はユーザーから確認。MCP に検索ツール無し） |
+| `AUTO_WEBINAR_PARTICIPATION` | `conditionAutoWebinarParticipation` | `{ autoWebinarId: number }`（オートウェビナーへの参加有無。ID は `getCreatorAutoWebinars` で取得可） |
+| `AUTO_WEBINAR_WATCH_TIME` | `conditionAutoWebinarWatchTime` | `{ autoWebinarId: number, metricType: "WATCH_POSITION"\|"TOTAL_PLAY_TIME", thresholdSeconds: number(0-86400) }`（オートウェビナーの視聴時間条件。`WATCH_POSITION`=到達した最大視聴位置、`TOTAL_PLAY_TIME`=視聴した総再生時間。`thresholdSeconds`は「以上」で判定。ID は `getCreatorAutoWebinars` で取得可） |
 | `BANK_TRANSFER_STATUS` | `conditionBankTransferStatus` | `{ serviceId: string, bankTransferStatus: "PENDING"\|"COMPLETED"\|"REJECTED"\|"CANCELED" }`（対象ゲストの指定プラン・サービスへの注文が、指定した銀行振込の振込状況に一致するかで分岐。`PENDING`=振込待ち・未入金、`COMPLETED`=振込完了・入金の反映待ちを含む、`REJECTED`=振込期限切れ、`CANCELED`=キャンセル。クレジットカード等、銀行振込以外の支払い方法の申し込みは常に「一致しない」側に進む） |
 
 `branches` の各要素:
