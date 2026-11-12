@@ -51,6 +51,7 @@ LP の必須欄は #1〜#3 と #4（ゴール種別のみ）。LP 固有の扱�
 - **承認が出るまで JSON を組まない。LP も作成しない**（作成数上限を無駄に消費しない）。修正は表を直して再提示する
 - 確認の言い回しは「この構成で MOSH に LP を作ってよいですか？」。ユーザー向け文言に JSON・ID・content・patch 等の内部用語を出さない（全ステップ共通。「構成」「セクション」「下書き」「公開」で言う）
 - セクション数は `best-practices.md` の「ゴール別の構成目安」が正（本書に数値は再掲しない）。ユーザーが構成・規模を指定した場合はその指定を優先
+- 「◯日まで」「締切後は消す」「ウェビナー開始から◯分後に出す」など期間で出し分ける章があれば、`section-plan.md`「期間で出し分ける章」で種別と確認事項を決める
 
 ### 4. LP 作成
 
@@ -65,7 +66,7 @@ LP の必須欄は #1〜#3 と #4（ゴール種別のみ）。LP 固有の扱�
 
 1. **プリセットを選ぶ**: `references/presets.md` に従い、ヒアリングの #4 ゴールと #7 トーンから4〜5択＋おすすめ印で提示し、1つ決める（Step 3 の構成案と同時に提示してよい）
 2. **プリセットの JSON を写す**: 選んだプリセットの `examples/catalog/<preset>.json` **だけ**を、章（1行＝1章）ごとに `offset`/`limit`（2章ずつ）で Read し、章単位でコピーして文言・画像・href を差し替える（全体を1回で Read すると打ち切られる。text/heading は tiptap なので文言は `text` ノードの `text` だけ差し替える。詳細は `examples/catalog/README.md`）。`styles` は変えない（例外はブランド色指定時の `brand`/`accent` 置換のみ。`presets.md`「選び方」）。章の増減は `best-practices.md` の「ゴール別の構成目安」に従い ID を振り直す
-3. 構造ルールは `references/content-schema.md`、設計指針は `references/best-practices.md`。プリセットに無い部品を新しく作るときだけ、この2つを読んで組む。**日程章（`schedule`）・オートウェビナー（`autoWebinar`）などサービス連携のパーツは catalog に無いので、ゴールが告知・イベント等でこれらを使うときは `content-schema.md` の該当節（「`schedule` の仕様」「`autoWebinar` の仕様」）を必ず読む**
+3. 構造ルールは `references/content-schema.md`、設計指針は `references/best-practices.md`。プリセットに無い部品を新しく作るときだけ、この2つを読んで組む。**日程章（`schedule`）・オートウェビナー（`autoWebinar`）などサービス連携のパーツは catalog に無いので、ゴールが告知・イベント等でこれらを使うときは `content-schema.md` の該当節（「`schedule` の仕様」「`autoWebinar` の仕様」）を必ず読む**。章に表示期間を付けるときは同「セクションの表示期間」を読む
 
 - **新規構築時**: 承認済み構成案の ID・見出し・メッセージをそのまま JSON に落とす。構成案に無いセクションを勝手に足さない
 - **既存 LP の編集時**: patch の前に「何を・どう・なぜ変更するか」のサマリーをユーザーに提示し、確認を得てから実行する（新規構築時は Step 3 の承認がこれに相当する）
@@ -160,8 +161,8 @@ PartType / attributes の詳細は `references/content-schema.md`、ID 命名は
 |---|---|
 | `creator-hearing`（別スキル） | ヒアリングの進め方・状態ラベル・共通3ブロック・原稿の扱い（正本） | Step 1 で必ず（スキルを起動する） |
 | `references/hearing-sheet.md` | LP 用のヒアリング追加項目（共通3ブロックは `creator-hearing` が正。ここは CV先の補足、ゴール種別（4択）、証拠、トーン・素材（画像スロット表：収穫→依頼）、#8 見せ場の材料（配布物一覧・ロゴ・表現の禁止事項）、デザインの3点、提示フォーマット、LP 固有の禁止） |
-| `references/section-plan.md` | 構成案ゲート（JSON 構築前の承認表の書式、意味的セクション ID 規約、保存後の修正ループ） |
-| `references/content-schema.md` | PartType 一覧、ID プレフィックス表、`attributes` 詳細（`sectionType` の許容値を含む）、特殊パーツの仕様（`schedule` / `autoWebinar` / `video` / `image-carousel` / `countdown`。使うときにその節を読む）、セクション+children の例 |
+| `references/section-plan.md` | 構成案ゲート（JSON 構築前の承認表の書式、意味的セクション ID 規約、期間で出し分ける章の種別選択、保存後の修正ループ） |
+| `references/content-schema.md` | PartType 一覧、ID プレフィックス表、`attributes` 詳細（`sectionType` の許容値を含む）、特殊パーツの仕様（`schedule` / `autoWebinar` / `video` / `image-carousel` / `countdown`。使うときにその節を読む）、セクションの表示期間（`displayPeriodType`）、セクション+children の例 |
 | `references/best-practices.md` | 構成計画（ゴール別のセクション数目安・推奨構成と `sectionType` 対応・推奨 ID）、テキストの具体性、余白の原則、表現テクニック、モバイルファースト、CTA 規約、画像の運用、セルフレビューチェックリスト |
 | `references/presets.md` | 6プリセット（配色＋骨格＋部品）の定義と選び方。Step 5 の最初に読む |
 | `references/mcp-tools.md` | 各 MCP ツールのパラメータ仕様。表示期限（`expirationType`）・一覧取得のフィルタ・title/content 以外の patch 項目を扱うときに読む |
