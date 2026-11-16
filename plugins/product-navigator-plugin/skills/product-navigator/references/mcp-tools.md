@@ -53,3 +53,17 @@ pathParams: { productId, productPlanId }
 
 - いずれも数値文字列（`^\d+$`）。`productPlanId` は `getCreatorProductPlans` の結果の `id` を渡す
 - 自分が所有していない・存在しないプランを指定すると「見つからない」エラーが返る
+
+## 商品の販売状況
+
+**`getCreatorProductSalesStatus`** — 商品の今月の販売状況（全プラン合算）を取得
+
+```
+pathParams: { productId }
+```
+
+- `productId`: `getCreatorProducts` の結果の `id` を渡す
+- 期間の指定はできない（常に今月分・現時点）
+- 自分が所有していない・存在しない商品を指定すると「見つからない」エラーが返る
+
+レスポンス: `{ paymentAmount, applicantsCount, subscribersCount }`。各項目の意味は [content-schema.md](content-schema.md) の「販売状況」節。
