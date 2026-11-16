@@ -12,6 +12,7 @@
 					"text": "はじめての方向けのヨガクラスです。",
 					"buttonText": "詳細・申込み",
 					"buttonUrl": "https://mosh.jp/<申込みページのパス>",
+					"postbackActions": null,
 					"openExternalBrowser": false
 				},
 				{
@@ -20,6 +21,7 @@
 					"text": "骨盤まわりを整えるクラスです。",
 					"buttonText": "詳細・申込み",
 					"buttonUrl": "https://mosh.jp/<申込みページのパス>",
+					"postbackActions": null,
 					"openExternalBrowser": false
 				},
 				{
@@ -28,6 +30,7 @@
 					"text": "瞑想のはじめ方を学ぶクラスです。",
 					"buttonText": "詳細・申込み",
 					"buttonUrl": "https://mosh.jp/<申込みページのパス>",
+					"postbackActions": null,
 					"openExternalBrowser": false
 				}
 			]
