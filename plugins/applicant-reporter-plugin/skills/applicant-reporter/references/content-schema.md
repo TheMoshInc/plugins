@@ -1,6 +1,6 @@
 # 申込者・購読者レスポンスの読み方
 
-`postCreatorProductApplicants` / `postCreatorProductSubscribers` が返す JSON の読み方と、ユーザーに提示するときの表示名。生の値をそのまま出さず、ここにある日本語の状態名で示す。
+`postCreatorProductApplicants` / `postCreatorProductSubscribers` と、1 件の詳細の `getCreatorProductApplicant` / `getCreatorProductSubscriber` が返す JSON の読み方と、ユーザーに提示するときの表示名。生の値をそのまま出さず、ここにある日本語の状態名で示す。
 
 ## 申込者一覧（`applicants[]`）
 
@@ -47,7 +47,7 @@
 | `scheduleEndDateTime` | 自動解約予定日時。予定が無ければ `null` |
 | `status` | 購読の状態（下表） |
 | `message` | 申込時のメッセージ。無ければ `null` |
-| `billingDurationMonths` | 購読開始から現在（解約済みなら解約日）までの継続月数（切り捨て） |
+| `billingDurationMonths` | 購読開始から現在（解約済みなら解約日）までの継続月数（切り捨て）。「満 N ヶ月」と示し、「N ヶ月目」とは書かない |
 | `billingCycleType` | `monthly`（月額）/ `yearly`（年額） |
 
 ### `status` の表示名変換表（4 値）
@@ -59,6 +59,36 @@
 | `canceled` | 解約済み | `canceledDateTime` が解約日時。`scheduleEndDateTime` があれば期間末で終了する予定 |
 | `trialing` | トライアル中 | 現状どのレコードにも付かない。絞り込みに指定しても 0 件になる |
 
+## 申込 1 件の詳細（`getCreatorProductApplicant`）
+
+一覧と同じ `id` / `guest` / `planId` / `planName` / `createdDateTime` / `viewingRestrictionDateTime` / `paymentType` / `status` に加えて次が返る。一覧の `order`（単数）は返らず、`orders`（配列）になる。
+
+| 項目 | 意味 |
+|---|---|
+| `message` | 申込時のゲストからのメッセージ。無ければ `null` |
+| `cardInstallmentCount` | 分割（一括入金型）のカード分割回数。それ以外は `null` |
+| `orders[]` | 支払い明細。分割（分割入金型）は回ごとに複数件。各要素は `status`（注文の生の状態）、`paymentMethod`、`amount`（金額）、`discount`（割引額）、`additionalFee`（追加手数料）、`paidAmount`（支払済み金額）、`differenceAmount`（差額）、`currency`、`createdDateTime`、`approvedDateTime`（決済日時）、`canceledDateTime`、`bankTransferExpirationDateTime`（振込期限） |
+| `installmentsOrder` | 分割（分割入金型）のときだけ入る。一覧の項目に加え、`interval`（`month` 月ごと / `hour`）、`nextApprovedDateTime`（次回決済予定日）、`amount`（1 回あたりの金額） |
+| `coupon` | 使ったクーポン。`code`、`name`、`amountOff`（定額割引）か `percentOff`（割合割引 %）。未使用なら `null` |
+| `preCouponAmount` | クーポン適用前の金額。一括と分割（一括入金型）で入る。分割（分割入金型）と、明細の無い古いデータでは `null`（算出できない） |
+| `surveyAnswers[]` | アンケート回答。`question` と `answer`（チェックボックスは `,` 区切り、未回答は空文字）。無ければ空配列。電話番号・性別などの個人情報を含みうる |
+
+`orders` の金額・手数料・差額の内訳は MOSH 内部の計算に由来する。ユーザーには `amount`（金額）と `paidAmount`（支払済み）を中心に示し、`differenceAmount` の意味を推測して説明しない。
+
+## 購読 1 件の詳細（`getCreatorProductSubscriber`）
+
+一覧の項目すべてに加えて次が返る。
+
+| 項目 | 意味 |
+|---|---|
+| `plan` | プランの価格情報（取得できないと `null`）。`price`（プラン価格）、`initialAmount`（初回金額。無ければ `null`）、`iterations`（支払い回数。無期限なら `null`）、`currency`、`paymentInterval`（`month` 月額 / `year` 年額 / `once`） |
+| `currentPeriodEnd` | 現在の請求期間の終了日時（次回請求の目安） |
+| `billingStartDate` | 課金開始日の指定があるときの初回請求日。指定が無ければ `null` |
+| `coupon` | 申込時に使ったクーポン。申込の詳細と同じ形 |
+| `surveyAnswers[]` | アンケート回答。申込の詳細と同じ形 |
+
+過去の毎月の請求明細は返らない。
+
 ## 表示名への変換表（生 ID → 何で引くか）
 
 | 生の値 | 表示 | 変換元 |
@@ -68,19 +98,22 @@
 | `guest.id` | MOSH ID | 変換しない。ユーザーが求めたときだけ「MOSH ID」として出す |
 | `status` | 状態名 | 上の変換表 |
 | `paymentType` | 一括 / 分割（分割入金型）/ 分割（一括入金型） | 上の説明 |
-| `order.paymentMethod` | カード / 現金 / チケット / 銀行振込 | `card` / `cash` / `ticket` / `bank-transfer` |
+| `order.paymentMethod` / `orders[].paymentMethod` | カード / 現金 / チケット / 銀行振込 | `card` / `cash` / `ticket` / `bank-transfer` |
+| 申込 ID / 購読 ID / 注文 ID / クーポン ID | 出さない | 詳細ツールの呼び出しにだけ使う |
+| 金額 | 円（3 桁区切り） | `currency` が `JPY` 以外のときは通貨を添える |
 | 日時 | 日本時間の年月日 | ISO 8601 のオフセット付き値を変換する |
 
 ## 取得できないもの
 
-- 金額・支払い回数ごとの明細（売上は `sales-reporter` スキル）
-- 申込 1 件の詳細（アンケート回答・クーポン・返金可否）
+- 一覧ツールの金額（金額は 1 件の詳細でだけ返る。期間・商品全体の売上集計は `sales-reporter` スキル）
+- サブスクの過去の請求明細
+- 返金できるかどうか
 - 申込のキャンセル・返金・購読の解約などの操作
-- ゲストの電話番号・住所などのプロフィール項目
+- ゲストのプロフィール項目（電話番号・住所など）。アンケートで聞いている場合だけ `surveyAnswers` に入る
 
 ## 絶対に避けること
 
-- 依頼された用途以外に `guest.name` / `guest.email` を出力・転記・要約する
-- `status` や `paymentType` の生の値をそのままユーザーに見せる
+- 依頼された用途以外に `guest.name` / `guest.email` / `surveyAnswers` / `message` を出力・転記・要約する
+- `status` や `paymentType`、絞り込みに使った `paymentPattern` の生の値をそのままユーザーに見せる
 - 「決済済み」と「反映待ち（`unapproved`）」を混同する
-- 金額や支払い明細を推測して答える
+- 詳細ツールで取っていない金額や支払い明細を推測して答える

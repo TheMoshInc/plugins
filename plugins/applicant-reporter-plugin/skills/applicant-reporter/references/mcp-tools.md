@@ -30,8 +30,8 @@ bodyParams: { planIds, keyword, paymentMethod, paymentPattern, approvedDateTime,
 | 項目 | 型 | 絞り込まない値 | 意味 |
 |---|---|---|---|
 | `planIds` | `string[]` | `[]` | 絞り込み対象のプラン ID。空配列は商品配下の全プラン。商品配下に無い ID を渡すとエラー |
-| `keyword` | `string` | `""` | 名前 / メールアドレスの部分一致 |
-| `paymentMethod` | `("card" \| "ticket" \| "cash" \| "bank-transfer")[]` | `[]` | 決済手段。**絞り込みとして効くのは `card` と `bank-transfer` のみ**。`ticket` / `cash` を単独で指定しても絞り込まれない。`card` は 0 円の申込を含む。`paymentPattern` と併用すると両者の AND |
+| `keyword` | `string` | `""` | 名前は前方一致（姓から入れる。名だけ・途中の文字では当たらない。スペースの有無と英字の大文字小文字を区別する）、メールアドレスは部分一致 |
+| `paymentMethod` | `("card" \| "ticket" \| "cash" \| "bank-transfer")[]` | `[]` | 決済手段。**絞り込みとして効くのは `card` と `bank-transfer` のみ**。`ticket` / `cash` を単独で指定しても絞り込まれない。`card` で絞ると 0 円の申込も含まれる（結果では `cash` で返ることがある）。`paymentPattern` と併用すると両者の AND |
 | `paymentPattern` | 下表の値の配列 | `[]` | 決済方法 × 状態の組み合わせ。複数指定は OR |
 | `approvedDateTime` | `{ startDateTime, endDateTime } \| null` | `null` | 申込日の範囲。各値は ISO 8601 日時か `null`。日本時間の日付単位で、終了日はその日の終わりまでを含む |
 | `limit` | `integer` | — | 1〜1000。閲覧用途は 20〜50 |
@@ -71,8 +71,8 @@ bodyParams: { planIds, keyword, statuses, startDateTime, endDateTime, limit, off
 
 | 項目 | 型 | 絞り込まない値 | 意味 |
 |---|---|---|---|
-| `planIds` | `string[]` | `[]` | 絞り込み対象のプラン ID。空配列は商品配下の全プラン |
-| `keyword` | `string` | `""` | 名前 / メールアドレスの部分一致 |
+| `planIds` | `string[]` | `[]` | 絞り込み対象のプラン ID。空配列は商品配下の全プラン。**商品配下に無い ID だけを渡すとエラーにならず 0 件が返る**（申込者一覧と挙動が違う） |
+| `keyword` | `string` | `""` | 名前は前方一致（姓から入れる。名だけ・途中の文字では当たらない。スペースの有無と英字の大文字小文字を区別する）、メールアドレスは部分一致 |
 | `statuses` | `("trialing" \| "active" \| "canceled" \| "pastDue")[]` | `[]` | 空配列は解約済みを含む全件。継続中は `["active", "pastDue"]`、解約済みは `["canceled"]`。`trialing` はどのレコードにも付かない |
 | `startDateTime` / `endDateTime` | `string \| null` | `null` | 購読開始日の範囲（ISO 8601 日時） |
 | `limit` | `integer` | — | 1〜1000。閲覧用途は 20〜50 |
@@ -81,7 +81,37 @@ bodyParams: { planIds, keyword, statuses, startDateTime, endDateTime, limit, off
 
 レスポンス: `{ subscribers: [...], totalCount }`。各要素の読み方は [content-schema.md](content-schema.md)。
 
-## 2 つのツールの使い分け
+## 申込 1 件の詳細
+
+**`getCreatorProductApplicant`** — 申込 1 件の詳細（支払い明細・分割の状況・クーポン・アンケート回答）
+
+```
+pathParams: { productId, applicantId }
+```
+
+| 項目 | 意味 |
+|---|---|
+| `productId` | 商品 ID |
+| `applicantId` | `postCreatorProductApplicants` が返す `applicants[].id` |
+
+別の商品の申込 ID や存在しない ID はエラーになる。レスポンスの読み方は [content-schema.md](content-schema.md) の「申込 1 件の詳細」。
+
+## 購読 1 件の詳細
+
+**`getCreatorProductSubscriber`** — サブスクリプション 1 件の詳細（プラン価格・課金サイクル・現在の請求期間・クーポン・アンケート回答）
+
+```
+pathParams: { productId, subscriberId }
+```
+
+| 項目 | 意味 |
+|---|---|
+| `productId` | 商品 ID |
+| `subscriberId` | `postCreatorProductSubscribers` が返す `subscribers[].id` |
+
+過去の請求履歴（毎月の決済明細）は返らない。レスポンスの読み方は [content-schema.md](content-schema.md) の「購読 1 件の詳細」。
+
+## 一覧ツールの使い分け
 
 | | `postCreatorProductApplicants` | `postCreatorProductSubscribers` |
 |---|---|---|
@@ -91,3 +121,5 @@ bodyParams: { planIds, keyword, statuses, startDateTime, endDateTime, limit, off
 | 状態の絞り込み | `paymentPattern`（決済方法 × 状態） | `statuses` |
 
 商品にサブスクのプランと単発のプランが両方あるときは両方を呼ぶ。
+
+詳細ツールを呼ぶタイミングは SKILL.md の Workflow「2. 取得」に従う。

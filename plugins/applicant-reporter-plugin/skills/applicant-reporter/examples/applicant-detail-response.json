@@ -1,0 +1,70 @@
+{
+  "id": "user-content-002",
+  "guest": {
+    "id": "100002",
+    "name": "サンプル 花子",
+    "email": "sample-hanako@example.com",
+    "iconPhotoId": null
+  },
+  "planId": "302",
+  "planName": "分割プラン（3回）",
+  "message": "よろしくお願いします。",
+  "createdDateTime": "2026-09-05T21:40:00+09:00",
+  "viewingRestrictionDateTime": null,
+  "status": "installmentActive",
+  "paymentType": "mosh-installments",
+  "cardInstallmentCount": null,
+  "orders": [
+    {
+      "id": "order-0001",
+      "status": "approved",
+      "paymentMethod": "card",
+      "amount": 30000,
+      "discount": 0,
+      "additionalFee": 0,
+      "paidAmount": 30000,
+      "differenceAmount": 0,
+      "currency": "JPY",
+      "createdDateTime": "2026-09-05T21:40:00+09:00",
+      "approvedDateTime": "2026-09-05T21:40:05+09:00",
+      "canceledDateTime": null,
+      "bankTransferExpirationDateTime": null
+    },
+    {
+      "id": "order-0002",
+      "status": "approved",
+      "paymentMethod": "card",
+      "amount": 30000,
+      "discount": 0,
+      "additionalFee": 0,
+      "paidAmount": 30000,
+      "differenceAmount": 0,
+      "currency": "JPY",
+      "createdDateTime": "2026-10-05T09:00:00+09:00",
+      "approvedDateTime": "2026-10-05T09:00:03+09:00",
+      "canceledDateTime": null,
+      "bankTransferExpirationDateTime": null
+    }
+  ],
+  "installmentsOrder": {
+    "iteration": 3,
+    "count": 2,
+    "status": "active",
+    "interval": "month",
+    "nextApprovedDateTime": "2026-11-05T09:00:00+09:00",
+    "amount": 30000
+  },
+  "coupon": {
+    "id": "coupon-001",
+    "code": "AUTUMN10",
+    "name": "秋の早割",
+    "amountOff": null,
+    "percentOff": 10
+  },
+  "preCouponAmount": null,
+  "surveyAnswers": [
+    { "question": "受講の目的を教えてください", "answer": "副業で始めたい" },
+    { "question": "電話番号", "answer": "090-0000-0000" },
+    { "question": "興味のあるテーマ（複数選択）", "answer": "集客,LINE運用" }
+  ]
+}
