@@ -1,0 +1,19 @@
+{
+	"folderId": 1,
+	"contentType": "article",
+	"title": "呼吸法のポイント",
+	"body": "{\"type\":\"doc\",\"content\":[{\"type\":\"heading\",\"attrs\":{\"level\":2},\"content\":[{\"type\":\"text\",\"text\":\"今日のポイント\"}]},{\"type\":\"paragraph\",\"content\":[{\"type\":\"text\",\"text\":\"呼吸は\"},{\"type\":\"text\",\"marks\":[{\"type\":\"bold\"}],\"text\":\"鼻から吸って口から吐く\"},{\"type\":\"text\",\"text\":\"のが基本です。\"}]},{\"type\":\"bulletList\",\"content\":[{\"type\":\"listItem\",\"content\":[{\"type\":\"paragraph\",\"content\":[{\"type\":\"text\",\"text\":\"背筋を伸ばす\"}]}]},{\"type\":\"listItem\",\"content\":[{\"type\":\"paragraph\",\"content\":[{\"type\":\"text\",\"text\":\"5回繰り返す\"}]}]}]},{\"type\":\"paragraph\",\"content\":[{\"type\":\"text\",\"marks\":[{\"type\":\"link\",\"attrs\":{\"href\":\"https://example.com\",\"target\":\"_blank\"}}],\"text\":\"参考リンク\"}]},{\"type\":\"vimeoEmbed\",\"attrs\":{\"src\":\"https://player.vimeo.com/video/123456789\"}}]}",
+	"description": "",
+	"chapters": [],
+	"thumbnailAssetId": null,
+	"assetIds": [],
+	"isPublished": false,
+	"isNotifyOnPublish": false,
+	"isCommentEnabled": false,
+	"isCompletionButtonVisible": true,
+	"scheduledPublishAt": null,
+	"scheduledUnpublishAt": null,
+	"visibleAfterPurchaseDays": null,
+	"unpublishAfterPurchaseDays": null,
+	"tagIds": []
+}

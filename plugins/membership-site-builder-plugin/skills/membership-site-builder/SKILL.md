@@ -1,6 +1,6 @@
 ---
 name: membership-site-builder
-description: MOSH の会員サイトを MCP 経由で作成・編集・公開するスキル。対象サイトの特定 → 現状の把握 → フォルダとコンテンツの組み立て → 読み戻してレビュー → ユーザー承認のうえ公開、という段階で対話的に進める。「会員サイトを作って」「レッスンを追加して」「フォルダを作って」「会員サイトの中身を見せて」「コンテンツを公開して」「この動画を会員サイトにアップロードして」「この音声をレッスンにして」「レッスン動画を差し替えて」「このコンテンツにサムネイルを付けて」「membership-site-builder」など、MOSH の会員サイトの作成・編集・整理リクエストで使用する。「会員サイトに何が入っているか教えて」のような単純な参照でも `*MembershipSite*` 系ツールを使う場合は本スキルを起動し、提示ルールを適用する。
+description: MOSH の会員サイトを MCP 経由で作成・編集・公開するスキル。対象サイトの特定 → 現状の把握 → フォルダとコンテンツの組み立て → 読み戻してレビュー → ユーザー承認のうえ公開、という段階で対話的に進める。「会員サイトを作って」「レッスンを追加して」「フォルダを作って」「会員サイトの中身を見せて」「コンテンツを公開して」「この動画を会員サイトにアップロードして」「この音声をレッスンにして」「レッスン動画を差し替えて」「このコンテンツにサムネイルを付けて」「フォルダにサムネイルを付けて」「一覧のサムネイルを消して」「会員サイトのロゴを設定して」「見出しや箇条書きで本文を整えて」「Vimeo の動画を埋め込んで」「membership-site-builder」など、MOSH の会員サイトの作成・編集・整理リクエストで使用する。「会員サイトに何が入っているか教えて」のような単純な参照でも `*MembershipSite*` 系ツールを使う場合は本スキルを起動し、提示ルールを適用する。
 ---
 
 # MOSH 会員サイトビルダー
@@ -25,7 +25,9 @@ MCP ツール（`*MembershipSite*` 系。以下ツール名は OpenAPI の opera
 
 **動画・音声は MCP からアップロードできる**（手順は [references/media-upload.md](references/media-upload.md)）。ファイル本体を送れる環境かどうかで進め方が変わる（判定と送れないときの扱いは同ファイルの「前提」が正）。
 
-**コンテンツのサムネイル画像も MCP から付けられる**（手順は [references/media-upload.md](references/media-upload.md) の「サムネイル画像」）。ヘッダーロゴ・ホーム画面アイコンは新しく付けられない（外すことはできる）。
+**コンテンツとフォルダのサムネイル画像も MCP から付けられる**（手順は [references/media-upload.md](references/media-upload.md) の「サムネイル画像」）。ヘッダーロゴ・ホーム画面アイコンの画像も付けられる（同ファイルの「ヘッダーロゴ・ホーム画面アイコン」）。
+
+**本文は見出し・太字・箇条書き・リンク・Vimeo 埋め込み付きで書ける**（書き方は [references/rich-body.md](references/rich-body.md)）。
 
 ## 前提条件: 参照リソース
 
@@ -36,25 +38,25 @@ MCP ツール（`*MembershipSite*` 系。以下ツール名は OpenAPI の opera
 | コンテンツの `contentId` | ✅ | `getCreatorMembershipSiteFolders`（各フォルダの `contents` に入っている） |
 | タグの `tagId` | ✅ | `getCreatorMembershipSiteTags` |
 | 動画・音声の `assetIds` | ✅（新規分のみ） | `postCreatorMembershipSiteAssets` で発行した `assetId`（手順は [references/media-upload.md](references/media-upload.md)）。既存アセットを一覧するツールは無く、既存コンテンツの値は `getCreatorMembershipSiteContent` で読んだときだけ分かる |
-| サムネイルの `thumbnailAssetId` | ✅（新規分のみ） | `postCreatorMembershipSiteImageAssets` で登録した `assetId`（手順は [references/media-upload.md](references/media-upload.md) の「サムネイル画像」）。付けないなら `null`。既存コンテンツの値は `getCreatorMembershipSiteContent` で読んだときだけ分かる |
-| `headerLogoImageId` / `homeIconImageId` | ❌ | MCP に画像をアップロードするツールが無い。外すときだけ `null` を明示する |
+| サムネイルの `thumbnailAssetId`（コンテンツ・フォルダ） | ✅（新規分のみ） | `postCreatorMembershipSiteImageAssets` で登録した `assetId`（手順は [references/media-upload.md](references/media-upload.md) の「サムネイル画像」）。付けないなら `null`。既存コンテンツの値は `getCreatorMembershipSiteContent` で読んだときだけ分かる（フォルダは `getCreatorMembershipSiteFolders` の各フォルダの `thumbnailAssetId`） |
+| `headerLogoImageId` / `homeIconImageId` | ✅（新規分のみ） | `postMeMediaUploadUrls` で発行した `moshMediaId`（`isPrivate` の扱いを含め手順は [references/media-upload.md](references/media-upload.md) の「ヘッダーロゴ・ホーム画面アイコン」）。外すときは `null` |
 
 コンテンツだけを一覧するツールは無い。サイトの中身を見るときは常に `getCreatorMembershipSiteFolders` を使う。
 
 ## When to use
 
-- 会員サイトを新しく作りたいとき、サイトの設定（名前・公開状態・テーマカラー等）を変えたいとき
+- 会員サイトを新しく作りたいとき、サイトの設定（名前・公開状態・テーマカラー・コンテンツ一覧のサムネイル表示等）を変えたいとき
 - フォルダを作る・名前や表示形式を変える・公開状態を切り替える・削除するとき
 - コンテンツ（動画・記事・音声）を作る・書き換える・別のフォルダへ移す・複製する・削除するとき
 - 手元の動画・音声ファイルを会員サイトにアップロードしてコンテンツにしたい・差し替えたいとき
-- 手元の画像をコンテンツのサムネイルにしたい・差し替えたいとき
+- 手元の画像をコンテンツ・フォルダのサムネイル、サイトのヘッダーロゴ・ホーム画面アイコンにしたい・差し替えたいとき
+- 本文を見出し・太字・箇条書き・リンク・Vimeo 埋め込みで整えたいとき
 - コンテンツにタグを付けたい、タグを作る・名前を変える・削除するとき
 - サイトの中に何がどれだけ入っているかを確認したいとき、会員数を確認したいとき
 - `*MembershipSite*` 系ツールが必要な文脈
 
 ## When NOT to use
 
-- ヘッダーロゴ・ホーム画面アイコンの画像のアップロード → MCP にツールが無いため管理画面を案内する
 - ファイル共有（共有URLで配る動画・画像・PDF）→ `file-share` スキル。会員サイトのアセットとは別系統
 - コンテンツ・フォルダ・タグの並び替え → MCP にツールが無いため管理画面を案内する
 - 会員（ゲスト）の招待・閲覧権限の付与・ブロック、会員一覧の参照、視聴状況の確認 → MCP にツールが無い（会員数だけは `getCreatorMembershipSiteDashboardMembers` で取れる）
@@ -65,7 +67,7 @@ MCP ツール（`*MembershipSite*` 系。以下ツール名は OpenAPI の opera
 - **複数コンテンツの一括設定**（公開/非公開・公開時の通知・コメント・閲覧完了ボタン・タグの一括変更）→ 一括ツールは無い。件数が少なければ `patchCreatorMembershipSiteContent` を 1 件ずつ（前の結果を受けてから次を）呼んで代替できる。件数が多いときは管理画面の一括設定を案内する
 - **大量の動画の一括アップロード、旧サービス（旧会員サイト）からのコンテンツ・コメントの移行** → 一括ツールは無い。数本なら 1 本ずつ MCP で上げられるが、大量なら管理画面を案内する
 - **アップロード済みの動画に後から AI 要約・目次（チャプター）を生成する** → MCP では発行時のフラグでしか指定できないため管理画面を案内する
-- **本文への動画埋め込み（Vimeo 等）・見出し・チェックリストなどの装飾** → `body` の Tiptap JSON を直接組み立てる手段を持たないため、本文はプレーンテキストの段落までにし、埋め込みや装飾は管理画面の本文エディタで行うよう案内する
+- **本文への画像の差し込み、Vimeo 以外（YouTube 等）の動画埋め込み** → 管理画面の本文エディタを案内する（見出し・太字・箇条書き・リンク・Vimeo 埋め込みは [references/rich-body.md](references/rich-body.md) で MCP から書ける）
 - 会員サイトを売る商品・プランの作成や価格の設定 → `product-navigator` スキルで参照し、変更は管理画面
 - 会員（購入者）向けのお知らせ配信・一斉配信 → `customer-broadcast` スキル
 - ランディングページ → `lp-builder` スキル、ステップ配信 → `workflow-builder` スキル
@@ -77,7 +79,7 @@ MCP ツール（`*MembershipSite*` 系。以下ツール名は OpenAPI の opera
 ### 1. 対象サイトの特定と現状の把握
 
 1. `getCreatorMembershipSites` で一覧を取得し、ユーザーが言ったサイト名から対象を特定する。名前が一致しないときは候補を挙げて選んでもらう（勝手に決めない）
-2. `totalCount` が取得件数より多ければ `offset` をずらして続きを取る（`limit` 既定 20）
+2. `totalCount` が取得件数より多ければ `offset` をずらして続きを取る（`limit` 既定 20）。各サイトの `linkedProductPlanCount` で、そのサイトを提供している商品プランの件数が分かる
 3. サイトの中身を見るときは `getCreatorMembershipSiteFolders`。フォルダと、その中のコンテンツの概要（タイトル・種類・公開状態・タグ）が 1 回で全件返る
 4. サイトの設定値（テーマカラー等）を見るときは `getCreatorMembershipSite`、タグを見るときは `getCreatorMembershipSiteTags`、会員数を見るときは `getCreatorMembershipSiteDashboardMembers`
 
@@ -86,10 +88,10 @@ MCP ツール（`*MembershipSite*` 系。以下ツール名は OpenAPI の opera
 作るものによって聞くことが変わる。自明なら聞き直さない。
 
 - **サイトを作る**: サイト名。作成直後は非公開・設定は初期値になる
-- **フォルダを作る**: フォルダ名、表示形式（カルーセル / リスト / タイル）、いま公開するか
-- **コンテンツを作る**: どのフォルダに入れるか、種類（動画 / 記事 / 音声）、タイトル、本文、概要、タグ、公開のタイミング
+- **フォルダを作る**: フォルダ名、表示形式（カルーセル / リスト / タイル）、いま公開するか、サムネイル画像を付けるか（会員に見えるのは表示形式がリストのときだけ）
+- **コンテンツを作る**: どのフォルダに入れるか、種類（動画 / 記事 / 音声）、タイトル、本文、概要（記事のみ。動画・音声は次の項目）、タグ、公開のタイミング（日時指定、または購入から◯日後の◯時◯分）
 - **種類は後から変えられない**ため、作る前に必ず確定させる
-- 動画・音声を選んだときは、手元のファイル（置き場所）と、字幕・AI 要約・目次を自動で作るかを聞く。ファイルを送れない環境なら、その扱い（[references/media-upload.md](references/media-upload.md) の「前提」）を先に伝える
+- 動画・音声を選んだときは、手元のファイル（置き場所）と、字幕を自動で作るかを聞く。AI 要約・目次と概要・チャプターの扱いは [references/media-upload.md](references/media-upload.md) の手順 1 が正（既定は AI に作らせ、概要・チャプターは聞かない）。ファイルを送れない環境なら、その扱い（[references/media-upload.md](references/media-upload.md) の「前提」）を先に伝える
 - サムネイル画像を付けるかを聞く。付けるなら手元の画像（JPEG・PNG・WebP。管理画面の推奨は横長の 16:9）の置き場所を聞く。付けない場合の見え方は [references/content-schema.md](references/content-schema.md) の `thumbnailAssetId` の行
 
 ### 3. 作成
@@ -97,7 +99,7 @@ MCP ツール（`*MembershipSite*` 系。以下ツール名は OpenAPI の opera
 サイト → フォルダ → コンテンツの順に作り、返ってきた `id` を次の呼び出しに渡す。
 
 1. `postCreatorMembershipSites`（サイト名だけ。作成直後は非公開）
-2. `postCreatorMembershipSiteFolders`（フォルダ名・表示形式・公開状態）
+2. `postCreatorMembershipSiteFolders`（フォルダ名・表示形式・公開状態・`thumbnailAssetId` の 4 項目すべて必須。サムネイルを付けないなら `thumbnailAssetId: null`）
 3. タグを使うなら先に `getCreatorMembershipSiteTags` で既存を確認し、無いものだけ `postCreatorMembershipSiteTags` で作る
 4. 動画・音声なら、先に [references/media-upload.md](references/media-upload.md) の手順で本体を上げ、`assetId` を用意する。サムネイル画像を付けるなら、同じファイルの「サムネイル画像」の手順で画像の `assetId` も用意する
 5. `postCreatorMembershipSiteContents`（[references/content-schema.md](references/content-schema.md) の全項目を埋める。記事の最小例は [examples/article-content-draft.json](examples/article-content-draft.json)。例の `folderId` はダミー値なので、取得した値に置き換えてから送る）
@@ -112,12 +114,14 @@ MCP ツール（`*MembershipSite*` 系。以下ツール名は OpenAPI の opera
 
 | ツール | 送り方 |
 |---|---|
-| `patchCreatorMembershipSite`（サイト設定） | **全置換**。7 項目すべて必須。先に `getCreatorMembershipSite` で現在値を読み、変えない項目はその値をそのまま送り返す。ただし `themeColor` は 8 色から選ぶ項目で、読んだ値がその 8 色に無いときはそのまま送り返せない |
+| `patchCreatorMembershipSite`（サイト設定） | **全置換**。全項目必須（項目は [references/mcp-tools.md](references/mcp-tools.md) の同ツール）。先に `getCreatorMembershipSite` で現在値を読み、変えない項目はその値をそのまま送り返す。ただし `themeColor` は 8 色から選ぶ項目で、読んだ値がその 8 色に無いときはそのまま送り返せない |
 | `patchCreatorMembershipSiteFolder` / `patchCreatorMembershipSiteContent` / `patchCreatorMembershipSiteTag` | **送った項目だけ**変わる。ただし 1 項目も送らないリクエストは受け付けない |
 
 コンテンツの `chapters` / `assetIds` / `tagIds` は、部分更新のツールでも**配列ごと置き換わる**。1 つ足すだけでも `getCreatorMembershipSiteContent` で現在値を取り、足したものを含む配列全体を送る。空配列を送るとすべて外れる。
 
-本文（`body`）も同じで、取得した本文を土台にせず書き直すと、保存済みの画像・埋め込み・書式が失われる。
+本文（`body`）を直すときは [references/rich-body.md](references/rich-body.md) の「書くときに守ること」に従う（取得した本文を土台にする）。
+
+「一覧のサムネイルを消して」のような依頼は、サイト全体で一覧にサムネイルを出さない（`patchCreatorMembershipSite` の `isContentThumbnailVisible: false`）のか、特定のコンテンツ・フォルダの画像を外す（`thumbnailAssetId: null`）のかを確認してから進める。
 
 ### 5. レビュー
 
@@ -129,7 +133,14 @@ MCP ツール（`*MembershipSite*` 系。以下ツール名は OpenAPI の opera
 
 公開はサイト・フォルダ・コンテンツのそれぞれが持つ `isPublished` を `true` にして行う（専用のツールは無い）。会員から見えるのは**サイト・フォルダ・コンテンツの 3 つがすべて公開のとき**だけ。
 
-**公開の前に必ず確認する。**
+**公開の前に必ず確認する。「◯◯を公開して」と依頼で明示されていても、公開のツールを呼ぶ前に一度止まって確認を取る。** 依頼した本人が知らないことを、公開前に伝えるためである。確認では次を示す。
+
+- 何を公開するか（名前）と、公開すると会員から見えるようになること
+- 公開時に会員へメール通知が届くか（コンテンツの場合）
+- 親のフォルダ・サイトが非公開で、公開してもまだ会員に見えないか
+- 動画・音声の変換が終わっているか
+
+承認を得てから公開のツールを呼ぶ。返事を待たずに呼ばない。
 
 - コンテンツを公開するときは、先に `getCreatorMembershipSiteContent` で `isNotifyOnPublish` を読む。`true` のまま公開すると購入者（会員）へ**メール**で通知が届き、**取り消せない**（LINE 通知は送られない）。通知が要らないなら同じリクエストで `isNotifyOnPublish: false` も送る
 - 動画・音声は「必須ルール B」を満たしてから公開する
@@ -145,6 +156,7 @@ MCP ツール（`*MembershipSite*` 系。以下ツール名は OpenAPI の opera
 
 削除ツールはすべて**復元できない**。依頼されたときだけ使い、次の順で進める。
 
+0. サイトを消すときは、先に `getCreatorMembershipSites` の `linkedProductPlanCount` を見る。1 以上なら商品プランで提供中のため削除できないことを伝えて止める。あわせて、削除したいなら先に商品側の紐付けを外す必要があること、見えなくしたいだけなら非公開にする方法があること（ただし購入済みの会員も見られなくなる）を伝える。件数の項目名や内部 ID は出さず「◯件の商品プランで販売中」のように言う
 1. 対象を読み戻し、**名前で**提示する（サイトなら `getCreatorMembershipSite` でサイト名 ＋ `getCreatorMembershipSiteFolders` でフォルダ数とコンテンツ数 ＋ `getCreatorMembershipSiteDashboardMembers` で会員数、フォルダなら中のコンテンツ件数と公開中の件数、コンテンツならタイトルと公開状態、タグなら付いているコンテンツの件数）
 2. 何が一緒に消えるかを伝える（[references/content-schema.md](references/content-schema.md) の「削除で消えるもの」）。サイトを消すときは、会員数が消えるゲストの**下限**であることも添える（0 人と返っても、データが消えるゲストがいる）
 3. 「削除しますか？」と確認を取る
@@ -154,11 +166,11 @@ MCP ツール（`*MembershipSite*` 系。以下ツール名は OpenAPI の opera
 
 ## ユーザーへの提示・コミュニケーション規約
 
-このスキルを使うのは MCP / JSON / HTTP の知識を持たないクリエイターである前提で会話する。
+このスキルを使うのは MCP / JSON / HTTP の知識を持たないクリエイターである前提で会話する。**返答を書く前に [examples/user-facing-replies.md](examples/user-facing-replies.md) の NG / OK 例と「送る前の確認」を見る。**
 
 1. **JSON をそのまま見せない。** 自然言語の箇条書きか表に整形して提示する。ユーザーが明示的に求めたときだけ JSON を出す。ただし本文（Tiptap JSON）と生の内部 ID は、求められても出さない
 2. **HTTP 用語・ステータスコードを文面に出さない。** 「保存できました」「動画が紐づいていないため公開できませんでした」のように、起きたことと理由を平易な日本語で伝える
-3. **生の内部 ID を出さない。** 会員サイト・フォルダ・コンテンツ・タグはすべて名前（タイトル）で示す。`slug` も内部の値なので出さない
+3. **生の内部 ID と項目名を出さない。** 会員サイト・フォルダ・コンテンツ・タグはすべて名前（タイトル）で示し、名前の後ろに「（id: 7）」のように ID を添えない。`slug` も内部の値なので出さない。理由や規則を説明するときも `linkedProductPlanCount` のような項目名を使わず、画面での言い方に置き換える（このスキルの文章は作業者向けに項目名で書いてあるので、そのまま写さない）
 4. **英字の設定値は日本語に変換して出す**（変換表は [references/content-schema.md](references/content-schema.md)）。`video` や `carousel` をそのまま見せない
 5. **本文はそのまま貼らない。** `body` は現在のエディタが保存した Tiptap JSON 文字列で返り、旧サイトから移行したものは HTML 断片、初期データはプレーンテキストのこともある。テキストを取り出して要約する
 6. 参照 ID が未確定でも、推測値・ダミー値・0 を入れない。取得ツールで確かめるか、ユーザーに聞く
@@ -167,7 +179,7 @@ MCP ツール（`*MembershipSite*` 系。以下ツール名は OpenAPI の opera
 
 ### A. コンテンツ作成は全項目必須
 
-`postCreatorMembershipSiteContents` は 17 項目すべてが必須で、部分的に送ることはできない。使わない項目に渡す値は [references/content-schema.md](references/content-schema.md) の表で確定している（例: 本文と概要は空文字、配列は空配列、日時は `null`、`thumbnailAssetId` は `null`）。
+`postCreatorMembershipSiteContents` は全項目が必須で、部分的に送ることはできない（必須・省略可の内訳は [references/content-schema.md](references/content-schema.md) の表）。使わない項目に渡す値は [references/content-schema.md](references/content-schema.md) の表で確定している（例: 本文と概要は空文字、配列は空配列、日時は `null`、`thumbnailAssetId` は `null`）。
 
 ### B. 動画・音声は READY を確かめてから公開する
 
@@ -181,6 +193,7 @@ MCP ツール（`*MembershipSite*` 系。以下ツール名は OpenAPI の opera
 
 | 操作 | 何が起きるか |
 |---|---|
+| サイト・フォルダ・コンテンツの公開（依頼で明示されていても） | 会員から見えるようになる。上の「6. 公開」の内容を示して承認を取ってから行う |
 | `isNotifyOnPublish: true` での公開 | 購入者（会員）へメールで通知が届き、取り消せない（LINE 通知は送られない）。公開中のコンテンツに `isNotifyOnPublish: true` だけを送った場合も、次の配信で同じ通知が届く |
 | `isFixedViewingOrder` を `true` から `false` へ | 全ゲストの閲覧完了状態が消える（どこまで見たかの再生位置は残る）。元に戻せない |
 | サイト・フォルダ・コンテンツ・タグの削除 | 復元できない。消える範囲は [references/content-schema.md](references/content-schema.md) の表 |
@@ -195,7 +208,9 @@ MCP ツール（`*MembershipSite*` 系。以下ツール名は OpenAPI の opera
 
 作ったフォルダ・コンテンツ・タグは、それぞれ末尾に追加される。MCP に並び替えのツールは無いため、順番を指定したいときは**作る順番で決める**か、管理画面での並び替えを案内する。
 
-### F. 日時はタイムゾーンオフセット付きで送る
+### F. 予約公開と日時の書き方
+
+予約公開は `isPublished: true` ＋ 未来の `scheduledPublishAt` で設定する（`isPublished: false` のままでは日時が来ても公開されない）。`isPublished: true` を送るので、「6. 公開」の確認（通知・承認・動画は READY）を同じく行う。通知が ON なら、メールは保存時ではなく予約日時が来たときに届く。
 
 `scheduledPublishAt` / `scheduledUnpublishAt` は `2026-09-01T10:00:00+09:00` のようにオフセットを付ける。省略するとエラーになる。`Z` は UTC として解釈されるため、日本時間のつもりで `Z` を付けると 9 時間ずれる。
 
@@ -203,7 +218,7 @@ MCP ツール（`*MembershipSite*` 系。以下ツール名は OpenAPI の opera
 
 ### G. 「購入後◯日で非公開」は使わない
 
-非公開のタイミングは `scheduledUnpublishAt`（日時指定）だけを使う。`unpublishAfterPurchaseDays`（購入後◯日で非公開）は API にはあるが管理画面に設定欄が無く、入れると画面から見えず直せない。作成では必ず `null`、ユーザーにも選択肢として示さない。
+非公開のタイミングは `scheduledUnpublishAt`（日時指定）だけを使う。`unpublishAfterPurchaseDays`（購入後◯日で非公開）は API にはあるが管理画面に設定欄が無く、入れると画面から見えず直せない。作成では必ず `null`、ユーザーにも選択肢として示さない。「購入後◯日で非公開にしたい」と頼まれたら、管理画面からも設定できないことを伝え、代わりに日時指定の非公開か、プランの閲覧期間（`product-builder` スキルのライセンス設定）を提案する。
 
 更新では原則送らない。例外として、`scheduledUnpublishAt` を設定するときに `getCreatorMembershipSiteContent` で読んだ `unpublishAfterPurchaseDays` に値が入っていれば、同じリクエストで `null` を送って外す（2 つは同時に指定できず弾かれる。送らなかった項目にも既存の値を当てはめて判定される）。
 
@@ -214,11 +229,13 @@ MCP ツール（`*MembershipSite*` 系。以下ツール名は OpenAPI の opera
 | NG | OK |
 |---|---|
 | コンテンツを一覧するツールを探す | 存在しない。`getCreatorMembershipSiteFolders` がフォルダごとにコンテンツの概要を返す |
-| サイト設定を 1 項目だけ送って更新する | 7 項目すべて必須。先に読んで、変えない項目もそのまま送り返す |
+| iPhone の写真（HEIC）をそのままサムネイルに上げる | 使えるのは JPEG・PNG・WebP だけ。JPEG に変換してから上げる |
 | タグを作る前に既存を確認しない | タグ名はサイト内で一意。同じ名前があると弾かれる。先に一覧を引き、あればその id を使い回す |
 | コンテンツにタグを 1 つ足すつもりで `tagIds` に 1 件だけ送る | 配列ごと置き換わる。現在の値を読み、足したものを含む全体を送る |
 | フォルダを公開にすればコンテンツも見えると考える | サイト・フォルダ・コンテンツの 3 つがすべて公開のときだけ会員から見える |
-| 本文に Markdown の記法を書く | Markdown として解釈されない。改行は段落になるが、見出しや太字の記法は文字のまま会員に表示される |
+| 本文に Markdown の記法を書く | Markdown として解釈されない（記法が文字のまま出る）。装飾は [references/rich-body.md](references/rich-body.md) の Tiptap JSON で書く |
+| ファイルを送れない環境で、ユーザーが指定した概要をそのまま動画・音声の下書きに入れる | 概要を入れると AI 要約・目次が反映されなくなる。入れる前に「指定の概要を使う（AI 要約は使わない）か、空にして AI 要約に任せるか」を確認する（[references/media-upload.md](references/media-upload.md) の「前提」） |
+| 本文の Tiptap JSON に表に無い要素名を入れる | 本文全体が空白表示になる。[references/rich-body.md](references/rich-body.md) の表にある名前だけを使う |
 | 空のフォルダだと思って削除する | 中身の有無は確認されずそのまま消える。先に中のコンテンツ件数を数えて提示する |
 | 読んだ `themeColor` をそのままサイト設定の更新に送る | 指定できるのは 8 色だけ。8 色に無い値を送ると、その更新全体が弾かれる。どの色にするかをユーザーに確認する |
 | タグ名の前後に空白を付けて別のタグにする | 前後の空白は落として保存され、重複の判定でも空白を落として比べる。空白だけの名前は作れない |
@@ -233,7 +250,7 @@ MCP ツール（`*MembershipSite*` 系。以下ツール名は OpenAPI の opera
 | 商品のプランで提供中のサイトを削除しようとした | 商品側の紐付けを外してからでないと削除できないこと |
 | 閲覧順の固定を ON にできない | 有効な閲覧権限を持つ会員が既にいるか、一部のフォルダだけを見せる権限があること。詳しい理由は [references/content-schema.md](references/content-schema.md) の対応表 |
 | 同じ名前のタグが既にある | 既存のタグ名を示し、そのタグを使うか別の名前にするかを確認する（前後の空白が違うだけの名前は同じ名前として扱われる） |
-| テーマカラーに指定できない色を送った | 選べる 8 色を示し、どれにするかを確認する。サイト設定の更新は 7 項目まとめて送るため、この 1 項目で更新全体が止まる |
+| テーマカラーに指定できない色を送った | 選べる 8 色を示し、どれにするかを確認する。サイト設定の更新は全項目をまとめて送るため、この 1 項目で更新全体が止まる |
 | 動画・音声の本体が無いまま公開しようとした | 本体を紐づけないと公開できないこと。アップロードするか、管理画面での作業を案内する |
 | アップロードした動画・音声の処理が失敗した（ERRORED）／送ったのに受付待ちのまま進まない | ファイルの取り込みに失敗したこと。アップロードをやり直す（発行から） |
 | 動画コンテンツに音声を（またはその逆を）紐づけようとした | 種類が合わないこと。コンテンツと同じ種類のファイルを上げ直す |
@@ -249,7 +266,10 @@ MCP ツール（`*MembershipSite*` 系。以下ツール名は OpenAPI の opera
 |---|---|---|
 | [references/content-schema.md](references/content-schema.md) | コンテンツ作成・更新の全項目仕様、日本語変換表、削除で消えるもの、絶対に避けること | 書き込みの前に必ず |
 | [references/mcp-tools.md](references/mcp-tools.md) | 使用する MCP ツール 23 件のパラメータ詳細 | ツールの引数・応答・制約を確かめるとき |
-| [references/media-upload.md](references/media-upload.md) | 動画・音声のアップロード手順（発行 → PUT → READY 待ち → 紐付け）と、サムネイル画像の登録手順 | 動画・音声の本体やサムネイル画像を上げる・差し替えるとき |
+| [references/media-upload.md](references/media-upload.md) | 動画・音声のアップロード手順（発行 → PUT → READY 待ち → 紐付け）と、サムネイル画像・ヘッダーロゴ・ホーム画面アイコンの登録手順 | 動画・音声の本体や画像を上げる・差し替えるとき |
+| [references/rich-body.md](references/rich-body.md) | 本文を装飾付きで書くための Tiptap JSON の書き方と使える要素 | 本文を書く・直すとき |
 | [references/best-practices.md](references/best-practices.md) | サイト構成の組み立て方とセルフレビューチェックリスト | サイトを一から組むとき、レビュー（Workflow 5）のとき |
 | [examples/article-content-draft.json](examples/article-content-draft.json) | 記事コンテンツ作成の最小の送信内容（`folderId` はダミー。取得した値に置き換える） | 記事を作るとき |
+| [examples/article-rich-body.json](examples/article-rich-body.json) | 見出し・太字・箇条書き・リンク・Vimeo 埋め込み付きの記事の送信内容（`folderId` はダミー） | 装飾付きの本文を書くとき |
+| [examples/user-facing-replies.md](examples/user-facing-replies.md) | ユーザーへの返答で ID・項目名を出してしまう NG 例と OK 例、送る前の確認 | ユーザーに返答するたび |
 | [examples/video-upload-trace.md](examples/video-upload-trace.md) | 動画 1 本を上げてレッスンにする完全トレース | 動画・音声コンテンツを初めて作るとき |

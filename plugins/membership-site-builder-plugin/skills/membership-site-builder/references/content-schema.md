@@ -16,7 +16,7 @@
 
 ## コンテンツ作成の全項目（`postCreatorMembershipSiteContents`）
 
-**17 項目すべて必須。** 使わない項目にも下の「使わないときの値」を渡す。
+**必須 17 項目 ＋ 省略できる 2 項目（`visibleAfterPurchaseHours` / `visibleAfterPurchaseMinutes`）。**使わない項目にも下の「使わないときの値」を渡す。
 
 | 項目 | 型 | 制約 | 使わないときの値 |
 |---|---|---|---|
@@ -32,9 +32,10 @@
 | `isNotifyOnPublish` | 真偽値 | `isPublished` と同時に `true` にすると購入者（会員）へメールで通知が届き、**取り消せない**。LINE 通知は送られない | `false` |
 | `isCommentEnabled` | 真偽値 | コメントの受け付け | `false` |
 | `isCompletionButtonVisible` | 真偽値 | 閲覧完了ボタンの表示。`false` だと会員側に出ない | `true`（管理画面で作ったときと同じ既定値） |
-| `scheduledPublishAt` | 日時文字列 または `null` | オフセット必須。`visibleAfterPurchaseDays` と同時に指定できない | `null` |
+| `scheduledPublishAt` | 日時文字列 または `null` | オフセット必須。`visibleAfterPurchaseDays` と同時に指定できない。`isPublished: true` と組み合わせたときだけ効く（SKILL.md 必須ルール F） | `null` |
 | `scheduledUnpublishAt` | 日時文字列 または `null` | オフセット必須。`unpublishAfterPurchaseDays` と同時に指定できない | `null` |
 | `visibleAfterPurchaseDays` | 整数 または `null` | 0〜366。`scheduledPublishAt` と同時に指定できない | `null` |
+| `visibleAfterPurchaseHours` / `visibleAfterPurchaseMinutes` | 整数（省略可） | 「購入から◯日後」の公開時刻（日本時間）の時 0〜23 / 分 0〜59。`visibleAfterPurchaseDays` が `null` なら 0 で保存される。更新で省略すると元の値のまま | 省略（0 で保存） |
 | `unpublishAfterPurchaseDays` | 整数 または `null` | **常に `null`。** 管理画面に設定欄が無い（SKILL.md 必須ルール G） | `null` |
 | `tagIds` | 配列 | 最大 20 件。`getCreatorMembershipSiteTags` の id | `[]` |
 
@@ -54,9 +55,9 @@
 
 ### 本文（`body`）
 
-- **Markdown として解釈されない。** 改行は段落として反映されるが、見出しや太字などの記法は文字のまま会員に表示される
+- **Markdown として解釈されない。** プレーンテキストなら改行が段落になるだけ。見出し・太字・箇条書き・リンク・Vimeo 埋め込みは Tiptap JSON で書く（[rich-body.md](rich-body.md)）
 - 読み取り時は現在のエディタが保存した Tiptap JSON 文字列で返る。旧サイトから移行したコンテンツは HTML 断片、初期データはプレーンテキストのこともある
-- 更新するときは取得した本文を土台にする。書き直すと保存済みの画像・埋め込み・書式が失われる
+- 更新するときの手順は [rich-body.md](rich-body.md) の「書くときに守ること」が正（取得した本文を土台にする）
 
 ## 英字の値と日本語表記
 
@@ -81,7 +82,8 @@
 | `isCommentEnabled` | コメントを受け付ける / 受け付けない |
 | `isCompletionButtonVisible` | 閲覧完了ボタンを出す / 出さない |
 | `isNotifyOnPublish` | 公開時に購入者へメールで通知する / しない（LINE では届かない） |
-| `visibleAfterPurchaseDays` | 「購入から◯日後に公開」。`null` なら設定なし |
+| `visibleAfterPurchaseDays` | 「購入から◯日後に公開」。`null` なら設定なし。時刻（`visibleAfterPurchaseHours` / `Minutes`）が 0:00 以外なら「購入から◯日後の◯時◯分に公開」 |
+| `isContentThumbnailVisible` | コンテンツ一覧にサムネイルを出す / 出さない（タイトルだけを縦に並べる） |
 
 ## 表示名への変換
 
@@ -130,7 +132,7 @@
 - **`isFixedViewingOrder` を、ユーザーに頼まれていないのに `false` で送らない。** サイト設定は全置換なので、直前に読んだ値をそのまま送る。`true` → `false` は全会員の閲覧完了状態を消し、元に戻せない
 - **サイト設定の全置換で、`themeColor` を確かめずに送り返さない。** 指定できるのは 8 色だけで、読んだ値がその中に無いときはそのまま送ると弾かれ、他の項目の更新も一緒に失敗する。どの色にするかをユーザーに確認してから送る
 - **`chapters` / `assetIds` / `tagIds` を、現在値を読まずに送らない。** 配列ごと置き換わる。空配列を送るとすべて外れる
-- **`body` を、取得した本文を土台にせず書き直さない。** 保存済みの画像・埋め込み・書式が失われる
+- **`body` を、取得した本文を土台にせず書き直さない。** 保存済みの画像・埋め込み・書式が失われる（手順は [rich-body.md](rich-body.md)）
 - **削除する前に、消える範囲を伝えて承認を取らずに実行しない。** 上の「削除で消えるもの」を提示する
 - **参照 ID を推測して入れない。** `folderId` / `tagIds` / `assetIds` / `thumbnailAssetId` は取得ツールや登録の結果から使う。0 やダミー値を入れない
 - **連続した作成・複製・フォルダ移動を並行して呼ばない。** 並び順の採番が衝突して失敗する

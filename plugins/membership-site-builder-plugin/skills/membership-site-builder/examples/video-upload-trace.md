@@ -8,7 +8,6 @@
 
 ## 1. 聞き足す（1 往復）
 
-- AI 要約・目次を自動で作るか → 「作って」
 - タイトル → 「第1回 はじめに」
 - 公開のタイミング → 「確認してから」
 
@@ -47,6 +46,8 @@ curl -sS -X PUT -T ~/Movies/lesson01.mp4 "<uploadUrl>" -o /dev/null -w '%{http_c
 `getCreatorMembershipSiteAsset { id: 12, assetId: 6789 }` を 10 秒程度の間隔で呼ぶ → `PROCESSING` … → `READY`
 
 ユーザーへ: 「動画の変換が終わりました。」
+
+AI 要約・目次は指示が無いので作る（[media-upload.md](../references/media-upload.md) 手順 1・7 のとおり、概要・チャプターは空で作る）。
 
 ## 6. 非公開でコンテンツを作る
 

@@ -19,7 +19,10 @@ queryParams: { limit?, offset? }
 
 レスポンス: `{ membershipSites: [...], totalCount }`。`totalCount` は**総件数**。取得済み件数より多いときは `offset` をずらして続きを取得する。1 件も無い場合は空配列・`totalCount: 0`（エラーではない）。
 
-各要素: `id` / `slug` / `name` / `isPublished` / `headerLogoImageId` / `createdAt` / `updatedAt`。
+各要素: `id` / `slug` / `name` / `isPublished` / `isMigratedFromLegacySite` / `headerLogoImageId` / `linkedProductPlanCount` / `createdAt` / `updatedAt`。
+
+- `linkedProductPlanCount`: このサイトを提供している商品プランの件数。1 以上なら削除できない（`deleteCreatorMembershipSite` の項。非公開にしたときの影響は [content-schema.md](content-schema.md) の「削除で消えるもの」の下）
+- `isMigratedFromLegacySite`: 旧サービス（申込者向けサイト）から一括移行で作ったサイトか。移行中・移行失敗も `true`
 
 ### `getCreatorMembershipSite` — 会員サイト詳細を取得
 
@@ -27,7 +30,7 @@ queryParams: { limit?, offset? }
 pathParams: { id }
 ```
 
-サイトの設定値 7 項目（`name` / `isPublished` / `isFixedViewingOrder` / `headerLogoImageId` / `themeColor` / `homeIconImageId` / `homeTitle`）に `id` / `slug` / `createdAt` / `updatedAt` を加えて返す。フォルダ・コンテンツ・タグは含まれない。
+サイトの設定値（`name` / `isPublished` / `isFixedViewingOrder` / `headerLogoImageId` / `themeColor` / `homeIconImageId` / `homeTitle` / `isContentThumbnailVisible`）に `id` / `slug` / `isMigratedFromLegacySite` / `createdAt` / `updatedAt` を加えて返す。フォルダ・コンテンツ・タグは含まれない。
 
 **`patchCreatorMembershipSite` の前には必ずこれを呼ぶ**（全置換のため、変えない項目の現在値が要る）。ただし `themeColor` だけは、返ってきた値をそのまま送り返せないことがある（`patchCreatorMembershipSite` の項を参照）。
 
@@ -47,17 +50,18 @@ bodyParams: { name }
 
 ```
 pathParams: { id }
-bodyParams: { name, isPublished, isFixedViewingOrder, headerLogoImageId, themeColor, homeIconImageId, homeTitle }
+bodyParams: { name, isPublished, isFixedViewingOrder, headerLogoImageId, themeColor, homeIconImageId, homeTitle, isContentThumbnailVisible }
 ```
 
-**7 項目すべて必須の全置換。** 省くと弾かれる（省いても消えはしない）。
+**8 項目すべて必須の全置換。** 省くと弾かれる（省いても消えはしない）。
 
 - `name`: 1〜100 文字
 - `isPublished`: 公開 / 非公開
 - `isFixedViewingOrder`: 設定順に閲覧させる制約。`true` → `false` は**全ゲストの閲覧完了状態が消え、元に戻せない**
-- `headerLogoImageId` / `homeIconImageId`: 文字列 または `null`（`null` で外す。MCP から新しい画像は付けられない）
+- `headerLogoImageId` / `homeIconImageId`: 文字列 または `null`（`null` で外す）。付けるときは `postMeMediaUploadUrls` で `isPrivate` を付けずに発行した `moshMediaId`（手順と注意は [media-upload.md](media-upload.md) の「ヘッダーロゴ・ホーム画面アイコン」が正）
 - `themeColor`: 下の 8 色のいずれか。大文字で書く（小文字は弾かれる）
 - `homeTitle`: ホーム画面表示名
+- `isContentThumbnailVisible`: 会員サイトのコンテンツ一覧にサムネイルを出すか。`false` にするとタイトルを縦に並べた表示になる
 
 テーマカラーに指定できる 8 色:
 
@@ -113,7 +117,7 @@ pathParams: { id }
 
 **サイトの中身を見る唯一の入口。** コンテンツだけを一覧するツールは存在しない。
 
-各フォルダが `id` / `name` / `displayType` / `isPublished` / `createdAt` / `updatedAt` と、配下コンテンツの概要 `contents` を表示順で持つ。コンテンツ概要に入るのは `id` / `slug` / `title` / `description` / `thumbnailUrl` / `isPublished` / `contentType` / `scheduledPublishAt` / `scheduledUnpublishAt` / `visibleAfterPurchaseDays` / `unpublishAfterPurchaseDays` / `tagNames` / `tagIds` / `createdAt` / `updatedAt`。**本文とチャプターは含まない。**
+各フォルダが `id` / `name` / `displayType` / `isPublished` / `thumbnailAssetId` / `thumbnailUrl`（フォルダのサムネイル。無ければ `null`）/ `createdAt` / `updatedAt` と、配下コンテンツの概要 `contents` を表示順で持つ。コンテンツ概要に入るのは `id` / `slug` / `title` / `description` / `thumbnailUrl` / `isPublished` / `contentType` / `scheduledPublishAt` / `scheduledUnpublishAt` / `visibleAfterPurchaseDays` / `visibleAfterPurchaseHours` / `visibleAfterPurchaseMinutes` / `unpublishAfterPurchaseDays` / `tagNames` / `tagIds` / `createdAt` / `updatedAt`。**本文とチャプターは含まない。**
 
 ページングは無く、全フォルダ・全コンテンツの概要が 1 回で返る。概要は 1 件あたり最大 10,000 文字のため、コンテンツ数が多いサイトでは応答が大きくなる。
 
@@ -121,12 +125,15 @@ pathParams: { id }
 
 ```
 pathParams: { id }
-bodyParams: { name, displayType, isPublished }
+bodyParams: { name, displayType, isPublished, thumbnailAssetId }
 ```
+
+**4 項目すべて必須。**
 
 - `name`: 1〜100 文字
 - `displayType`: `"carousel"` | `"folderView"` | `"tile"`（日本語表記は [content-schema.md](content-schema.md)）
-- `isPublished`: `true` にすると、閲覧権限のある会員にすぐ公開される。下書きとして用意するなら `false`
+- `isPublished`: `true` にすると、閲覧権限のある会員にすぐ公開される。今後追加されるフォルダを自動で閲覧可にする権限には作成と同時に追加されるため、下書きとして用意するなら `false`
+- `thumbnailAssetId`: `postCreatorMembershipSiteImageAssets` で登録した画像の `assetId`。付けないなら `null`。会員に見えるのは `displayType` がリスト（`folderView`）のときだけで、`null` なら先頭コンテンツのサムネイルが代わりに出る。動画・音声の `assetId` は弾かれる
 
 レスポンスは `{ id }`。既存フォルダの末尾に追加される。
 
@@ -134,10 +141,10 @@ bodyParams: { name, displayType, isPublished }
 
 ```
 pathParams: { id, folderId }
-bodyParams: { name?, displayType?, isPublished? }
+bodyParams: { name?, displayType?, isPublished?, thumbnailAssetId? }
 ```
 
-送った項目だけが変わる。1 項目も送らないと弾かれる。`isPublished` を `false` にすると中のコンテンツは会員から見えなくなる（コンテンツ自体の公開状態は変わらない）。
+送った項目だけが変わる。`thumbnailAssetId` は作成と同じ値を使い、外すなら `null`。表示形式をリスト以外に変えてもサムネイルは残る（会員には見えなくなる）。1 項目も送らないと弾かれる。`isPublished` を `false` にすると中のコンテンツは会員から見えなくなる（コンテンツ自体の公開状態は変わらない）。
 
 ### `deleteCreatorMembershipSiteFolder` — フォルダを削除
 
@@ -201,7 +208,7 @@ pathParams: { id, contentId }
 
 本文・チャプター・公開設定まで含めて 1 件を返す。`contentId` は `getCreatorMembershipSiteFolders` の `contents` から取る（コンテンツ ID だけを指定するツールは無く、サイトの `id` も必ず一緒に渡す）。
 
-`body` は現在のエディタが保存した Tiptap JSON 文字列で返る。旧サイトから移行したコンテンツは HTML 断片、初期データはプレーンテキストのこともあるため、そのまま引用せずテキストを取り出して扱う。
+`body` は現在のエディタが保存した Tiptap JSON 文字列で返る（書くときの形と使える要素は [rich-body.md](rich-body.md)）。旧サイトから移行したコンテンツは HTML 断片、初期データはプレーンテキストのこともあるため、そのまま引用せずテキストを取り出して扱う。
 
 会員の視聴進捗・コメント・ブックマークは含まれない。
 
@@ -209,7 +216,7 @@ pathParams: { id, contentId }
 
 ```
 pathParams: { id }
-bodyParams: 17 項目すべて必須（content-schema.md の表を参照）
+bodyParams: 全項目必須（省略できる項目を含む内訳は content-schema.md の表）
 ```
 
 `folderId` は `getCreatorMembershipSiteFolders`、`tagIds` は `getCreatorMembershipSiteTags` で先に取得する。レスポンスは `{ id }`。フォルダ内の末尾に追加される。
@@ -218,7 +225,7 @@ bodyParams: 17 項目すべて必須（content-schema.md の表を参照）
 
 ```
 pathParams: { id, contentId }
-bodyParams: { folderId?, title?, body?, description?, chapters?, thumbnailAssetId?, assetIds?, isPublished?, isNotifyOnPublish?, isCommentEnabled?, isCompletionButtonVisible?, scheduledPublishAt?, scheduledUnpublishAt?, visibleAfterPurchaseDays?, unpublishAfterPurchaseDays?, tagIds? }
+bodyParams: { folderId?, title?, body?, description?, chapters?, thumbnailAssetId?, assetIds?, isPublished?, isNotifyOnPublish?, isCommentEnabled?, isCompletionButtonVisible?, scheduledPublishAt?, scheduledUnpublishAt?, visibleAfterPurchaseDays?, visibleAfterPurchaseHours?, visibleAfterPurchaseMinutes?, unpublishAfterPurchaseDays?, tagIds? }
 ```
 
 送った項目だけが変わる。`unpublishAfterPurchaseDays` は原則送らない（例外は SKILL.md 必須ルール G）。1 項目も送らないと弾かれる。各項目の型・上限は作成と同じ（[content-schema.md](content-schema.md)）。
@@ -247,9 +254,8 @@ pathParams: { id, contentId }
 
 - タイトルは「〈元のタイトル〉のコピー」になる。合計が 200 文字を超える場合は元のタイトルが切り詰められるため、実行後の値を `getCreatorMembershipSiteContent` で確認する
 - 必ず非公開で作られる
-- チャプター・タグ・動画や画像との結びつきは引き継がれる
-- 予約公開・予約非公開・購入後◯日で公開・公開時の通知（`isNotifyOnPublish`）の設定は引き継がれない（通知は必ず OFF になる）
-- コメントの受け付けは引き継がれず、必ず無効になる
+- 本文・概要・チャプター・タグ・動画や画像との結びつき・サムネイル・コメントの受け付け（ツールの説明とは異なり引き継がれる）・閲覧完了ボタンの表示は引き継がれる
+- 予約公開・予約非公開・購入後◯日で公開（時刻を含む）・公開時の通知（`isNotifyOnPublish`）の設定は引き継がれない（通知は必ず OFF になる）
 - 複製先は元と同じフォルダで、別のフォルダは指定できない
 
 レスポンスは複製後の `{ id }`。実行後は、タイトルが変わることと非公開で作られることをユーザーに伝える。
@@ -268,7 +274,7 @@ bodyParams: { assetType, fileSizeBytes, isGenerateSubtitles, isGenerateAiSummary
 - `assetType`: `"video"`（上限 20GB）| `"audio"`（上限 500MB）。コンテンツの `contentType` と揃える
 - `fileSizeBytes`: アップロードするファイルの実バイト数
 - `isGenerateSubtitles`: 字幕を自動生成するか（音声は指定に関わらず文字起こしを作る。会員側に字幕表示は無い）
-- `isGenerateAiSummary`: AI 要約・目次（チャプター）を自動生成するか。`true` なら字幕の指定に関わらず文字起こしを作る
+- `isGenerateAiSummary`: AI 要約・目次（チャプター）を自動生成するか。`true` なら字幕の指定に関わらず文字起こしを作る。発行後は変えられない。既定値と、コンテンツの概要・チャプターを空で作るルールは [media-upload.md](media-upload.md) の手順 1・7 が正
 
 レスポンスは `uploadUrl` / `assetId` / `uploadId`。**ファイル本体の PUT はこのツールでは行わない。** `uploadUrl` の有効期限は発行から 1 時間。使い方の注意は [media-upload.md](media-upload.md) の「動画・音声で守ること」。
 
@@ -278,7 +284,7 @@ bodyParams: { assetType, fileSizeBytes, isGenerateSubtitles, isGenerateAiSummary
 pathParams: { id, assetId }
 ```
 
-`status` と再生トークンを返す。PUT のあと 10 秒程度の間隔で READY になるまで呼ぶ。
+`status`・`aiGenerationStatus`・`subtitleStatus` と再生トークンを返す。PUT のあと 10 秒程度の間隔で READY になるまで呼ぶ。
 
 | `status` | 意味 | 次の動き |
 |---|---|---|
@@ -289,6 +295,13 @@ pathParams: { id, assetId }
 
 `isGenerateAiSummary: true` で発行したアセットは、READY 後にこのツールを呼んだ時点で AI 要約・目次の生成が始まる。
 
+| 項目 | 値 | 意味 |
+|---|---|---|
+| `aiGenerationStatus` | `notRequested` / `pending` / `processing` / `completed` / `failed` | AI 要約・目次の生成状態（未依頼 / 依頼済み / 生成中 / 完了 / 断念） |
+| `subtitleStatus` | `notCreated` / `processing` / `ready` / `failed` | 字幕の状態（作っていない / 生成中 / 表示できる / 失敗） |
+
+ユーザーには日本語の状態で伝える（「AI 要約を作成中です」など）。生成された要約・目次そのものは `aiDescription` / `aiChapters` で読める（コンテンツの概要・目次が空ならそこへ自動で入る）。
+
 ## サムネイル画像
 
 手順全体と失敗時の扱いは [media-upload.md](media-upload.md) の「サムネイル画像」。
@@ -296,11 +309,12 @@ pathParams: { id, assetId }
 ### `postMeMediaUploadUrls` — 画像のアップロード先を発行
 
 ```
-bodyParams: { name, type }
+bodyParams: { name, type, isPrivate }
 ```
 
 - `name`: 拡張子つきのファイル名
-- `type`: サムネイルでは `imageJpeg` / `imagePng` / `imageWebp` のどれか。ほかに `applicationPdf` / `textCsv` / `applicationXlsx` も選べるが、それで発行した ID はサムネイルの登録で弾かれる
+- `isPrivate`: 省略すると公開で発行される。用途で使い分けが逆になる（サムネイルは `true`、ヘッダーロゴ・ホーム画面アイコンは付けない）ため、[media-upload.md](media-upload.md) の各手順が正
+- `type`: サムネイルでは `imageJpeg` / `imagePng` / `imageWebp` のどれか。ほかの値（`applicationPdf` などのファイル、`imageHeic` / `imageHeif` を含む）も選べるが、それで発行した ID はサムネイルの登録で弾かれる
 
 レスポンスは `moshMediaId` / `uploadUrl`。**ファイル本体の PUT はこのツールでは行わない。** `uploadUrl` の有効期限は発行から 15 分で、過ぎたら発行し直す。PUT に `Content-Type` ヘッダーは要らない。画像の変換が終わったかを確かめるツールは無く、次の `postCreatorMembershipSiteImageAssets` の応答で分かる。
 
@@ -311,7 +325,7 @@ pathParams: { id }
 bodyParams: { moshMediaId }
 ```
 
-`postMeMediaUploadUrls` で発行し PUT を済ませた `moshMediaId` を、会員サイトのアセットとして登録する。レスポンスは `{ assetId }` で、これを `postCreatorMembershipSiteContents` / `patchCreatorMembershipSiteContent` の `thumbnailAssetId` に渡す。
+`postMeMediaUploadUrls`（`isPrivate: true`）で発行し PUT を済ませた `moshMediaId` を、会員サイトのアセットとして登録する。レスポンスは `{ assetId }` で、これをコンテンツ（`postCreatorMembershipSiteContents` / `patchCreatorMembershipSiteContent`）またはフォルダ（`postCreatorMembershipSiteFolders` / `patchCreatorMembershipSiteFolder`）の `thumbnailAssetId` に渡す。
 
 - 画像の変換が終わるまでは「画像の処理が完了していません」と返る。時間をおいて同じ `moshMediaId` で呼び直す（PUT はやり直さない）。数分続くなら変換に失敗しているので発行からやり直す
 - 同じ `moshMediaId` で呼び直しても、新しく作らず同じ `assetId` を返す
