@@ -2,12 +2,6 @@
 
 レイヤー0に着手する前に必ず読む。**誤読が誤診断に直結する**箇所だけを集めている。
 
-裏取り:
-
-- **構造**: `getCreatorScenario` の実レスポンス（テストアカウント上のワークフローで確認。確認日 2026-08-28）と、[`workflow-builder` の references/content-schema.md](../../workflow-builder/references/content-schema.md)
-- **実行実績**: `getCreatorScenariosExecutions` の OpenAPI レスポンススキーマと実際の挙動。確認日 2026-08-28
-- **trigger のキー名（`SCHEDULED_PROCESSING` / `LINE_KEYWORD_RESPONSE_MATCHED`）**: OpenAPI スキーマで確認。確認日 2026-10-15（実機レスポンスは未確認）
-
 ## 構造（`getCreatorScenario`）の読み方
 
 **本スキルの主軸。実行データが1件も無くてもここまでは確定できる。**
@@ -99,7 +93,7 @@
 | `CONTACT_TAG_ADDED` | `contactTagAddedTrigger` | `name`（タグ名） |
 | `INFLOW_ACTION_CONVERTED` | `inflowActionConvertedTrigger` | `name`（流入経路名） |
 | `MARKETING_LEAD_BENEFIT_RECEIVED` | `marketingLeadBenefitReceivedTrigger` | `title` |
-| `LINE_KEYWORD_RESPONSE_MATCHED` | `lineKeywordResponseMatchedTrigger` | `name`（キーワード応答の設定名。**公開時点の名前**を保存したもの＝公開後に管理画面で名前を変えていれば食い違う。実機未確認）。キーワード応答は MCP に一覧・詳細ツールが無いので、**名前を得られるのは実績側だけ**（公開履歴が無い＝404 なら名前は得られない） |
+| `LINE_KEYWORD_RESPONSE_MATCHED` | `lineKeywordResponseMatchedTrigger` | `name`（キーワード応答の設定名。**公開時点の名前**を保存したもの＝公開後に管理画面で名前を変えていれば食い違う。公開した時点で保存され、下書き側のトリガーは ID しか持たない）。現在の設定名・キーワード等は `getCreatorLineKeywordResponse` で取れるので、**公開時点の名前との食い違い**（公開後に改名）だけ実績側と見比べて分かる |
 | `SCHEDULED_PROCESSING` | `scheduledProcessingTrigger` | 表示名なし。`targetType` と `scheduleRules`（発火スケジュール） |
 | `INSTALLMENT_PAYMENT_FAILED` / `SUBSCRIPTION_PAYMENT_FAILED` | なし | — |
 
@@ -107,6 +101,7 @@
 |---|---|---|
 | `steps[0]` | トリガーステージ（先頭）。以降 `steps` は上流→下流の順 | — |
 | `totalCount` | **`completedCount` + `failedCount` のみ** | 待機中（SCHEDULED）とキャンセル（CANCELED）は含まれない。WAIT_TIME 直後の件数減は「待機中の人が見えていないだけ」で正常 |
+| トリガーの件数の読み方 | **実行履歴のレコード数（延べ回数）で、人数ではない** | 反応頻度が `毎回`（キーワード応答 `everyTime` / 流入経路 `conversionFrequencyType: everyTime`）だと、同じ人が繰り返すたびに増える。`初回のみ` なら1人1回まで。件数を人数として読み上げない |
 | `completedCount` | 正常に実行できた件数 | CONDITION では「条件が false だった人」も COMPLETED に含まれる |
 | `failedCount` | 実行できなかった件数 | 「条件に合わなかった」ではない（下の原因コード辞書） |
 | `waitTime` | WAIT_TIME ステージのみ非 null。`{waitTimeType, actionDate, actionAfterDays(0-30), actionHours, actionMinutes}` | 待機の長さは `actionAfterDays` で読む |
@@ -115,16 +110,23 @@
 
 ### 実績と分岐の対応づけ【未検証・フェイルセーフに扱う】
 
-実績側の `steps[].steps`（CONDITION の子）が、構造側の `branches[]` のどちらに対応するかは**実クリエイターの生レスポンスで未確認**（テストアカウントに実行履歴のあるワークフローが無いため）。次の順で扱う:
+実績側の `steps[].steps`（CONDITION の子）が、構造側の `branches[]` のどちらに対応するかは、実績側から**確定できない**（実績のステージエントリ（`stageSnapshotId` / `type` / 各件数 / `steps`）に **`handle` は含まれない**。子ステップは `steps[]` に入れ子で返る）。次の順で扱う:
 
-1. 実績のステージエントリに構造側と同じ `handle` が**含まれていれば**、それで対応づけて確定してよい
-2. 含まれていなければ**対応づけを推測しない**。レイヤー0で確定している「true 側／false 側で何が起きるか」に、実績の合計値を突き合わせて言える範囲（例:「この分岐を通った◯人のうち、配信が実行されたのは△人」）にとどめ、`要確認` として報告する
+1. （実績に `handle` が含まれる場合のみ。現状は含まれない）構造側と同じ `handle` で対応づけて確定してよい
+2. **対応づけを推測しない**。レイヤー0で確定している「true 側／false 側で何が起きるか」に、実績の合計値を突き合わせて言える範囲（例:「この分岐を通った◯人のうち、配信が実行されたのは△人」）にとどめ、`要確認` として報告する
 
 この穴は `getCreatorScenariosExecutions` に `handle` を含める拡張（SKILL.md §未解決の制約）で根本解決する。
 
 ## 失敗の原因コード辞書
 
-**MCP では取得できない**（原因コード別の内訳を返すツールが無い。SKILL.md §未解決の制約の1件目）。したがって通常のレビューでは**原因を断定せず、下表から最も確からしい仮説を1つ提示するだけ**にとどめる。ユーザーが管理画面の実行履歴で見た文言を伝えてきたとき、および PM が BigQuery で深掘りするときの読み替え表として使う。
+`getCreatorScenariosStageSnapshotExecutions` で、ステップ1つの実行対象ごとの `errorCode` / `errorDetailCode` を取れる（`getCreatorScenariosExecutions` の `steps[].stageSnapshotId` を渡す。条件分岐の子ステップは `steps[].steps[]` の中）。使い方:
+
+- `executionStatus: FAILED` で絞る。**1ページ50件・新しい順**。`currentPage < totalPage` なら `page` を進める。件数が多いときは先頭の数ページを見て、理由の割合を「直近の傾向」として伝える（全件を数えたと言わない）
+- 理由コードは**事実**として提示してよい（下表の「意味」）。「なぜその設定にしたか」は引き続き仮説で、下表の「疑うべき設定ミス」から最も確からしい1つを添える
+- **個人情報（表示名・メールアドレス）を含む**。レポートには理由ごとの件数だけを書き、個人を特定する情報は転記しない
+- 返却の形: `{ action, executions[], totalPage, currentPage }`。各 `executions[]` は `targetType`（例: `CONTACT_LINE`）、対象の `guest` / `contactLine` / `contactEmail`（該当しないものは `null`。表示名・アイコン URL を含む）、`executionStatus`、`errorCode` / `errorDetailCode`（成功は両方空文字）、`executedAt`。該当が無ければ `executions: []` で `totalPage: 0`
+- 理由別の件数を返すツールは無い（全ページを取って数える必要がある。SKILL.md §未解決の制約の1件目）
+- 他人のワークフロー・存在しない ID・そのワークフローに属さない `stageSnapshotId` は 404
 
 | errorCode / errorDetailCode | 主に出るアクション | 意味 | 疑うべき設定ミス |
 |---|---|---|---|
@@ -133,4 +135,7 @@
 | `REJECTED` / `LINE_BLOCKED` | SEND_LINE_MESSAGE | 相手が LINE 公式アカウントをブロック済み | 設定ミスではない。一定割合は正常。率が突出して高い場合は配信頻度・内容の問題 |
 | `QUOTA_LIMIT_ERROR` / `LINE_QUOTA_LIMIT` | SEND_LINE_MESSAGE | LINE 公式アカウントの月間配信通数上限に到達 | 設定ミスではなく運用課題。LINE 側プランの見直しを案内する |
 | `TARGET_RESOURCE_NOT_FOUND` / `CREATOR_LINE_CHANNEL_NOT_FOUND` | SEND_LINE_MESSAGE | ワークフローに紐づく LINE 公式アカウントが解決できない | LINE 連携が解除された、または流入経路が属するアカウントとワークフローの LINE 公式アカウントが不一致（S-4） |
+| `QUOTA_LIMIT_ERROR` / `MOSH_QUOTA_LIMIT` | SEND_LINE_MESSAGE, SEND_EMAIL | MOSH プランの配信上限に到達 | 設定ミスではなく運用課題。プランの見直しを案内する |
+| `TARGET_RESOURCE_NOT_FOUND` / `CONTACT_TAG_NOT_FOUND` | ADD_CONTACT_TAG, REMOVE_CONTACT_TAG, CONDITION(CONTACT_TAG) | 指定したタグが存在しない | タグが削除された（S-4 参照先の消失）。タグ名で作り直されていないかを確認する |
+| `TARGET_RESOURCE_NOT_FOUND` / `LINE_RICH_MENU_NOT_FOUND` | LINK_LINE_RICH_MENU | 指定したリッチメニューが存在しない | リッチメニューが削除された（S-4 参照先の消失） |
 | `UNKNOWN_ERROR` | SEND_LINE_MESSAGE | 分類不能 | 件数が少なければ様子見。多発するならエンジニアにエスカレーション |
