@@ -87,7 +87,7 @@
 
 `productId` / `productPlanId`（ともにパス。数値文字列）で対象を指定する。
 
-**部分更新には対応していない。** body は `initialPrice` / `iterations` / `discountPrice` / `applicationPeriods` / `bankTransferDeadlineDays` 以外すべて必須で、作成時の項目に `isSuspended`（販売受付だけ止めるフラグ）が加わり、`billingStartType` / `billingStartAbsoluteDate` / `billingStartRelativeOffsetDays` は**項目自体が無い**（課金開始日は作成時のまま変わらない）。
+**部分更新には対応していない。** body は `initialPrice` / `iterations` / `discountPrice` / `applicationPeriods` / `bankTransferDeadlineDays` 以外すべて必須で、作成時の項目に `isSuspended`（販売受付だけ止めるフラグ）が加わる。`billingStartType` / `billingStartAbsoluteDate` / `billingStartRelativeOffsetDays` は任意で、省略すると現在値を維持する。変更できるのは `isBillingStartEditable` が true（非公開かつ購読者ゼロ）のプランだけ。
 
 送る前に `getCreatorProductPlan` で現在値を読み、変えない項目もそのまま含める。
 
@@ -128,7 +128,7 @@
 返るのは `productPlanId`（複製されたプランの ID）のみ。内容を確認するには `getCreatorProductPlan` で読み戻す。
 
 - 複製されたプランは「<元のプラン名>のコピー」という名前で作成され、公開ステータスは**非公開**（`PRIVATE`）になる
-- **課金開始日は引き継がれず「購入後すぐ」になる。** 更新では変えられないため、課金開始日を指定しているプランは複製ではなく新規作成する
+- **課金開始日は引き継がれず「購入後すぐ」になる。** 複製先は非公開かつ購読者ゼロなので、必要なら複製直後に `patchCreatorProductPlan` で付け直す
 - サンクスページ／メール・自動リダイレクト・感想レポート・決済方法の設定は複製先にも引き継がれる
 - **クーポンは引き継がれない。** 複製先でも使うなら `postCreatorProductPlanCoupon` で新しく発行する。コードは MOSH 全体で一意なので、複製元と同じコードは使えず別のコードにする
 - `isOfferedContentCopy: true` のとき、会員サイトの紐付けは複製されるが、**ライセンス設定は初期状態**（複製時点の全フォルダ閲覧可・今後追加されるフォルダも含む・無期限）で作られる。**予約メニューの紐付けは複製されない**
