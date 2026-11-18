@@ -6,7 +6,7 @@
   "capacity": 20,
   "showRemaining": true,
   "remainingThreshold": 5,
-  "price": { "amount": 3000, "currency": "JPY" },
+  "price": { "amount": 2480, "currency": "JPY" },
   "discountPrice": null,
   "paymentMethods": [
     { "method": "CARD", "isEnabled": true },
@@ -17,6 +17,6 @@
   "benefits": [],
   "installmentType": "LUMP_SUM",
   "installmentIterations": [],
-  "applicationStartDateTime": "2026-06-01T00:00:00+09:00",
-  "applicationEndDateTime": "2026-06-30T23:59:00+09:00"
+  "applicationStartDateTime": "2027-01-01T00:00:00+09:00",
+  "applicationEndDateTime": "2027-01-31T23:59:00+09:00"
 }

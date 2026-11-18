@@ -1,8 +1,12 @@
 # 使用する MCP ツール
 
+**いつ読むか**: 商品・プラン本体（作成・更新・並び替え・削除・取得）と画像アップロードのツールを呼ぶ前に、パラメータ・必須項目・返却値を確かめるとき。プランの設定・複製・クーポンのツールは各領域ファイルに置いてあり、このファイルを読む必要はない（末尾の対応表）。
+
 ツール名は OpenAPI の operationId で記す。実際のツール名にはサーバー識別子の接頭辞（例: `mcp__<server>__postCreatorProduct`）が付くが、その形は環境により異なるためここでは付けない。
 
 ## 書き込み系
+
+項目の範囲・組み合わせ・既定値・**拒否されたときのメッセージ**の正本は [content-schema.md](content-schema.md)。この節は送るパラメータの一覧で、拒否条件は再掲しない。旧サービスの扱いは [content-schema.md](content-schema.md) の「旧サービス（isLegacyService: true）」。
 
 ### `postCreatorProduct` — 商品を作成
 
@@ -64,19 +68,19 @@
 | `remainingThreshold` | ○ | 0 以上。残席がこの数以下になったら表示する |
 | `price` | ○ | `{ amount, currency }`。`currency` は `JPY` |
 | `discountPrice` | ○ | 割引前価格。無いなら `null`。1 円以上かつ**価格より大きい**。**買い切り（`ONE_TIME`）のみ**。サブスクリプションでは `null` |
-| `paymentMethods` | ○ | `{ method, isEnabled }` の配列。`method` は `CARD` / `BANK_TRANSFER` |
+| `paymentMethods` | ○ | `{ method, isEnabled }` の配列。`method` は `CARD` / `BANK_TRANSFER`。サブスクリプションでは `BANK_TRANSFER` を有効にできない |
 | `bankTransferDeadlineDays` | ○ | 銀行振込の振込期限（申込からの日数）。1〜99 または `null`。**`null` は標準の 15 日**。銀行振込が無効なプラン（サブスクリプションは常に無効）では `null` を送る。日数を送ると拒否される |
 | `billingCycle` | ○ | `ONE_TIME` / `MONTHLY` / `YEARLY` |
 | `benefits` | ○ | 文字列の配列。**最大 10 件・各 50 文字**。買い切りでは `[]` |
 | `installmentType` | ○ | `LUMP_SUM` / `INSTALLMENT_LUMP_DEPOSIT` / `INSTALLMENT` |
-| `installmentIterations` | ○ | `{ count, price }` の配列。`count` は 2 以上、`price` は 1 円以上または `null`。**`LUMP_SUM` では空配列**、`INSTALLMENT` では 1 件以上必須。`INSTALLMENT_LUMP_DEPOSIT` は任意だが入れれば回数として使われる |
+| `installmentIterations` | ○ | `{ count, price }` の配列。**`LUMP_SUM` では空配列**、`INSTALLMENT` では 1 件以上必須。`INSTALLMENT_LUMP_DEPOSIT` では送っても保存されない（[content-schema.md](content-schema.md) の「分割払い」） |
 | `applicationStartDateTime` | ○ | 販売受付開始日時または `null`。**サブスクリプションでは常に `null`** |
 | `applicationEndDateTime` | ○ | 販売受付終了日時または `null`。同上 |
-| `initialPrice` | — | 初回価格（1 円以上）。fincode のクリエイターのサブスクリプションでのみ使う。`null` で通常価格と同額 |
+| `initialPrice` | — | 初回価格（1 円以上）。サブスクリプション × fincode のクリエイター限定。`null` で通常価格と同額。Stripe では無視されるので読み戻して確かめる（[content-schema.md](content-schema.md) の「初回価格」） |
 | `iterations` | — | 課金回数（初回を含む合計）。**1〜12**。サブスクリプションかつ Stripe のクリエイターのみ。`null` で無制限 |
 | `billingStartType` | — | `immediate` / `absolute` / `relative`。省略時は `immediate`。サブスクリプションのみ |
 | `billingStartAbsoluteDate` | — | `absolute` のときの課金開始日。それ以外は `null` |
-| `billingStartRelativeOffsetDays` | — | `relative` のときの日数（0〜365）。それ以外は `0` |
+| `billingStartRelativeOffsetDays` | — | `relative` のときの日数（1〜365）。それ以外は `0` |
 | `applicationPeriods` | — | 申込期間の配列。**買い切りでは使えない**。詳細は [content-schema.md](content-schema.md) |
 
 返るのは `productPlanId` のみ。内容を確認するには `getCreatorProductPlan` で読み戻す。
@@ -87,20 +91,16 @@
 
 `productId` / `productPlanId`（ともにパス。数値文字列）で対象を指定する。
 
-**部分更新には対応していない。** body は `initialPrice` / `iterations` / `discountPrice` / `applicationPeriods` / `bankTransferDeadlineDays` 以外すべて必須で、作成時の項目に `isSuspended`（販売受付だけ止めるフラグ）が加わる。`billingStartType` / `billingStartAbsoluteDate` / `billingStartRelativeOffsetDays` は任意で、省略すると現在値を維持する。変更できるのは `isBillingStartEditable` が true（非公開かつ購読者ゼロ）のプランだけ。
+**部分更新には対応していない。** body は `initialPrice` / `iterations` / `discountPrice` / `applicationPeriods` / `bankTransferDeadlineDays` / 課金開始日の 3 項目以外すべて必須で、作成時の項目に `isSuspended`（販売受付だけ止めるフラグ）が加わる。
 
-送る前に `getCreatorProductPlan` で現在値を読み、変えない項目もそのまま含める。
+- **課金開始日の 3 項目は、変えないなら省略する**（省略で現在値を維持）。取得値は日数が `null` で返ることがあり、そのまま送り返すと形式エラーになる。変更できるのは `isBillingStartEditable` が true（非公開かつ購読者ゼロ）のプランだけ（[content-schema.md](content-schema.md) の「課金開始日」）
+- **`discountPrice` は省略・現在値の送り返しでも `null` に置き換わったり、価格を上げると拒否されたりする**（[content-schema.md](content-schema.md) の「割引前の価格と価格の更新」）
+
+送る前に `getCreatorProductPlan`（詳細）か `getCreatorProductPlans`（一覧）で同じプランの現在値を読み、変えない項目もそのまま含める（一覧と詳細は同じ項目を返す）。
 
 `bankTransferDeadlineDays` は省略すると現在値のまま、`null` を送ると標準の 15 日に戻る。銀行振込を無効にする更新では、残っていた期限も消える。
 
-拒否される変更:
-
-| 変更 | 結果 |
-|---|---|
-| `billingCycle` / `iterations` / `initialPrice` を現在値と違う値にする | 拒否される。新しいプランを作る |
-| 公開中または購入者がいるサブスクリプションプランの `name` / `price` を変える | 拒否される。`isNameEditable` / `isPriceEditable` で事前判定できる |
-| `capacity` を現在の購読者数より小さくする | 拒否される |
-| 銀行振込が無効なプラン（更新後の状態で判定）に `bankTransferDeadlineDays` の日数を送る | 拒否される（「振込期限は銀行振込を有効にしたプランでのみ設定できます。」）。現在値と同じ値の送り返しは通る |
+**エラーで終わっても途中まで反映されていることがある**（価格は元に戻るが、プラン名・公開状態・定員は新しい値で残りうる）。エラーのあとは読み戻して確かめる。拒否される変更（変更不可の項目・名前と価格のロック・定員・振込期限など）は [content-schema.md](content-schema.md) の「拒否されたときのメッセージ」。
 
 ### `patchCreatorProductProductPlansReorder` — プランの表示順を一括更新
 
@@ -117,31 +117,6 @@
 
 サブスクリプションを購読中のゲスト、購入済みのゲスト、分割払いの支払いが完了していないゲストがいる場合は削除できない。事前に `getCreatorProductPlan` の `isDeletable` で判定できる。
 
-### `postCreatorProductPlanDuplicate` — 商品プランを複製
-
-`productId` / `productPlanId`（ともにパス。数値文字列。`productPlanId` は複製元のプラン）で対象を指定する。
-
-| パラメータ | 必須 | 制約 |
-|---|---|---|
-| `isOfferedContentCopy` | ○ | 提供コンテンツも複製するか |
-
-返るのは `productPlanId`（複製されたプランの ID）のみ。内容を確認するには `getCreatorProductPlan` で読み戻す。
-
-- 複製されたプランは「<元のプラン名>のコピー」という名前で作成され、公開ステータスは**非公開**（`PRIVATE`）になる
-- **課金開始日は引き継がれず「購入後すぐ」になる。** 複製先は非公開かつ購読者ゼロなので、必要なら複製直後に `patchCreatorProductPlan` で付け直す
-- サンクスページ／メール・自動リダイレクト・感想レポート・決済方法の設定は複製先にも引き継がれる
-- **クーポンは引き継がれない。** 複製先でも使うなら `postCreatorProductPlanCoupon` で新しく発行する。コードは MOSH 全体で一意なので、複製元と同じコードは使えず別のコードにする
-- `isOfferedContentCopy: true` のとき、会員サイトの紐付けは複製されるが、**ライセンス設定は初期状態**（複製時点の全フォルダ閲覧可・今後追加されるフォルダも含む・無期限）で作られる。**予約メニューの紐付けは複製されない**
-- 自分が所有する商品のプランのみ複製できる。他のユーザーのプランは「見つからない」旨のエラー
-
-拒否される操作:
-
-| 操作 | 結果 |
-|---|---|
-| プラン名に「のコピー」を付けると文字数上限（50 文字）を超える | 拒否される。複製元のプラン名を短くしてから複製する |
-
-**途中で失敗した場合、複製元のプラン自体は変更されないが、複製先のプランが設定の欠けた不完全な状態で残ることがある。** 再試行の前に `getCreatorProductPlans` で一覧を確認する。
-
 ## 読み取り系（確認・読み戻しに使う）
 
 ### `getCreatorProducts` — 商品一覧を取得
@@ -151,6 +126,7 @@
 | `limit` | 20 | 1〜100 |
 | `offset` | 0 | 0 以上 |
 | `status` | 省略時は全件 | `PUBLIC` / `LIMITED` / `PRIVATE` |
+| `searchQuery` | 省略時は絞らない | 商品名・プラン名の部分一致。最大 200 文字。商品が多いときの対象の特定に使う |
 
 `totalCount` は**総件数**。取得済み件数より多ければ `offset` をずらして続きを取得する。
 
@@ -172,217 +148,31 @@
 
 **更新の前には必ずこれを呼ぶ**（部分更新に対応していないため、現在値が要る）。`isNameEditable` / `isPriceEditable` / `isDeletable` もここで読める。`membershipSites` にプランに紐づく会員サイトの名前と ID が入る。
 
-## 提供コンテンツ（会員サイト・予約メニュー）
+## 画像のアップロード
 
-プランで提供する会員サイト・予約メニューの紐付け。`productId` / `productPlanId` はいずれもパスで、**数値文字列**。
+### `postMeMediaUploadUrls` — 画像のアップロード先を発行
 
-### `getCreatorProductPlanOfferedContents` — プランに紐づく提供コンテンツ一覧を取得
+商品画像（`imageIds` / `steps[].imageId`）とサンクスページのバナー（`bannerMediaId`）に使う画像を、手元のファイルからアップロードするときに使う。返る `moshMediaId` がそのまま画像 ID になる。パラメータ・PUT の方法・失敗時の対処は [media-upload.md](media-upload.md) にまとめてある。
 
-会員サイトと予約メニューが種別の違う提供コンテンツとして**同じ配列**に並ぶ。ページングされない。
+## プランの設定・複製・クーポンのツール
 
-レスポンス: `{ offeredContents: [...], totalCount, isUsingLegacySite }`。各要素の項目は [content-schema.md](content-schema.md) の「提供コンテンツの項目」。`isUsingLegacySite` が `true` なら、いま申込者向けサイト（旧会員サイト）を使っている。
+次のツールのパラメータ・応答・注意は、手順と同じ領域ファイルの「使用するツール」（複製は「リクエストと返却」）と各「項目」節にまとめてある（このファイルには置かない）。
 
-紐付けが無ければ空配列。書き込みの前後でこれを読み、**変更前と変更後を会員サイト名・予約メニューのタイトルで提示する**。
-
-### `postCreatorProductPlanOfferedContent` — プランに会員サイトを紐付け
-
-| パラメータ | 必須 | 制約 |
-|---|---|---|
-| `useLegacyMembershipSite` | ○ | `true` で申込者向けサイト（旧会員サイト）を使う |
-| `membershipSiteId` | ○ | 紐付ける会員サイトの ID（**数値**）または `null`。**省略はできない** |
-
-2 つの組み合わせで 3 通りの操作になる（詳細は [content-schema.md](content-schema.md) の「会員サイトの紐付けリクエスト」）。
-
-| `useLegacyMembershipSite` | `membershipSiteId` | 操作 |
-|---|---|---|
-| `false` | 数値 | その会員サイトを紐付ける（変更も同じ）。**申込者向けサイトは非公開になる** |
-| `true` | `null` | 申込者向けサイト（旧会員サイト）を使う。紐付いている会員サイトは外れない。非公開にした申込者向けサイトは自動では公開に戻らない |
-| `false` | `null` | 会員サイトを使わない。会員サイトの紐付けをすべて外し、**申込者向けサイトを非公開にする** |
-
-`true` と数値を同時に送ると拒否される。
-
-拒否される操作:
-
-| 操作 | 結果 |
+| ツール | 正本 |
 |---|---|
-| 購入者がいるプランで、別の会員サイトへ変える・申込者向けサイトへ切り替える・会員サイトを使わない設定にする | 拒否される。`getCreatorProductPlan` の `isDeletable: false` なら呼ばずに伝える |
-| 購入者がいるプランで、申込者向けサイトから会員サイトへ変える | 同上 |
-| 自分の会員サイトでない `membershipSiteId` | 「見つからない」旨のエラー |
-| 申込者向けサイトが用意されていないプランで `useLegacyMembershipSite: true` | 「見つからない」旨のエラー |
-
-購入者の有無で止まるのは**すでに紐付いているものの変更・解除**だけ。何も紐付いていないプランへの初回の紐付けは、購入者がいてもできる。
-
-**同じ会員サイトを再指定すると「変更がないためスキップしました」で成功する。** 会員サイトを新しく紐付けたときは、そのプランのライセンスが「全フォルダ閲覧可・今後追加分も含む・無期限」で自動作成される。予約メニューの紐付けは、このツールでは変わらない。
-
-### `deleteCreatorProductPlanOfferedContent` — プランから提供コンテンツの紐付けを解除
-
-`productId` / `productPlanId` / `offeredContentId`（いずれもパス。数値文字列）で対象を指定する。`offeredContentId` は一覧の `id`。会員サイトも予約メニューも同じツールで外す。
-
-拒否される操作:
-
-| 操作 | 結果 |
-|---|---|
-| 申込者向けサイト（旧会員サイト）の紐付けを外す | 拒否される。`postCreatorProductPlanOfferedContent` で「会員サイトを使わない」を選ぶ |
-| 購入者がいるプランの紐付けを外す | 拒否される（会員サイト・予約メニューとも） |
-| 一度でも予約に使われた予約メニューを外す | 拒否される。キャンセル済みの予約も数える |
-
-例外として、**削除済み（アーカイブ済み）の予約メニュー**の紐付けは、予約の有無・購入者の有無にかかわらず外せる。
-
-会員サイトの紐付けをこのツールで外しても、申込者向けサイトの公開状態は変わらない。
-
-### 参照に使う他ドメインのツール
-
-| ツール | 使いどころ |
-|---|---|
-| `getCreatorMembershipSites` | 会員サイト名から `membershipSiteId` を特定する（`id` / `name` / `isPublished` が返る） |
-| `getCreatorMembershipSite` | 会員サイトの閲覧順の固定（`isFixedViewingOrder`）を確認する |
-
-## 購入後設定
-
-購入完了後にゲストが見る画面・受け取るメールと、その後の導線。`productId` / `productPlanId` はいずれもパスで、数値文字列。3 つの設定は互いに独立している。サンクスページ／メールと感想レポートには取得ツールがあるが、**自動リダイレクトの現在値を取得するツールは無い**（作成／更新と削除のみ）。
-
-### `getCreatorProductPlanSettingsThanks` — サンクスページ／メール設定を取得
-
-レスポンス: `{ content, bannerMediaId, bannerLinkUrl }`。未設定の項目は `content` が空文字、バナーの 2 項目が `null`。
-
-### `patchCreatorProductPlanSettingsThanks` — サンクスページ／メール設定を更新
-
-| パラメータ | 必須 | 制約 |
-|---|---|---|
-| `content` | ○ | 本文。10,000 文字まで。**毎回必須**（変えないときも現在値を送る） |
-| `bannerMediaId` | — | バナー画像の ID。**省略＝維持、`null`＝削除** |
-| `bannerLinkUrl` | — | バナーをタップしたときの移動先。`http://` / `https://` で始まる URL のみ。**省略＝維持、`null`＝削除** |
-
-拒否される操作:
-
-| 操作 | 結果 |
-|---|---|
-| `bannerLinkUrl` に `http(s)` 以外の URL | 拒否される |
-| 自分の画像でない・存在しない `bannerMediaId` | 拒否される |
-| バナー画像が無い状態（保存済みも `null`）で `bannerLinkUrl` だけ指定する | 拒否される。先に画像を設定するか、リンク先も `null` にする |
-
-### `patchCreatorProductPlanSettingsRedirect` — 自動リダイレクト設定を作成／更新
-
-| パラメータ | 必須 | 制約 |
-|---|---|---|
-| `redirectUrl` | ○ | 移動先の URL |
-| `pendingSecond` | ○ | 移動までの待機秒数。**0〜15** の整数 |
-
-作成と更新は同じツール。2 項目とも毎回送る。**現在値を読むツールが無い**ので、設定済みかどうか・移動先・秒数はユーザーに確認し、設定済みなら上書きになることを伝えてから送る。送信後は読み戻せないため、送った値を提示する。
-
-### `deleteCreatorProductPlanSettingsRedirect` — 自動リダイレクト設定を削除
-
-パラメータはパスのみ。**未設定でも成功する**（2 回呼んでも成功する）ため、有無を確かめるためだけに呼ばない。「自動リダイレクトを解除します（あとから再設定できます）」と伝えて承認を取ってから呼ぶ。
-
-### `getCreatorProductPlanSettingsReviewReport` — 感想レポート設定を取得
-
-レスポンス: `{ isAutoRequestEnabled }`。**一度も設定していないプランは `true`（有効）で返る。**
-
-### `patchCreatorProductPlanSettingsReviewReport` — 感想レポート設定を更新
-
-| パラメータ | 必須 | 制約 |
-|---|---|---|
-| `isAutoRequestEnabled` | ○ | 購入後に感想レポートの投稿依頼メールを自動で送るか |
-
-## ライセンス設定（会員サイトの閲覧権限）
-
-会員サイトが紐付いたプランで、購入したゲストが閲覧できるフォルダと期間を決める。パスは `membershipSiteId`（**数値**）/ `productId` / `planId`（数値文字列）の 3 つで、**プラン ID のパラメータ名だけ `planId`**。`membershipSiteId` は `getCreatorProductPlanOfferedContents` の値を使う。
-
-### `getCreatorMembershipSiteProductPlanLicenseSetting` — プランのライセンス設定を取得
-
-レスポンス: `{ folders: [{ id, name, isViewable }], isNewFoldersIncluded, accessDurationDays, accessStartsAt, accessEndsAt }`。`folders` は会員サイトの**全フォルダ**にフォルダ名と閲覧可否が付いた一覧。**フォルダ名を別ツールで引く必要はない。**
-
-会員サイトが紐付いていないプラン・自分の会員サイトでない `membershipSiteId` は「見つからない」旨のエラー。
-
-### `putCreatorMembershipSiteProductPlanLicenseSetting` — プランのライセンス設定を更新
-
-| パラメータ | 必須 | 制約 |
-|---|---|---|
-| `viewableFolderIds` | ○ | 閲覧可能にするフォルダの ID（数値）の配列。**送った内容に置き換わる**。重複不可 |
-| `isNewFoldersIncluded` | ○ | 今後追加されるフォルダも自動で閲覧可能にするか |
-| `accessDurationDays` | ○ | 閲覧期限（日数）。**1〜1000**。使わないときは `null`（省略不可） |
-| `accessStartsAt` | ○ | 閲覧開始日時。`null` は開始の制限なし（省略不可）。タイムゾーンオフセット付きで指定する（例: `2026-10-01T10:00:00+09:00`） |
-| `accessEndsAt` | ○ | 閲覧終了日時。`null` は終了の制限なし（省略不可）。形式は `accessStartsAt` と同じ |
-
-拒否される操作:
-
-| 操作 | 結果 |
-|---|---|
-| 閲覧順の固定が有効な会員サイトで、一部のフォルダだけ閲覧可にする・`isNewFoldersIncluded: false` にする | 拒否される。全フォルダ + `true` にするか、先に閲覧順の固定を外す |
-| `viewableFolderIds` に重複がある・その会員サイトに無いフォルダ ID を含む | 拒否される |
-| `accessDurationDays` と `accessStartsAt` / `accessEndsAt` を同時に指定する | 拒否される（「『購入から○日間』と『指定日』は同時に設定できません。」） |
-| `accessStartsAt` と `accessEndsAt` を両方指定し、終了が開始より後でない（同時刻を含む） | 拒否される（「終了日時は開始日時より後に設定してください。」） |
-| 日時にタイムゾーンオフセットが無い | 拒否される |
-
-公開中・限定公開のプラン、または `isDeletable: false`（購入者がいる可能性のある）プランで、いま閲覧可能なフォルダを外すと、**そのフォルダを購入済みのゲストも見られなくなる**。送る前に承認を取る。
-
-## クーポン
-
-プランに紐づくクーポン（割引コード）。`productId` / `productPlanId` / `couponId` はいずれもパスで、文字列。**クーポンの内容は作成後に変更できない**（有効／無効の切り替えと削除のみ）。項目の意味と既定値は [content-schema.md](content-schema.md) の「クーポンの項目」を参照する。
-
-### `getCreatorProductPlanCoupons` — プランのクーポン一覧を取得
-
-| パラメータ | 既定 | 制約 |
-|---|---|---|
-| `limit` | 20 | 1 以上 |
-| `offset` | 0 | 0 以上 |
-
-レスポンス: `{ coupons: [...], totalCount }`。各要素の項目は [content-schema.md](content-schema.md) の「クーポンの項目」。`totalCount` はページに依らない**総件数**で、**削除済みは含まない**。取得済み件数より多ければ `offset` をずらして続きを取得する。
-
-存在しない・自分のものでないプランは「見つからない」旨のエラー。
-
-### `postCreatorProductPlanCoupon` — プランにクーポンを作成
-
-| パラメータ | 必須 | 制約 |
-|---|---|---|
-| `code` | ○ | クーポンコード。**4〜20 文字の半角英数字と `-` `_`**。削除済みを除く MOSH 全体のクーポンで一意（**他のクリエイターとも重複不可**） |
-| `name` | ○ | クーポン名。**1〜40 文字**。41 文字以上は拒否される |
-| `amountOff` | — | 値引額（円）。1 円以上、プランの価格以下。`percentOff` と排他で**どちらか一方を必ず指定**する。使わないときは `null` |
-| `percentOff` | — | 割引率（%、1〜100、整数推奨）。`amountOff` と排他。使わないときは `null` |
-| `maxRedemptions` | — | 発行枚数（最大使用回数）。1 以上。`null` は無制限 |
-| `expiresAt` | — | 有効期限。現在より後の日時（タイムゾーン付きの ISO 8601）。`null` は無期限 |
-| `subscriptionDurationType` | — | 回数設定（適用期間）。`once` / `forever`。**サブスクリプションプランのみ `forever` を指定できる**。買い切りプランは `once` のみ。省略時は `once` |
-
-返るのは `couponId` のみ。内容を確認するには `getCreatorProductPlanCoupon` で読み戻す。
-
-**同じ内容を再送すると `code` の重複で拒否される**（成功していれば 2 回目は必ず拒否される）。再試行の前に一覧で作られていないかを確認する。
-
-拒否される操作（理由は項目ごとのメッセージで返る。文言は [content-schema.md](content-schema.md) の「拒否されたときのメッセージ」）:
-
-| 操作 | 結果 |
-|---|---|
-| `amountOff` と `percentOff` を両方指定する・両方 `null` にする | 拒否される |
-| `amountOff` がプランの価格を超える・1 円未満 | 拒否される |
-| `percentOff` が 1〜100 の範囲外 | 拒否される |
-| `expiresAt` が現在より前 | 拒否される |
-| 買い切りプランに `subscriptionDurationType: "forever"` | 拒否される |
-| fincode のクリエイターのサブスクリプションプラン | 拒否される（クーポンを利用できない） |
-| すでに使われている `code`（他のクリエイターのものを含む） | 拒否される。別のコードを提案する |
-
-### `getCreatorProductPlanCoupon` — プランのクーポン詳細を取得
-
-`productId` / `productPlanId` / `couponId`（いずれもパス）で指定する。レスポンスは一覧の 1 件と同じ形。**回数設定（`subscriptionDurationType`）は取得項目に無い。** 削除済みのクーポンは「見つからない」旨のエラー。
-
-### `patchCreatorProductPlanCoupon` — プランのクーポンを更新（有効／無効の切り替えのみ）
-
-| パラメータ | 必須 | 制約 |
-|---|---|---|
-| `isEnabled` | ○ | `true` で有効、`false` で無効 |
-
-送れるのはこの 1 項目だけ。**クーポンの内容（コード・割引・枚数・期限・回数設定）は作成後に変更できない**ため、変える場合は新しいクーポンを作成して古いクーポンを無効化する。無効にすると、そのコードを持つゲストがその場で使えなくなる（あとから有効に戻せる）。
-
-### `deleteCreatorProductPlanCoupon` — プランのクーポンを削除
-
-`productId` / `productPlanId` / `couponId`（いずれもパス）で対象を指定する。**取り消せない。** プラン単位ではなくクーポン本体を削除するため、過去の複製で共有しているプランがあれば、そこからも同時に消える。削除済みのクーポンをもう一度指定すると「見つからない」旨のエラー。削除したクーポンは一覧と `totalCount` から除かれる。
+| `getCreatorProductPlanOfferedContents` / `postCreatorProductPlanOfferedContent` / `deleteCreatorProductPlanOfferedContent` / `getCreatorMembershipSites` / `getCreatorMembershipSite` | [membership-link.md](membership-link.md) |
+| `getCreatorMembershipSiteProductPlanLicenseSetting` / `putCreatorMembershipSiteProductPlanLicenseSetting` | [membership-link.md](membership-link.md) |
+| `getCreatorProductPlanSettingsThanks` / `patchCreatorProductPlanSettingsThanks` / `getCreatorProductPlanSettingsRedirect` / `patchCreatorProductPlanSettingsRedirect` / `deleteCreatorProductPlanSettingsRedirect` / `getCreatorProductPlanSettingsReviewReport` / `patchCreatorProductPlanSettingsReviewReport` | [post-purchase-settings.md](post-purchase-settings.md) |
+| `postCreatorProductPlanDuplicate` | [plan-duplicate.md](plan-duplicate.md) |
+| `getCreatorProductPlanCoupons` / `postCreatorProductPlanCoupon` / `getCreatorProductPlanCoupon` / `patchCreatorProductPlanCoupon` / `deleteCreatorProductPlanCoupon` | [coupons.md](coupons.md) |
 
 ## このスキルで扱えない操作
 
 | 操作 | 案内先 |
 |---|---|
-| **商品編集画面でアップロードした画像**（商品画像・サンクスページのバナー画像）のアップロード・一覧取得 | 管理画面（画像 ID はユーザーから受け取る） |
+| アップロード済みの画像の一覧・検索 | できない。いま付いている画像は `getCreatorProduct` / `getCreatorProductPlanSettingsThanks` で読める。それ以外はユーザーから ID を受け取るか、手元のファイルをアップロードし直す（[media-upload.md](media-upload.md)） |
 | 事業者情報の登録・確認 | 管理画面 |
 | 予約メニューをプランに紐付ける | 管理画面（解除はこのスキルで可能） |
-| 自動リダイレクトの現在値の確認 | 管理画面（作成／更新と削除のみ可） |
 | 商品ごとの複製（配下のプランをまとめて別の商品として複製する） | 管理画面（プラン 1 件の複製はこのスキルで可能） |
 | クーポンの内容（コード・割引・枚数・期限・回数設定）の変更 | できない。新しいクーポンを作成し、古いクーポンを無効化する |
 | 収益分配・決済リンクの設定 | 管理画面 |

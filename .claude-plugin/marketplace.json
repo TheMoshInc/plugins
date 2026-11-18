@@ -48,7 +48,7 @@
     {
       "name": "product-builder-plugin",
       "source": "./plugins/product-builder-plugin",
-      "description": "Adds a product-builder skill for creating, updating, duplicating, publishing and deleting MOSH products and product plans, and for issuing and managing coupons"
+      "description": "Adds a product-builder skill for creating, updating, duplicating, publishing and deleting MOSH products and product plans, linking membership sites to plans, setting membership site licenses and post-purchase settings, uploading product images, and issuing and managing coupons"
     },
     {
       "name": "membership-site-builder-plugin",
