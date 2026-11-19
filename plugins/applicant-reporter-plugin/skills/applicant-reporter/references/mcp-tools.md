@@ -31,7 +31,7 @@ bodyParams: { planIds, keyword, paymentMethod, paymentPattern, approvedDateTime,
 |---|---|---|---|
 | `planIds` | `string[]` | `[]` | 絞り込み対象のプラン ID。空配列は商品配下の全プラン。商品配下に無い ID を渡すとエラー |
 | `keyword` | `string` | `""` | 名前は前方一致（姓から入れる。名だけ・途中の文字では当たらない。スペースの有無と英字の大文字小文字を区別する）、メールアドレスは部分一致 |
-| `paymentMethod` | `("card" \| "ticket" \| "cash" \| "bank-transfer")[]` | `[]` | 決済手段。**絞り込みとして効くのは `card` と `bank-transfer` のみ**。`ticket` / `cash` を単独で指定しても絞り込まれない。`card` で絞ると 0 円の申込も含まれる（結果では `cash` で返ることがある）。`paymentPattern` と併用すると両者の AND |
+| `paymentMethod` | `("card" \| "ticket" \| "cash" \| "bankTransfer")[]` | `[]` | 決済手段。**絞り込みとして効くのは `card` と `bankTransfer` のみ**。`ticket` / `cash` を単独で指定しても絞り込まれない。`card` で絞ると 0 円の申込も含まれる（結果では `cash` で返ることがある）。`paymentPattern` と併用すると両者の AND |
 | `paymentPattern` | 下表の値の配列 | `[]` | 決済方法 × 状態の組み合わせ。複数指定は OR |
 | `approvedDateTime` | `{ startDateTime, endDateTime } \| null` | `null` | 申込日の範囲。各値は ISO 8601 日時か `null`。日本時間の日付単位で、終了日はその日の終わりまでを含む |
 | `limit` | `integer` | — | 1〜1000。閲覧用途は 20〜50 |

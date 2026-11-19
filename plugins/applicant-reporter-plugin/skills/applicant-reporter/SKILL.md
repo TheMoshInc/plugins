@@ -73,7 +73,7 @@ MCP ツール（一覧の `postCreatorProductApplicants` / `postCreatorProductSu
 
 - リクエストボディは全項目必須。省略せず「絞り込まない」値を明示して送る
 - 「継続中の購読者」は `statuses: ["active", "pastDue"]`。`pastDue` は決済エラーだが購読は続いている。`trialing` はどのレコードにも付かない
-- `paymentMethod` で絞り込みとして効くのは `card` と `bank-transfer` のみ。`ticket` / `cash` を単独で指定しても絞り込まれない。現金・チケットの申込は、絞り込まずに取得した結果の `order.paymentMethod` で判別する（手順は [references/best-practices.md](references/best-practices.md) の「7. 現金・チケットで支払った人を出す」）。`card` で絞ると 0 円の申込も含まれる
+- `paymentMethod` で絞り込みとして効くのは `card` と `bankTransfer` のみ。`ticket` / `cash` を単独で指定しても絞り込まれない。現金・チケットの申込は、絞り込まずに取得した結果の `order.paymentMethod` で判別する（手順は [references/best-practices.md](references/best-practices.md) の「7. 現金・チケットで支払った人を出す」）。`card` で絞ると 0 円の申込も含まれる
 - 購読者一覧の `planIds` に商品配下でない ID を渡すとエラーにならず 0 件が返る。0 件のときは「購読者がいない」と断定せず、プランが実在するかを `getCreatorProductPlans` で確かめる
 - `totalCount` が多いときに全件を取りに行く前に、ユーザーに確認する
 - 件数の内訳（プラン別・状態別）を、取得した 1 ページ分から推定しない。内訳が必要なら `planIds` / `paymentPattern` / `statuses` で絞った呼び出しの `totalCount` を使う。取らないなら合計件数だけを答える

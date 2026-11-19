@@ -13,10 +13,10 @@
 | `planId` / `planName` | 申込んだプラン。対応するプランが無い（削除済みなど）と空文字 |
 | `createdDateTime` | 申込日時（ISO 8601、オフセット付き） |
 | `viewingRestrictionDateTime` | 視聴制限がかかった日時。無ければ `null` |
-| `paymentType` | `one-time`（一括）/ `mosh-installments`（分割（分割入金型））/ `card-installments`（分割（一括入金型）） |
+| `paymentType` | `oneTime`（一括）/ `moshInstallments`（分割（分割入金型））/ `cardInstallments`（分割（一括入金型）） |
 | `status` | 申込の状態（下表） |
-| `order` | 注文。`paymentMethod`（`card` / `cash` / `ticket` / `bank-transfer`）、`contentTitle`（購入時のプラン名）、`status`（注文の生の状態）、`bankTransferExpirationDateTime`（振込期限）、`canceledDateTime`。注文を解決できないと `null` |
-| `installmentsOrder` | 分割（分割入金型）のときだけ入る。`iteration`（分割回数）、`count`（支払済み回数）、`status`（`active` / `past_due` / `fulfilled` / `canceled`）。それ以外は `null` |
+| `order` | 注文。`paymentMethod`（`card` / `cash` / `ticket` / `bankTransfer`）、`contentTitle`（購入時のプラン名）、`status`（注文の生の状態）、`bankTransferExpirationDateTime`（振込期限）、`canceledDateTime`。注文を解決できないと `null` |
+| `installmentsOrder` | 分割（分割入金型）のときだけ入る。`iteration`（分割回数）、`count`（支払済み回数）、`status`（`active` / `pastDue` / `fulfilled` / `canceled`）。それ以外は `null` |
 
 ### `status` の表示名変換表（8 値）
 
@@ -31,7 +31,7 @@
 | `installmentFulfilled` | 分割決済完了 | 全回の支払いが完了した | 分割決済（分割入金） |
 | `installmentPastDue` | 決済エラー | 分割決済（分割入金）の途中で決済に失敗し、再決済待ち | 分割決済（分割入金） |
 
-分割決済は 2 種類ある。**分割（分割入金型）**（`paymentType: mosh-installments`。毎回請求され、途中経過が `status` に出る）と**分割（一括入金型）**（`paymentType: card-installments`。カード会社の分割で、状態は `approved` / `canceled` の 2 つだけ）。
+分割決済は 2 種類ある。**分割（分割入金型）**（`paymentType: moshInstallments`。毎回請求され、途中経過が `status` に出る）と**分割（一括入金型）**（`paymentType: cardInstallments`。カード会社の分割で、状態は `approved` / `canceled` の 2 つだけ）。
 
 ## 購読者一覧（`subscribers[]`）
 
@@ -98,7 +98,7 @@
 | `guest.id` | MOSH ID | 変換しない。ユーザーが求めたときだけ「MOSH ID」として出す |
 | `status` | 状態名 | 上の変換表 |
 | `paymentType` | 一括 / 分割（分割入金型）/ 分割（一括入金型） | 上の説明 |
-| `order.paymentMethod` / `orders[].paymentMethod` | カード / 現金 / チケット / 銀行振込 | `card` / `cash` / `ticket` / `bank-transfer` |
+| `order.paymentMethod` / `orders[].paymentMethod` | カード / 現金 / チケット / 銀行振込 | `card` / `cash` / `ticket` / `bankTransfer` |
 | 申込 ID / 購読 ID / 注文 ID / クーポン ID | 出さない | 詳細ツールの呼び出しにだけ使う |
 | 金額 | 円（3 桁区切り） | `currency` が `JPY` 以外のときは通貨を添える |
 | 日時 | 日本時間の年月日 | ISO 8601 のオフセット付き値を変換する |

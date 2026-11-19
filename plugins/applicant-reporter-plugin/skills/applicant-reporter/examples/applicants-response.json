@@ -12,7 +12,7 @@
       "planName": "ベーシックプラン",
       "createdDateTime": "2026-09-01T10:15:00+09:00",
       "viewingRestrictionDateTime": null,
-      "paymentType": "one-time",
+      "paymentType": "oneTime",
       "status": "approved",
       "order": {
         "paymentMethod": "card",
@@ -36,7 +36,7 @@
       "planName": "分割払いプラン",
       "createdDateTime": "2026-08-20T19:40:00+09:00",
       "viewingRestrictionDateTime": null,
-      "paymentType": "mosh-installments",
+      "paymentType": "moshInstallments",
       "status": "installmentActive",
       "order": {
         "paymentMethod": "card",
@@ -64,10 +64,10 @@
       "planName": "ベーシックプラン",
       "createdDateTime": "2026-09-10T08:00:00+09:00",
       "viewingRestrictionDateTime": null,
-      "paymentType": "one-time",
+      "paymentType": "oneTime",
       "status": "pending",
       "order": {
-        "paymentMethod": "bank-transfer",
+        "paymentMethod": "bankTransfer",
         "contentId": "service-301",
         "contentTitle": "ベーシックプラン",
         "status": "pending",
