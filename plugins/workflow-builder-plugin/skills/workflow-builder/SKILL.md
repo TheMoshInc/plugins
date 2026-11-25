@@ -150,6 +150,13 @@ MOSHのAPIは `ACTIVE` 化時に埋め込み変数の可否を検証しない（
 
 「ちゃんと動いてる？」「届かなかった人がいる」と聞かれたら、`getCreatorScenariosExecutions` で各ステップの件数（`totalCount` / `completedCount` / `failedCount`）を見る。`failedCount` が 0 でなければ、該当ステップの `stageSnapshotId` で `getCreatorScenariosStageSnapshotExecutions`（`executionStatus: "FAILED"`）を取り、失敗理由ごとに件数を数えて日本語で伝える（コードの意味は [references/mcp-tools.md](references/mcp-tools.md)）。紐付け未成立（`CONTACT_NOT_FOUND` / `GUEST_NOT_FOUND`）が多いときは、[best-practices.md](references/best-practices.md) のコンテキスト適合表の △ に当たっていないかを疑う。個人情報を含むため、個人を特定する一覧は求められたときだけ出す。
 
+**件数が少ない・0件のとき、または「公開し直したら0件になった」「前の実績を見たい」と言われたら、バージョンをまたいで見る**。`getCreatorScenariosExecutions` は省略時に最新のバージョン（最後に公開した後）の分しか返さないため:
+
+1. `getCreatorScenarioSnapshots` でバージョンの一覧を取る。`snapshots[0].startedAt` が最後に公開した日。最新のバージョンが数日前に始まったばかりなら、0件は「壊れている」ではなく「公開し直した直後」の可能性が高い
+2. 前のバージョンの `id` を `getCreatorScenariosExecutions` の `queryParams.snapshotId` に渡し、ステップ別の件数を取る（失敗理由もそのバージョンの `stageSnapshotId` で取れる）
+3. バージョンごとに分けて伝える（例:「11/18に公開し直した今のバージョンは2件、その前のバージョン（10/1〜11/18）は120件」）。バージョンによってステップの数や並びが違うことがあるので、**バージョンをまたいでステップ別の件数を足し合わせない**
+4. 前のバージョンの中身はトリガー・ステップの種類・待ち時間・分岐の形までしか分からない。メッセージ本文や条件の内容が違ったかは取れないので、そう伝えたうえでユーザーに確かめる（[references/mcp-tools.md](references/mcp-tools.md) の `getCreatorScenarioSnapshots`）
+
 ## MCP でできないこと（管理画面の操作を案内する）
 
 管理画面ではできるが MCP ツールが無い操作。ツール名を推測して呼ばず、ユーザーに管理画面での操作を案内する:

@@ -110,12 +110,29 @@ pathParams: { id }
 
 ## 実行結果取得
 
-**`getCreatorScenariosExecutions`** — ワークフロー実行結果サマリーを取得
+実行結果は**バージョン（スナップショット）ごと**に記録される。公開（稼働ON）のたびに新しいバージョンができ、実行はその時点のバージョンに対して数えられる。編集して公開し直すと、最新のバージョンの件数は 0 から数え直しになる（前のバージョンの実績は消えず、バージョンを指定すれば見られる）。
+
+**`getCreatorScenarioSnapshots`** — バージョンの一覧を取得
 
 ```
 pathParams: { id }
 ```
 
+- 返却: `{ snapshots: [{ id, triggeredCount, completedCount, failedCount, startedAt }] }`。**稼働開始日時（`startedAt`）の新しい順**。`snapshots[0]` が最新のバージョン
+- `startedAt` はそのバージョンで稼働を始めた日時。**`snapshots[0].startedAt` を最後に公開した日として扱ってよい**（ユーザーに聞かなくてよい。編集せずに停止・再開しただけでバージョンが分かれるかは確認できていない）。バージョンの稼働終了日時は返らないので、あるバージョンの期間は「そのバージョンの `startedAt` 〜 1つ新しいバージョンの `startedAt`」と読む（最新のバージョンで今も動いているかは `getCreatorScenario` の `lifecycle` で確かめる）
+- バージョン全体の件数（`triggeredCount`＝開始した数 / `completedCount` / `failedCount`）。**延べ回数で、人数ではない**（同じ人が繰り返し対象になれば重ねて数える）。「◯人」と言い換えない。ステップごとの件数は下の `getCreatorScenariosExecutions` に `snapshotId` を渡して取る
+- 一度も稼働していなければ `snapshots: []`
+- **バージョンの中身は一部しか取れない**: バージョンを指定した `getCreatorScenariosExecutions` で、そのバージョンのトリガー（種別と表示名）・ステップの種類・待ち時間・分岐の形までは分かる。メッセージ本文・条件分岐の条件・付けるタグなどの設定内容は取れない。「前のバージョンで何を送っていたか」は、公開日時と編集の記録をもとにユーザーに確かめる
+
+**`getCreatorScenariosExecutions`** — ワークフロー実行結果サマリーを取得
+
+```
+pathParams: { id }
+queryParams: { snapshotId? }
+```
+
+- `snapshotId` を渡すとそのバージョンの結果、**省略すると最新のバージョンの結果**。`snapshotId` は `getCreatorScenarioSnapshots` の `snapshots[].id`。そのワークフローに属さない `snapshotId` は 404
+- バージョンを指定すると、`trigger` と `steps` の形も**そのバージョンのもの**が返る（今の構造と違うことがある）。`stageSnapshotId` もバージョンごとに別
 - 一度も稼働していないワークフロー（下書きのまま等）は **404**（「リソースが存在しません」）。エラーではなく「まだ実行されていない」と伝える
 
 - `LINE_KEYWORD_RESPONSE_MATCHED` の場合、`trigger.lineKeywordResponseMatchedTrigger` に `{ lineKeywordResponseId, name }`（キーワード応答の設定名）が入る（実機では未確認）。公開後に、申告された ID が意図したキーワード応答だったかを名前で確かめるのに使える
