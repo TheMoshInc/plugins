@@ -609,7 +609,7 @@ PC で「テキスト左・画像右」にすると SP は テキスト→画像
 
 ## セルフレビューチェックリスト
 
-`patchCreatorLandingPageDraft` で content を送る**前**に一度、保存後に `getCreatorLandingPage` で読み戻した content に対してもう一度、以下を確認する。問題があれば修正して再保存する。
+`patchCreatorLandingPageDraft` で content を送る**前**に、以下を確認する。問題があれば直してから送る。
 
 | # | チェック | NG の例 |
 |---|---|---|

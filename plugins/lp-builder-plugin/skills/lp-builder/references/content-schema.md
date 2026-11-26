@@ -484,7 +484,7 @@
 - `hardBreak`ノード — `\n`ではなく明示的な改行専用ノード。`text`プロパティは持たない独立した要素。直後のテキストと書式の連続性を保つため、同じ`marks`を付けておくとよい。
 - 要素レベルの`styles`（padding等）は引き続き有効。文字の色・サイズはmarks側が優先される。
 - **`textStyle.attrs.fontFamily` を空文字にすると「継承」ではなく既定フォント（`'Noto Sans JP'`）にフォールバックする。** 要素の `styles.fontFamily` が `'Noto Serif JP'` や `'M PLUS Rounded 1c'` の見出しをプレーン文字列から tiptap に変換すると、**書体が黙って変わる**（実機で確認済み）。tiptap に変換するときは、**全ランの `fontFamily` に要素と同じ書体名を明示する**こと。
-- 保存後に`getCreatorLandingPage`で取得すると、プレーン文字列で送った`text`/`heading`もこの形式に自動変換されて返ってくる（正引きの参考にできる）。
+- MCP から保存した`text`/`heading`は、送った形のまま保存される。編集画面で直した`text`/`heading`は、プレーン文字列だったものもこの形式で返ってくる（正引きの参考にできる）。
 
 ### SP だけ文字サイズを変える（`mobileFontSize`）
 
