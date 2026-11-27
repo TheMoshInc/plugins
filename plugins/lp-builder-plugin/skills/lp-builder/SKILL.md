@@ -69,20 +69,31 @@ LP の必須欄は #1〜#3 と #4（ゴール種別のみ）。LP 固有の扱�
 3. 構造ルールは `references/content-schema.md`、設計指針は `references/best-practices.md`。プリセットに無い部品を新しく作るときだけ、この2つを読んで組む。**日程章（`schedule`）・オートウェビナー（`autoWebinar`）などサービス連携のパーツは catalog に無いので、ゴールが告知・イベント等でこれらを使うときは `content-schema.md` の該当節（「`schedule` の仕様」「`autoWebinar` の仕様」）を必ず読む**。章に表示期間を付けるときは同「セクションの表示期間」を読む
 
 - **新規構築時**: 承認済み構成案の ID・見出し・メッセージをそのまま JSON に落とす。構成案に無いセクションを勝手に足さない
-- **既存 LP の編集時**: patch の前に「何を・どう・なぜ変更するか」のサマリーをユーザーに提示し、確認を得てから実行する（新規構築時は Step 3 の承認がこれに相当する）
+- **既存 LP の編集時**: 保存の前に「何を・どう・なぜ変更するか」のサマリーをユーザーに提示し、確認を得てから実行する（新規構築時は Step 3 の承認がこれに相当する）
 - 送信前に `best-practices.md` の**「セルフレビューチェックリスト」の節だけ**を読んで content を自己点検する
 
-`patchCreatorLandingPageDraft` で下書きを更新する：
+新規構築では `patchCreatorLandingPageDraft` で下書きを更新する：
 
 - `title`: LP タイトル
 - `content`: 構造ルールに従った JSON オブジェクト
 - `metaTitle` / `metaDescription`: SEO 用メタ情報
 
-`content` は一度にすべて送信する。部分更新は不可。
+保存したあとの修正は、要素単位のツールで直す範囲だけを送る（手順は `section-plan.md` の「保存後の修正ループ」、引数と ID の条件は `mcp-tools.md`）。使い分け:
+
+| やること | ツール |
+|---|---|
+| 新規構築・プリセットの差し替えなど LP 全体の作り直し・`page` のスタイルを変える | `patchCreatorLandingPageDraft`（content 全量） |
+| タイトル・メタ情報・表示期限など content 以外を変える | `patchCreatorLandingPageDraft`（content を含めない） |
+| 保存済みの LP の要素の中身を直す（文言・画像・スタイル・リンク） | `putCreatorLandingPageDraftElement`（直す範囲を含むいちばん小さい要素） |
+| 章・要素を足す | `postCreatorLandingPageDraftElements` |
+| 章・要素を消す | `deleteCreatorLandingPageDraftElement` |
+| 章の順番を変える | 移す章を削除してから、新しい位置に追加する |
+
+既存の LP を直すときは、全量保存でも要素単位でも、直す前に `section-plan.md` の修正ループ 3 の取り直す条件に当たるかを確かめる（編集画面の変更を古い content で巻き戻さないため）。
 
 ### 6. レビュー
 
-1. 保存の応答は完了メッセージだけで、送った content がそのまま保存される。保存の直後に `getCreatorLandingPage` で取得し直さない（セルフレビューは Step 5 の送信前に済ませる）
+1. 保存の応答は完了メッセージだけで、送った content（要素単位のツールでは送った要素）がそのまま保存される。保存の直後に `getCreatorLandingPage` で取得し直さない（セルフレビューは Step 5 の送信前に済ませる）
 2. エラーが返ったら、入力の誤りなら直して送り直す。業務ルールのエラーは「エラーが返ったとき」に従う
 3. ユーザーには **MOSH エディタで実物を見てもらい**、修正指示を構成案の ID に解決して該当セクションだけ書き換える（手順は `section-plan.md` の「保存後の修正ループ」）
 
@@ -165,7 +176,7 @@ PartType / attributes の詳細は `references/content-schema.md`、ID 命名は
 | `references/content-schema.md` | PartType 一覧、ID プレフィックス表、`attributes` 詳細（`sectionType` の許容値を含む）、特殊パーツの仕様（`schedule` / `autoWebinar` / `video` / `image-carousel` / `countdown`。使うときにその節を読む）、セクションの表示期間（`displayPeriodType`）、セクション+children の例 |
 | `references/best-practices.md` | 構成計画（ゴール別のセクション数目安・推奨構成と `sectionType` 対応・推奨 ID）、テキストの具体性、余白の原則、表現テクニック、モバイルファースト、CTA 規約、画像の運用、セルフレビューチェックリスト |
 | `references/presets.md` | 6プリセット（配色＋骨格＋部品）の定義と選び方。Step 5 の最初に読む |
-| `references/mcp-tools.md` | 各 MCP ツールのパラメータ仕様。表示期限（`expirationType`）・一覧取得のフィルタ・title/content 以外の patch 項目を扱うときに読む |
+| `references/mcp-tools.md` | 各 MCP ツールのパラメータ仕様。要素単位の追加・置き換え・削除（ID の条件・エラーが返ったとき）、表示期限（`expirationType`）・一覧取得のフィルタ・title/content 以外の patch 項目を扱うときに読む |
 | `references/photo-patterns.md` | 写真・画像の見せ方40型（ヒーロー／本文の中／並べる／信頼／場所・手順・料金／写真がないとき。LP機能で作れるか ○△× 付き）。構成案の「レイアウト型」に写真の型を添えるとき、素材が足りない枠の代替を選ぶときに読む |
 | `examples/catalog/<preset>.json` | プリセット6本の LP 全体 JSON。選んだ1本だけ Read し、章単位で写す。索引は `examples/catalog/README.md` |
 | `examples/full-landing-page.json` | 構造の最小例（メイン / 特徴 / CTA / フッター）。プリセットを使わず白紙から組むときの参照 |

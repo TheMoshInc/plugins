@@ -1,6 +1,6 @@
 # LPコンテンツ構造リファレンス
 
-`patchCreatorLandingPageDraft` の `content` フィールドに渡すJSONオブジェクトの詳細仕様。
+`patchCreatorLandingPageDraft` の `content` フィールドに渡すJSONオブジェクトの詳細仕様。要素単位のツール（`mcp-tools.md`）で送る `element` も、`content.elements` の要素と同じ形。
 
 ## トップレベル構造
 

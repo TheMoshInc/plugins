@@ -67,6 +67,7 @@ pathParams: { id }
 bodyParams: { title?, content?, metaTitle?, metaDescription?, isSearchEngineEnabled?, expirationType?, relativeExpiration?, expireAt?, expirationAction?, redirectUrl?, serviceId?, scheduleDisplayCount?, ogpImageId?, faviconImageId?, metaPixelId?, googleAnalyticsId? }
 ```
 
+- `content` を送ると content 全体を置き換える。送らなければ content は変わらない（タイトル・メタ情報だけを変えるときは content を含めない）
 - `expirationType`: `"NONE"` | `"RELATIVE"` | `"ABSOLUTE"`（`"ABSOLUTE"`は`expireAt`まで、`"RELATIVE"`は閲覧開始時刻から`relativeExpiration`後まで。`"NONE"`の場合ページは期限切れにならず、`expirationAction`/`redirectUrl`は参照されない）
 - `relativeExpiration`: `{ days, hours, minutes, seconds }`（`0-9999`/`0-23`/`0-59`/`0-59`、全て必須。`"RELATIVE"`時に使用）
 - `expireAt`: ISO 8601 datetime | `null`（`"ABSOLUTE"`時に使用）
@@ -78,6 +79,41 @@ bodyParams: { title?, content?, metaTitle?, metaDescription?, isSearchEngineEnab
 pathParams: { id }
 bodyParams: { status: "DRAFT" | "PUBLISHED" | "ARCHIVED" }
 ```
+
+## 要素単位の追加・置き換え・削除
+
+保存済みの LP の一部だけを直すときに使う（使い分けは SKILL.md Step 5 の表）。content の他の要素と `page` は変わらない。変わるのは下書きだけ。
+
+**`putCreatorLandingPageDraftElement`** — 下書きの要素を 1 つ、子孫ごと置き換える
+
+```
+pathParams: { id, elementId }
+bodyParams: { element }
+```
+
+- `element.id` は `elementId` と同じにする。残す子孫は今の id のまま送る。新しく入る子孫の id は、LP 内の他の要素と重ならないものにする（置き換えで消える子孫の id は使い直してよい）
+
+**`postCreatorLandingPageDraftElements`** — 下書きに要素を 1 つ（子孫ごと）追加する
+
+```
+pathParams: { id }
+bodyParams: { element, beforeElementId, parentElementId }
+```
+
+- 位置は `beforeElementId`（その要素の直前）か `parentElementId`（そのセクションの `children` の末尾）のどちらか 1 つで指定し、使わない方は `null`。両方 `null` なら最上位の末尾に入る。`parentElementId` に指定できるのは `type` が `section` の要素だけ
+- `element` とその子孫の id は、LP 内の既存の要素と重ならないものにする
+
+**`deleteCreatorLandingPageDraftElement`** — 下書きの要素を 1 つ、子孫ごと削除する
+
+```
+pathParams: { id, elementId }
+```
+
+共通:
+
+- `elementId`・位置の ID は、`getCreatorLandingPage` で取得した content から取る。`element` は `content.elements` の要素と同じ形で、文字列の `id` と `type` を持つ
+- `elementId` と、送る `element`（残す子孫も含む）の id に使えるのは英数字・ハイフン・アンダースコアだけ（`section-plan.md` の規約の ID は満たす）。それ以外を含むとエラーになり、保存されない。既存の要素の id がこの文字に合わず要素単位で送れないときは、id を変えずに、取得した content を書き換えて全量保存する
+- 「要素が見つからない」「追加する位置が見つからない」と返ったら、取得し直して ID を確かめる。「ID が重なっている」と返ったら、新しい要素の id を変えて送り直す。「LP 全体を送って更新してください」と返ったら、取得し直した content を書き換えて全量保存する
 
 ## 画像・動画のアップロード（MCP対応済み）
 
