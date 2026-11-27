@@ -294,7 +294,19 @@ ImageCarouselItem の形（`postbackActions` の仕様は CarouselItem と同じ
 }
 ```
 
-**`CAROUSEL`（`imageUrl`）/ `IMAGE_CAROUSEL`（`image`）/ `RICH_MESSAGE`（`imageUrl`）の画像は MCP からアップロードできる（MCP対応済み）**: これらはスキーマ上 `format: uri` の単なる文字列で、`VIDEO` の `previewMoshImageId` のような特別な ID 紐付けは無い。ユーザーから渡された画像ファイルがある場合、次項「`previewMoshImageId` の取得方法」と同じアップロードフローで画像を作成し、`getCreatorMaterialImage`（`pathParams: { id: materialId }`）が返す `imageUrl` をそのまま `imageUrl`/`image` に設定すればよい。`ready` になる前の URL を使うと配信時に画像が表示されないため、`postCreatorMaterialImage` が成功した（＝`ready`になった）ことを確認してから取得する。ワークフロー用途で不要なら、この場合も `deleteCreatorMaterialImage` で画像素材の紐付けだけ削除してよい（画像本体URLは生き続ける）。ユーザーが既に実在する外部の画像URLを持っている場合は、`VIDEO`と異なりそのまま使ってよい（MOSHホスト画像である必要はない）。
+**`CAROUSEL`（`imageUrl`）/ `IMAGE_CAROUSEL`（`image`）/ `RICH_MESSAGE`（`imageUrl`）の画像は MCP からアップロードできる（MCP対応済み）**: これらはスキーマ上 `format: uri` の単なる文字列で、`VIDEO` の `previewMoshImageId` のような特別な ID 紐付けは無い。ユーザーから渡された画像ファイルがある場合、次の手順で**ファイル共有の共有URL**を作り、それを `imageUrl`/`image` に設定する。
+
+1. 画像は **JPEG か PNG** に限る（LINE が受け付ける形式。WebP・GIF はアップロードできても配信で使えない）
+2. 次項「`previewMoshImageId` の取得方法」の手順1〜3と同じアップロードフローで画像を作成する（`postCreatorMaterialImage` が成功＝変換完了まで待つ）
+3. 作成時に共有リンクが1本自動で発行されているので、`getCreatorMaterialContentLinks`（`pathParams: { id: materialId }`）で `expiresAt` が `null` のものの `slug` を取る（新しく発行しない）
+4. `<接続先の環境のホスト>/materials/<slug>` を組み立てて設定する。ホストは本番 `https://mosh.jp` / staging `https://develop.mosh.jp`。分からなければユーザーに確認し、推測しない。`slug` を推測・創作しない
+
+画像の共有URLは画面ではなく画像そのものを返すため、LINE の画像URLとして使える。
+
+- **`getCreatorMaterialImage` が返す `imageUrl`（画像本体URL）は使わない。** 発行から1時間で切れる署名付きURLで、時間をおいて配信するワークフローでは配信時に画像が表示されない
+- **作成した画像ファイルと共有リンクは削除しない。** 削除すると共有URLが止まり、そのメッセージの画像が表示されなくなる（ワークフローが稼働している間は残す）
+
+ユーザーが既に実在する外部の画像URLを持っている場合は、`VIDEO`と異なりそのまま使ってよい（MOSHホスト画像である必要はない）。
 
 **VIDEO の `muxAssetId` の取得方法（MCP対応済み）**: `muxAssetId` は捏造・流用不可。ユーザーから渡された mp4 を以下の手順で MCP からアップロードして採番する。
 
